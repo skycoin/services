@@ -1,0 +1,40 @@
+[
+    {
+        "address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
+        "min_scan_block": 41,
+        "mid_scan_block": 41,
+        "max_scan_block": 41,
+        "txs": [
+            {
+                "tx_hash": "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0",
+                "btc_address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
+                "block_hash": "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048",
+                "parent_hash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+                "block_height": 1,
+                "satoshi_amount": 5000000000,
+                "bitcoin_amount": "50"
+            }
+        ]
+    },
+    {
+        "address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1",
+        "min_scan_block": 0,
+        "mid_scan_block": 0,
+        "max_scan_block": 0,
+        "txs": []
+    },
+    {
+        "address": "17abzUBJr7cnqfnxnmznn8W38s9f9EoXiq",
+        "min_scan_block": 0,
+        "mid_scan_block": 0,
+        "max_scan_block": 0,
+        "txs": []
+    },
+    {
+        "address": "16LoW7y83wtawMg5XmT4M3Q7EdjjUmenjM",
+        "min_scan_block": 0,
+        "mid_scan_block": 0,
+        "max_scan_block": 0,
+        "txs": []
+    }
+]
