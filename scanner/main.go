@@ -2,20 +2,19 @@ package main
 
 import (
 	"net/http"
-	"./handler"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"./scan"
-	"./config"
+	"github.com/services/scanner/handler"
+	"github.com/services/scanner/config"
 	"fmt"
 	"os"
+	"github.com/gorilla/handlers"
+	"github.com/services/scanner/scan"
 )
 
 
 func main() {
 
-	config := config.LoadConfiguration("config.json")
-	_, err := scan.NewBTCDClient(config.BTCD.User, config.BTCD.Pass)
+	config.LoadConfiguration("config.json")
+	_, err := scan.NewBTCDClient(config.Config.BTCD.User, config.Config.BTCD.Pass)
 	if err != nil {
 		fmt.Printf("Can't connect btcd, error: ", err)
 		os.Exit(1)
@@ -27,12 +26,16 @@ func main() {
 }
 
 func startServer() {
-	r := mux.NewRouter()
-	r.Handle("/", http.FileServer(http.Dir("./static")))
-	r.Handle("/getaddrs", handler.AddressHandler).Methods("GET")
-	r.Handle("/scanrange", handler.DiapasonHandler).Methods("POST")
-	r.Handle("/newaddrs", handler.AddAddressHandler).Methods("POST")
-	http.ListenAndServe(":7755", handlers.CORS()(r))
+
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir("./static/dist")))
+	mux.Handle("/getaddrs", handler.AddressHandler)
+	mux.Handle("/newaddrs", handler.AddAddressHandler)
+	mux.Handle("/scanrange", handler.DiapasonHandler)
+	http.ListenAndServe(":7755", handlers.CORS()(mux))
+
 }
+
+
 
 
