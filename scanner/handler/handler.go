@@ -5,8 +5,8 @@ import (
 	"time"
 	"encoding/json"
 	"fmt"
-	"../scan"
-	"../config"
+	"github.com/services/scanner/scan"
+	"github.com/services/scanner/config"
 	"strconv"
 	"io/ioutil"
 	"github.com/Jeffail/gabs"
@@ -84,7 +84,6 @@ var DiapasonHandler = http.HandlerFunc(func(response http.ResponseWriter, reques
 
 //AddAddressHandler add address to wallet
 var AddAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-	fmt.Println("here")
 	body, _ := ioutil.ReadAll(request.Body)
 	json, _ := gabs.ParseJSON(body)
 	children, _ := json.S("addrs").Children()

@@ -36,5 +36,19 @@
         "mid_scan_block": 0,
         "max_scan_block": 0,
         "txs": []
+    },
+    {
+        "address": "19LoW7y83wtawMg5XmT4M3Q7EdjjUmenjM",
+        "min_scan_block": 0,
+        "mid_scan_block": 0,
+        "max_scan_block": 0,
+        "txs": []
+    },
+    {
+        "address": "1G43MvhzCqRz1ctsQUmgU4LgLuSVdfU557",
+        "min_scan_block": 0,
+        "mid_scan_block": 0,
+        "max_scan_block": 0,
+        "txs": []
     }
 ]
