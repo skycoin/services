@@ -1,9 +1,9 @@
 [
     {
         "address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
-        "min_scan_block": 41,
-        "mid_scan_block": 41,
-        "max_scan_block": 41,
+        "min_scan_block": 53,
+        "mid_scan_block": 53,
+        "max_scan_block": 53,
         "txs": [
             {
                 "tx_hash": "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0",
@@ -18,37 +18,77 @@
     },
     {
         "address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1",
-        "min_scan_block": 0,
-        "mid_scan_block": 0,
-        "max_scan_block": 0,
-        "txs": []
+        "min_scan_block": 35,
+        "mid_scan_block": 35,
+        "max_scan_block": 35,
+        "txs": [
+            {
+                "tx_hash": "9b0fc92260312ce44e74ef369f5c66bbb85848f2eddd5a7a1cde251e54ccfdd5:0",
+                "btc_address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1",
+                "block_hash": "000000006a625f06636b8bb6ac7b960a8d03705d1ace08b1a19da3fdcc99ddbd",
+                "parent_hash": "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048",
+                "block_height": 2,
+                "satoshi_amount": 5000000000,
+                "bitcoin_amount": "50"
+            }
+        ]
     },
     {
         "address": "17abzUBJr7cnqfnxnmznn8W38s9f9EoXiq",
-        "min_scan_block": 0,
-        "mid_scan_block": 0,
-        "max_scan_block": 0,
-        "txs": []
+        "min_scan_block": 35,
+        "mid_scan_block": 35,
+        "max_scan_block": 35,
+        "txs": [
+            {
+                "tx_hash": "9962d5c704ec27243364cbe9d384808feeac1c15c35ac790dffd1e929829b271:0",
+                "btc_address": "17abzUBJr7cnqfnxnmznn8W38s9f9EoXiq",
+                "block_hash": "000000005c51de2031a895adc145ee2242e919a01c6d61fb222a54a54b4d3089",
+                "parent_hash": "0000000027c2488e2510d1acf4369787784fa20ee084c258b58d9fbd43802b5e",
+                "block_height": 13,
+                "satoshi_amount": 5000000000,
+                "bitcoin_amount": "50"
+            }
+        ]
     },
     {
         "address": "16LoW7y83wtawMg5XmT4M3Q7EdjjUmenjM",
-        "min_scan_block": 0,
-        "mid_scan_block": 0,
-        "max_scan_block": 0,
-        "txs": []
+        "min_scan_block": 35,
+        "mid_scan_block": 35,
+        "max_scan_block": 35,
+        "txs": [
+            {
+                "tx_hash": "8aa673bc752f2851fd645d6a0a92917e967083007d9c1684f9423b100540673f:0",
+                "btc_address": "16LoW7y83wtawMg5XmT4M3Q7EdjjUmenjM",
+                "block_hash": "0000000071966c2b1d065fd446b1e485b2c9d9594acd2007ccbd5441cfc89444",
+                "parent_hash": "000000003031a0e73735690c5a1ff2a4be82553b2a12b776fbd3a215dc8f778d",
+                "block_height": 7,
+                "satoshi_amount": 5000000000,
+                "bitcoin_amount": "50"
+            }
+        ]
     },
     {
         "address": "19LoW7y83wtawMg5XmT4M3Q7EdjjUmenjM",
-        "min_scan_block": 0,
-        "mid_scan_block": 0,
-        "max_scan_block": 0,
+        "min_scan_block": 35,
+        "mid_scan_block": 35,
+        "max_scan_block": 35,
         "txs": []
     },
     {
         "address": "1G43MvhzCqRz1ctsQUmgU4LgLuSVdfU557",
-        "min_scan_block": 0,
-        "mid_scan_block": 0,
-        "max_scan_block": 0,
-        "txs": []
+        "min_scan_block": 35,
+        "mid_scan_block": 35,
+        "max_scan_block": 35,
+        "txs": [
+            {
+                "tx_hash": "230cf03a6ce420eaa42e3c64feebb47920f3470efb4323b4574b4b6e5a004f65:0",
+                "btc_address": "1G43MvhzCqRz1ctsQUmgU4LgLuSVdfU557",
+                "block_hash": "0000000071350772f98f84babf35502b33d42ee8466d3dde0f376c4120352081",
+                "parent_hash": "0000000041438e52d25bccab8798a92cabafdaad69a071d3d2a41718faf01098",
+                "block_height": 27,
+                "satoshi_amount": 5000000000,
+                "bitcoin_amount": "50"
+            }
+        ]
     }
 ]
