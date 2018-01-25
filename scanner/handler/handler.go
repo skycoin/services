@@ -45,6 +45,93 @@ var AddressHandler = http.HandlerFunc(func(response http.ResponseWriter, request
 	responseMessage(addrs, response, request)
 })
 
+//MinScanHandler scan min block
+var MinScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
+	if err != nil {
+		fmt.Println("Wallet loading is failed:", err)
+	}
+
+	client, err := scan.NewBTCDClient(config.Config.BTCD.User, config.Config.BTCD.Pass)
+	defer client.Shutdown()
+
+	addrs, err = scan.UpdateMin(addrs, client)
+	if err != nil {
+		fmt.Println("Update min is failed:", err)
+	}
+
+	err = scan.SaveWallet(config.Config.Wallet.File, addrs)
+	if err != nil {
+		fmt.Println("Saving wallet is failed:", err)
+	}
+	responseMessage(addrs, response, request)
+})
+
+//MaxScanHandler scan min block
+var MaxScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
+	if err != nil {
+		fmt.Println("Wallet loading is failed:", err)
+	}
+
+	client, err := scan.NewBTCDClient(config.Config.BTCD.User, config.Config.BTCD.Pass)
+	defer client.Shutdown()
+
+	addrs, err = scan.UpdateMax(addrs, client)
+	if err != nil {
+		fmt.Println("Update max is failed:", err)
+	}
+
+	err = scan.SaveWallet(config.Config.Wallet.File, addrs)
+	if err != nil {
+		fmt.Println("Saving wallet is failed:", err)
+	}
+	responseMessage(addrs, response, request)
+})
+
+//FarScanHandler scan min block
+var FarScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
+	if err != nil {
+		fmt.Println("Wallet loading is failed:", err)
+	}
+
+	client, err := scan.NewBTCDClient(config.Config.BTCD.User, config.Config.BTCD.Pass)
+	defer client.Shutdown()
+
+	addrs, err = scan.UpdateFar(addrs, client)
+	if err != nil {
+		fmt.Println("Update far is failed:", err)
+	}
+
+	err = scan.SaveWallet(config.Config.Wallet.File, addrs)
+	if err != nil {
+		fmt.Println("Saving wallet is failed:", err)
+	}
+	responseMessage(addrs, response, request)
+})
+//FarScanHandler scan min block
+var ShortScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
+	if err != nil {
+		fmt.Println("Wallet loading is failed:", err)
+	}
+
+	client, err := scan.NewBTCDClient(config.Config.BTCD.User, config.Config.BTCD.Pass)
+	defer client.Shutdown()
+
+	addrs, err = scan.UpdateShort(addrs, client)
+	if err != nil {
+		fmt.Println("Update short is failed:", err)
+	}
+
+	err = scan.SaveWallet(config.Config.Wallet.File, addrs)
+	if err != nil {
+		fmt.Println("Saving wallet is failed:", err)
+	}
+	responseMessage(addrs, response, request)
+})
+
 //DiapasonHandler get start and end block number and scan these blocks
 var DiapasonHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 	err := request.ParseForm()
@@ -92,6 +179,21 @@ var AddAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, requ
 		scan.AddBTCAddress(child.Data().(string), config.Config.Wallet.File)
 	}
 	responseMessage(json, response, request)
+
+})
+
+
+//AddAddressHandler add address to wallet
+var GetAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+	address := request.URL.Query().Get("address")
+	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
+	if err != nil {
+		fmt.Println("Wallet loading is failed:", err)
+	}
+	var newAddr scan.Address
+	_, newAddr = scan.FindAddress(address, addrs)
+
+	responseMessage(newAddr, response, request)
 
 })
 

@@ -30,11 +30,20 @@ func startServer() {
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir("./static/dist")))
 	mux.Handle("/getaddrs", handler.AddressHandler)
+	mux.Handle("/getaddr", handler.GetAddressHandler)
 	mux.Handle("/newaddrs", handler.AddAddressHandler)
 	mux.Handle("/scanrange", handler.DiapasonHandler)
+	mux.Handle("/scanmin", handler.MinScanHandler)
+	mux.Handle("/scanmax", handler.MaxScanHandler)
+	mux.Handle("/scanfar", handler.FarScanHandler)
+	mux.Handle("/scanshort", handler.ShortScanHandler)
 	http.ListenAndServe(":7755", handlers.CORS()(mux))
 
 }
+
+
+
+
 
 
 

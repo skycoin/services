@@ -112,6 +112,15 @@ func ExistAddress(newAddr Address, walletAddresses []Address) bool {
 	return false
 }
 
+func FindAddress(newAddr string, walletAddresses []Address) (bool, Address) {
+	for _, addr := range walletAddresses {
+		if newAddr == addr.Addr {
+			return true, addr
+		}
+	}
+	return false, walletAddresses[0]
+}
+
 func UpdateAddressInfo(addrs []Address, deps []Deposit, blockID int64) []Address {
 	for i, addr := range addrs {
 		switch {
@@ -303,7 +312,7 @@ func FindFar(addrs []Address) int64 {
 		}
 	}
 
-	return far
+	return far + 1
 }
 
 func PrintUpdateInfo(updateType string, elapsed float64, scannedBlock int64) error {
