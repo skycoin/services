@@ -89,7 +89,7 @@ var MaxScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request
 	responseMessage(addrs, response, request)
 })
 
-//FarScanHandler scan min block
+//FarScanHandler scan fat block
 var FarScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
 	if err != nil {
@@ -110,7 +110,7 @@ var FarScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request
 	}
 	responseMessage(addrs, response, request)
 })
-//FarScanHandler scan min block
+//ShortScanHandler scan short block
 var ShortScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
 	if err != nil {
@@ -183,7 +183,7 @@ var AddAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, requ
 })
 
 
-//AddAddressHandler add address to wallet
+//AddAddressHandler get address and return all transactions
 var GetAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 	address := request.URL.Query().Get("address")
 	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
