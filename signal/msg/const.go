@@ -1,0 +1,14 @@
+package msg
+
+const (
+	MSG_OP_SIZE = 1
+
+	MSG_HEADER_BEGIN = 0
+	MSG_OP_BEGIN
+	MSG_OP_END = MSG_OP_BEGIN + MSG_OP_SIZE
+	MSG_HEADER_END
+)
+
+const (
+	RESP_PREFIX = 0x80
+)
