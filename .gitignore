@@ -4,6 +4,9 @@
 *.so
 *.dylib
 
+# IDEs and editors
+/.idea
+
 # Test binary, build with `go test -c`
 *.test
 
