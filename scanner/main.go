@@ -2,12 +2,12 @@ package main
 
 import (
 	"net/http"
-	"github.com/services/scanner/handler"
-	"github.com/services/scanner/config"
+	"github.com/skycoin/services/scanner/handler"
+	"github.com/skycoin/services/scanner/config"
 	"fmt"
 	"os"
 	"github.com/gorilla/handlers"
-	"github.com/services/scanner/scan"
+	"github.com/skycoin/services/scanner/scan"
 )
 
 
@@ -40,6 +40,11 @@ func startServer() {
 	http.ListenAndServe(":7755", handlers.CORS()(mux))
 
 }
+
+
+
+
+
 
 
 
