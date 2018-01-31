@@ -77,9 +77,9 @@ func getClosedIssues(ctx context.Context, client *github.Client, start, end time
 	var pullRequests = issuesSlice{}
 	for {
 		options := github.IssueListByRepoOptions{
-			Sort:  "updated",
-			State: "closed",
-			Since: start,
+			Sort:      "updated",
+			State:     "closed",
+			Since:     start,
 			Direction: "asc",
 			ListOptions: github.ListOptions{
 				Page:    page,
