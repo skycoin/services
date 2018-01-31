@@ -8,6 +8,7 @@ import (
 	"os"
 	"github.com/gorilla/handlers"
 	"github.com/skycoin/services/scanner/scan"
+	"github.com/skratchdot/open-golang/open"
 )
 
 
@@ -37,6 +38,7 @@ func startServer() {
 	mux.Handle("/scanmax", handler.MaxScanHandler)
 	mux.Handle("/scanfar", handler.FarScanHandler)
 	mux.Handle("/scanshort", handler.ShortScanHandler)
+	open.Run("http://localhost:7755/")
 	http.ListenAndServe(":7755", handlers.CORS()(mux))
 
 }
