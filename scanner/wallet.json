@@ -1,9 +1,9 @@
 [
     {
         "address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
-        "min_scan_block": 53,
-        "mid_scan_block": 53,
-        "max_scan_block": 53,
+        "min_scan_block": 54,
+        "mid_scan_block": 54,
+        "max_scan_block": 54,
         "txs": [
             {
                 "tx_hash": "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0",
