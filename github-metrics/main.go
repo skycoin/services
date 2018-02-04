@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -15,10 +14,11 @@ import (
 )
 
 var (
-	repo           string
 	startStr       string
 	endStr         string
+	repo           string
 	owner          string
+	org            string
 	integrationId  int
 	installationId int
 	keyPath        string
@@ -29,6 +29,7 @@ func main() {
 	flag.StringVar(&endStr, "end", "", "end date in format YYYY-MM-DD")
 	flag.StringVar(&owner, "owner", "skycoin", "repo owner. `skycoin` by default")
 	flag.StringVar(&repo, "repo", "skycoin", "repo name. `skycoin` by default")
+	flag.StringVar(&org, "org", "", "org name. empty by default")
 	flag.IntVar(&integrationId, "integrationID", 0, "github app integrationID")
 	flag.IntVar(&installationId, "installationID", 0, "github app installationID")
 	flag.StringVar(&keyPath, "key", "", "path to the api key *.pem")
@@ -36,12 +37,17 @@ func main() {
 	var start, end time.Time
 	var err error
 	ctx := context.Background()
-
-	if start, err = time.Parse("2006-01-02", startStr); err != nil {
-		fmt.Printf("Failed parse `start` param. err: %s\n", err)
+	if startStr != "" {
+		if start, err = time.Parse("2006-01-02", startStr); err != nil {
+			fmt.Printf("Failed parse `start` param. err: %s\n", err)
+			flag.Usage()
+			return
+		}
+	} else {
 		flag.Usage()
 		return
 	}
+
 	if endStr != "" {
 		if end, err = time.Parse("2006-01-02", endStr); err != nil {
 			fmt.Printf("Failed parse `end` param. err: %s\n", err)
@@ -57,7 +63,7 @@ func main() {
 	if keyPath != "" {
 		itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, integrationId, installationId, keyPath)
 		if err != nil {
-			log.Printf("Failed create http Transport. err: %v", err)
+			fmt.Printf("Failed create http Transport. err: %v", err)
 			return
 		}
 		httpClient = &http.Client{
@@ -66,39 +72,75 @@ func main() {
 	}
 
 	client := github.NewClient(httpClient)
-	getClosedIssues(ctx, client, start, end)
+	c := newClientWrapper(ctx, client, start, end, owner, repo, org)
+	if c.org != "" {
+		c.getClosedIssuesByOrg()
+	} else {
+		pullRequests, issues := c.getClosedIssues()
+		c.report(pullRequests, issues)
+	}
 }
 
-func getClosedIssues(ctx context.Context, client *github.Client, start, end time.Time) {
+type clientWrapper struct {
+	ctx    context.Context
+	client *github.Client
+	start  time.Time
+	end    time.Time
+	owner  string
+	repo   string
+	org    string
+}
+
+func newClientWrapper(ctx context.Context, client *github.Client, start, end time.Time, owner, repo, org string) *clientWrapper {
+	return &clientWrapper{
+		ctx:    ctx,
+		client: client,
+		start:  start,
+		end:    end,
+		owner:  owner,
+		repo:   repo,
+		org:    org,
+	}
+}
+
+func (c *clientWrapper) getClosedIssuesByOrg() {
+	repos, _, err := c.client.Repositories.ListByOrg(c.ctx, c.org, &github.RepositoryListByOrgOptions{})
+	if err != nil {
+		fmt.Printf("failed get organisation. err: %s", err)
+	}
+	for _, repo := range repos {
+		c.repo = *repo.Name
+		c.owner = *repo.Owner.Login
+		pullRequests, issues := c.getClosedIssues()
+		c.report(pullRequests, issues)
+	}
+}
+
+func (c *clientWrapper) getClosedIssues() (issuesSlice, issuesSlice) {
 	var page = 0
 	var perPage = 100
 	var seen = make(map[int]bool, 0)
 	var issues = issuesSlice{}
 	var pullRequests = issuesSlice{}
+	var batchIssues []*github.Issue
+	var err error
 	for {
-		options := github.IssueListByRepoOptions{
-			Sort:      "updated",
-			State:     "closed",
-			Since:     start,
-			Direction: "asc",
-			ListOptions: github.ListOptions{
-				Page:    page,
-				PerPage: perPage,
-			},
-		}
-		batchIssues, _, err := client.Issues.ListByRepo(ctx, owner, repo, &options)
+		batchIssues, err = c.getBatch(page, perPage)
 		if err != nil {
 			if _, ok := err.(*github.RateLimitError); ok {
-				log.Printf("hit rate limit.\n message: %s", err.Error())
+				fmt.Printf("hit rate limit.\n message: %s", err.Error())
 			} else {
-				log.Printf("failed get closed issues list. err: %v", err)
+				fmt.Printf("failed get closed issues list. err: %v", err)
 			}
+			break
 		}
 		if len(batchIssues) == 0 {
 			break
 		}
 		for _, issue := range batchIssues {
-			if !seen[*issue.Number] && (issue.ClosedAt.Equal(start) || issue.ClosedAt.After(start)) && (issue.ClosedAt.Equal(end) || issue.ClosedAt.Before(end)) {
+			if !seen[*issue.Number] &&
+				(issue.ClosedAt.Equal(c.start) || issue.ClosedAt.After(c.start)) &&
+				(issue.ClosedAt.Equal(c.end) || issue.ClosedAt.Before(c.end)) {
 				seen[*issue.Number] = true
 				if issue.IsPullRequest() {
 					pullRequests.addIssue(issue)
@@ -109,12 +151,44 @@ func getClosedIssues(ctx context.Context, client *github.Client, start, end time
 		}
 		page++
 	}
-	fmt.Println("CLOSED PULL REQUESTS")
-	fmt.Println("--------------------")
-	pullRequests.report()
-	fmt.Println("\n\nCLOSED ISSUES")
-	fmt.Println("-------------")
-	issues.report()
+	return pullRequests, issues
+}
+
+func (c *clientWrapper) report(pullRequests, issues issuesSlice) {
+	if len(issues.issues) == 0 && len(pullRequests.issues) == 0 {
+		return
+	}
+	fmt.Println("------------------------------------------------------------------------------------------------------------------------")
+	fmt.Printf("%s/%s\n", c.owner, c.repo)
+	if len(pullRequests.issues) > 0 {
+		fmt.Println("\nCLOSED PULL REQUESTS")
+		fmt.Println("--------------------")
+		pullRequests.report()
+	}
+
+	if len(issues.issues) > 0 {
+		fmt.Println("\nCLOSED ISSUES")
+		fmt.Println("-------------")
+		issues.report()
+	}
+	fmt.Println("------------------------------------------------------------------------------------------------------------------------\n\n")
+}
+
+func (c *clientWrapper) getBatch(page, perPage int) ([]*github.Issue, error) {
+	var batchIssues []*github.Issue
+	var err error
+	options := github.IssueListByRepoOptions{
+		Sort:      "updated",
+		State:     "closed",
+		Since:     c.start,
+		Direction: "asc",
+		ListOptions: github.ListOptions{
+			Page:    page,
+			PerPage: perPage,
+		},
+	}
+	batchIssues, _, err = c.client.Issues.ListByRepo(c.ctx, c.owner, c.repo, &options)
+	return batchIssues, err
 }
 
 type issuesSlice struct {
