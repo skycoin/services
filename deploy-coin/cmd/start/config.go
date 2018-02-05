@@ -2,12 +2,17 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/skycoin/skycoin/src/coin"
+	"github.com/skycoin/skycoin/src/daemon"
+	"github.com/skycoin/skycoin/src/visor"
 
 	"github.com/skycoin/services/deploy-coin/common"
 	"github.com/skycoin/skycoin/src/cipher"
+	"github.com/skycoin/skycoin/src/util/file"
 )
 
 // Config records the node's configuration
@@ -94,7 +99,7 @@ type NodeConfig struct {
 	TestChain    bool
 }
 
-func makeNodeConfig(toolCfg common.Config) (NodeConfig, error) {
+func makeNodeConfig(toolCfg common.Config, runMaster bool) (NodeConfig, error) {
 	var (
 		cfg NodeConfig
 		err error
@@ -115,22 +120,42 @@ func makeNodeConfig(toolCfg common.Config) (NodeConfig, error) {
 	cfg.ProfileCPUFile = "skycoin.prof"
 
 	// User provided configuration
-	if cfg.BlockchainSeckey, err = cipher.SecKeyFromHex(toolCfg.Secret.MasterSecKey); err != nil {
-		return cfg, errors.New("invalid master node secret key")
-	}
-
-	if cfg.BlockchainPubkey, err = cipher.PubKeyFromHex(toolCfg.Public.MasterPubKey); err != nil {
-		return cfg, errors.New("invalid master node public key")
-	}
+	cfg.RunMaster = runMaster
 
 	cfg.Port = toolCfg.Public.Port
 	cfg.WebInterfacePort = toolCfg.Public.WebInterfacePort
 	cfg.RPCInterfacePort = toolCfg.Public.RPCInterfacePort
 
 	cfg.DataDirectory = toolCfg.Public.DataDirectory
-	// TODO
-	// cfg.DefaultConnections = toolCfg.Public.DefaultConnections
+	cfg.WebInterfaceCert = filepath.Join(cfg.DataDirectory, "cert.pem")
+	cfg.WebInterfaceKey = filepath.Join(cfg.DataDirectory, "key.pem")
+	cfg.WalletDirectory = filepath.Join(cfg.DataDirectory, "wallets")
+	cfg.DBPath = filepath.Join(cfg.DataDirectory, "data.db")
+
 	cfg.LogFmt = toolCfg.Public.LogFmt
+
+	// Master node is the only trusted peer of new network
+	if !cfg.RunMaster {
+		cfg.DefaultConnections = []string{
+			fmt.Sprintf("127.0.0.1:%d", cfg.Port),
+		}
+	}
+
+	// Only master node knows its private key
+	if runMaster {
+		if cfg.BlockchainSeckey, err = cipher.SecKeyFromHex(toolCfg.Secret.MasterSecKey); err != nil {
+			return cfg, errors.New("invalid master node secret key")
+		}
+	}
+
+	// Other nodes know masters's public key
+	if cfg.BlockchainPubkey, err = cipher.PubKeyFromHex(toolCfg.Public.MasterPubKey); err != nil {
+		return cfg, errors.New("invalid master node public key")
+	}
+
+	if _, err = file.InitDataDir(cfg.DataDirectory); err != nil {
+		return cfg, err
+	}
 
 	return cfg, nil
 }
@@ -176,4 +201,39 @@ func makeGenesisBlock(cfg common.Config) (coin.SignedBlock, error) {
 	}
 
 	return sb, nil
+}
+
+func makeDaemonConfg(nc NodeConfig) daemon.Config {
+	dc := daemon.NewConfig()
+
+	dc.Peers.DataDirectory = nc.DataDirectory
+	dc.Peers.Disabled = nc.DisablePEX
+	dc.Daemon.DisableOutgoingConnections = nc.DisableOutgoingConnections
+	dc.Daemon.DisableIncomingConnections = nc.DisableIncomingConnections
+	dc.Daemon.DisableNetworking = nc.DisableNetworking
+	dc.Daemon.Port = nc.Port
+	dc.Daemon.Address = nc.Address
+	dc.Daemon.LocalhostOnly = nc.LocalhostOnly
+	dc.Daemon.OutgoingMax = nc.MaxConnections
+	dc.Daemon.DataDirectory = nc.DataDirectory
+	dc.Daemon.LogPings = !nc.DisablePingPong
+
+	daemon.DefaultConnections = nc.DefaultConnections
+
+	dc.Daemon.OutgoingRate = nc.OutgoingConnectionsRate
+
+	dc.Visor.Config.IsMaster = nc.RunMaster
+
+	dc.Visor.Config.BlockchainPubkey = nc.BlockchainPubkey
+	dc.Visor.Config.BlockchainSeckey = nc.BlockchainSeckey
+
+	dc.Visor.Config.DBPath = nc.DBPath
+	dc.Visor.Config.Arbitrating = nc.Arbitrating
+	dc.Visor.Config.WalletDirectory = nc.WalletDirectory
+	dc.Visor.Config.BuildInfo = visor.BuildInfo{
+		Version: Version,
+		Commit:  Commit,
+	}
+
+	return dc
 }

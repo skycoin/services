@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/skycoin/skycoin/src/coin"
+	"github.com/skycoin/skycoin/src/daemon"
 
 	"github.com/skycoin/skycoin/src/util/logging"
 )
@@ -65,6 +66,17 @@ func initLogger(cfg NodeConfig) (func(), error) {
 }
 
 func startDaemon(cfg NodeConfig, gb coin.SignedBlock) (func(), error) {
+	dc := makeDaemonConfg(cfg)
+
+	d, err := daemon.NewDaemon(dc)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = d.Visor.ExecuteSignedBlock(gb); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 

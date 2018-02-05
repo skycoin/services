@@ -23,6 +23,7 @@ var (
 
 func main() {
 	cfgPath := flag.String("config", "", "path to JSON configuration file for coin")
+	runMaster := flag.Bool("isMaster", false, "run node as master")
 	flag.Parse()
 
 	var (
@@ -50,7 +51,7 @@ func main() {
 	}
 
 	// Coin node config
-	nodeCfg, err := makeNodeConfig(cfg)
+	nodeCfg, err := makeNodeConfig(cfg, *runMaster)
 	if err != nil {
 		logger.Fatalf("invalid coin node configuration - %s", err)
 	}
