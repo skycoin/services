@@ -9,7 +9,7 @@ import (
 
 var (
 	SEED     = flag.String("seed", "", "seed used to generate skycoin addresses")
-	WAIT     = flag.Int("wait", 30, "time in seconds to wait between transactions")
+	WAIT     = flag.Int("wait", 5, "time in seconds to wait between transactions")
 	N        = flag.Int("n", 10, "number of addresses to generate from the seed")
 	LOG_FILE = flag.String("log_file", "", "filepath where logs will be saved")
 	LOG_TXS  = flag.Bool("log_txs", true, "show transaction logs")
