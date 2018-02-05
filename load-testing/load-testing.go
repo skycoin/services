@@ -51,7 +51,7 @@ func init() {
 	if STEP, err = NewStep(
 		c,
 		w,
-		log.New(LogWriter, "[LOAD-TESTING] ", log.LstdFlags),
+		log.New(LogWriter, "", 0),
 		w.GenerateAddresses(uint64(*N)),
 	); err != nil {
 		log.Fatalln(err)
@@ -63,13 +63,25 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 
+	var (
+		res *StepResult
+		err error
+	)
+
+	summary := NewSummary(STEP.Addrs[0])
+
 transactions:
 	for {
-		result := STEP.Run()
+		res, err = STEP.Run()
+		if err != nil {
+			panic(err)
+		}
 
-		// log/record result
+		summary.Add(res)
 
-		println(result)
+		if *LOG_TXS {
+			STEP.Logger.Println(res.String())
+		}
 
 		select {
 		case <-time.After(time.Second * time.Duration(*WAIT)):
@@ -79,9 +91,16 @@ transactions:
 		}
 	}
 
-	// finish transaction
+	// stop the timer
+	summary.Stop()
 
 	if *CLEANUP {
-		// cleanup
+		println("cleaning up...")
+		res, err = STEP.Cleanup()
+		STEP.Logger.Println(res.String())
+	}
+
+	if *LOG_SUM {
+		STEP.Logger.Println(summary.String())
 	}
 }

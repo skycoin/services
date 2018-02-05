@@ -2,37 +2,55 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
-type Duration struct {
-	Start time.Time
-	End   time.Time
-}
-
-type TransactionResult int
-
-const (
-	SUCCESS TransactionResult = iota
-	FAIL
-)
-
-type Transaction struct {
-	Duration *Duration
-	Result   TransactionResult
-}
-
 type Summary struct {
-	Duration     *Duration
+	Start        time.Time
+	End          time.Time
 	CleanupAddr  string
-	Transactions map[string]*Transaction
+	Transactions map[string]*StepResult
 }
 
-func (t *Summary) Succeeded() int {
+func (s *Summary) String() string {
+	var out string
+
+	out = out + "SUMMARY:\n"
+
+	out = out + fmt.Sprintf("- Start:        %v\n", s.Start)
+	out = out + fmt.Sprintf("- End:          %v\n", s.End)
+	out = out + fmt.Sprintf("- Duration:     %v\n", s.End.Sub(s.Start))
+	out = out + fmt.Sprintf("- Cleanup:      %s\n", s.CleanupAddr)
+	out = out + fmt.Sprintf("- Transactions: %d\n", s.All())
+	out = out + fmt.Sprintf("     - Average: %v\n", s.Average())
+	out = out + fmt.Sprintf("     - Minimum: %v\n", s.Minimum())
+	out = out + fmt.Sprintf("     - Maximum: %v\n", s.Maximum())
+
+	return out
+}
+
+func NewSummary(addr string) *Summary {
+	return &Summary{
+		Start:        time.Now(),
+		CleanupAddr:  addr,
+		Transactions: make(map[string]*StepResult, 0),
+	}
+}
+
+func (s *Summary) Stop() {
+	s.End = time.Now()
+}
+
+func (s *Summary) All() int {
+	return len(s.Transactions)
+}
+
+func (s *Summary) Succeeded() int {
 	count := 0
 
-	for _, tx := range t.Transactions {
-		if tx.Result == SUCCESS {
+	for _, tx := range s.Transactions {
+		if tx.Status.Confirmed {
 			count++
 		}
 	}
@@ -40,11 +58,11 @@ func (t *Summary) Succeeded() int {
 	return count
 }
 
-func (t *Summary) Failed() int {
+func (s *Summary) Failed() int {
 	count := 0
 
-	for _, tx := range t.Transactions {
-		if tx.Result == FAIL {
+	for _, tx := range s.Transactions {
+		if !tx.Status.Confirmed {
 			count++
 		}
 	}
@@ -52,27 +70,27 @@ func (t *Summary) Failed() int {
 	return count
 }
 
-func (t *Summary) Average() time.Duration {
+func (s *Summary) Average() time.Duration {
 	var (
-		count int64 = int64(len(t.Transactions))
+		count int64 = int64(len(s.Transactions))
 		total int64
 	)
 
-	for _, tx := range t.Transactions {
-		total = total + int64(tx.Duration.End.Sub(tx.Duration.Start))
+	for _, tx := range s.Transactions {
+		total = total + int64(tx.Duration)
 	}
 
 	return time.Duration(total / count)
 }
 
-func (t *Summary) Minimum() time.Duration {
+func (s *Summary) Minimum() time.Duration {
 	var (
 		minimum  int64 = -1
 		duration int64
 	)
 
-	for _, tx := range t.Transactions {
-		duration = int64(tx.Duration.End.Sub(tx.Duration.Start))
+	for _, tx := range s.Transactions {
+		duration = int64(tx.Duration)
 
 		if duration < minimum || minimum == -1 {
 			minimum = duration
@@ -82,14 +100,14 @@ func (t *Summary) Minimum() time.Duration {
 	return time.Duration(minimum)
 }
 
-func (t *Summary) Maximum() time.Duration {
+func (s *Summary) Maximum() time.Duration {
 	var (
 		maximum  int64 = -1
 		duration int64
 	)
 
-	for _, tx := range t.Transactions {
-		duration = int64(tx.Duration.End.Sub(tx.Duration.Start))
+	for _, tx := range s.Transactions {
+		duration = int64(tx.Duration)
 
 		if duration > maximum || maximum == -1 {
 			maximum = duration
@@ -99,26 +117,12 @@ func (t *Summary) Maximum() time.Duration {
 	return time.Duration(maximum)
 }
 
-func (t *Summary) Start(txId string) error {
-	if _, exists := t.Transactions[txId]; exists {
+func (s *Summary) Add(res *StepResult) error {
+	if _, exists := s.Transactions[res.Id]; exists {
 		return errors.New("timer for that txId has already been started")
 	}
 
-	t.Transactions[txId] = &Transaction{
-		Duration: &Duration{
-			Start: time.Now(),
-		},
-	}
-
-	return nil
-}
-
-func (t *Summary) End(txId string) error {
-	if _, exists := t.Transactions[txId]; !exists {
-		return errors.New("timer for that txId doesn't exist")
-	}
-
-	t.Transactions[txId].Duration.End = time.Now()
+	s.Transactions[res.Id] = res
 
 	return nil
 }
