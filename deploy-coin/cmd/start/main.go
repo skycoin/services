@@ -11,6 +11,8 @@ import (
 	"runtime/pprof"
 	"syscall"
 
+	"github.com/skycoin/skycoin/src/gui"
+
 	"github.com/skycoin/services/deploy-coin/common"
 )
 
@@ -22,8 +24,11 @@ var (
 )
 
 func main() {
-	cfgPath := flag.String("config", "", "path to JSON configuration file for coin")
-	runMaster := flag.Bool("isMaster", false, "run node as master")
+	var (
+		cfgPath   = flag.String("config", "", "path to JSON configuration file for coin")
+		runMaster = flag.Bool("isMaster", false, "run node as master")
+		runGUI    = flag.Bool("gui", false, "lanuch web GUI for node in browser")
+	)
 	flag.Parse()
 
 	var (
@@ -55,52 +60,92 @@ func main() {
 	if err != nil {
 		logger.Fatalf("invalid coin node configuration - %s", err)
 	}
-
 	gb, err := makeGenesisBlock(cfg)
 	if err != nil {
 		logger.Fatalf("invalid genesis block - %s", err)
 	}
 
-	// General stuff
+	// Init general stuff
 	closeLog, err := initLogger(nodeCfg)
 	if err != nil {
 		logger.Fatalf("failed to init logging - %s", err)
 	}
 
 	initPprof(nodeCfg)
+	catchDebug()
 
-	quit := make(chan struct{})
-	go catchInterrupt(quit)
+	// Init node
+	daemon, err := initDaemon(nodeCfg, gb)
+	if err != nil {
+		logger.Fatalf("failed to init node daemon - %s", err)
+	}
 
-	go catchDebug()
+	webRPC, err := initWebRPC(nodeCfg, daemon)
+	if err != nil {
+		logger.Fatalf("failed to init node web RPC - %s", err)
+	}
+
+	if *runGUI {
+		if err = startWebGUI(nodeCfg, daemon); err != nil {
+			logger.Fatalf("failed to start web GUI - %s", err)
+		}
+	}
 
 	// Start node
-	stopDaemon, err := startDaemon(nodeCfg, gb)
-	if err != nil {
-		logger.Fatalf("failed to start node daemon - %s", err)
+	errCh := make(chan error)
+
+	go func() {
+		errCh <- daemon.Run()
+	}()
+
+	go func() {
+		errCh <- webRPC.Run()
+	}()
+
+	// Wait for SIGINT or startup error
+	select {
+	case <-catchInterrupt():
+	case err := <-errCh:
+		logger.Errorf("failed to start node -%s", err)
 	}
 
-	stopRPC, err := startRPC(nodeCfg)
-	if err != nil {
-		logger.Fatalf("failed to start node web RPC interface")
+	// Shutdown node
+	logger.Info("Shutting down...")
+
+	if *runGUI {
+		gui.Shutdown()
 	}
 
-	stopRPC()
-	stopDaemon()
+	if webRPC != nil {
+		webRPC.Shutdown()
+	}
+
+	if daemon != nil {
+		daemon.Shutdown()
+	}
+
 	closeLog()
 
 	logger.Info("Goodbye")
 }
 
 // Catches SIGINT
-func catchInterrupt(quit chan<- struct{}) {
-	sigchan := make(chan os.Signal, 1)
-	signal.Notify(sigchan, os.Interrupt)
+func catchInterrupt() chan struct{} {
+	var (
+		sigCh  = make(chan os.Signal, 1)
+		quitCh = make(chan struct{})
+	)
 
-	<-sigchan
+	signal.Notify(sigCh, os.Interrupt)
 
-	signal.Stop(sigchan)
-	close(quit)
+	go func() {
+		<-sigCh
+		signal.Stop(sigCh)
+
+		close(quitCh)
+	}()
+
+	return quitCh
 }
 
 // Catches SIGUSR1 and prints internal program state
@@ -109,12 +154,14 @@ func catchDebug() {
 	//signal.Notify(sigchan, syscall.SIGUSR1)
 	signal.Notify(sigchan, syscall.Signal(0xa)) // SIGUSR1 = Signal(0xa)
 
-	for {
-		select {
-		case <-sigchan:
-			printProgramStatus()
+	go func() {
+		for {
+			select {
+			case <-sigchan:
+				printProgramStatus()
+			}
 		}
-	}
+	}()
 }
 
 func initPprof(cfg NodeConfig) {

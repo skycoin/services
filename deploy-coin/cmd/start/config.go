@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"path/filepath"
 	"time"
 
@@ -135,10 +134,13 @@ func makeNodeConfig(toolCfg common.Config, runMaster bool) (NodeConfig, error) {
 	cfg.LogFmt = toolCfg.Public.LogFmt
 
 	// Master node is the only trusted peer of new network
+	cfg.LocalhostOnly = true
 	if !cfg.RunMaster {
-		cfg.DefaultConnections = []string{
-			fmt.Sprintf("127.0.0.1:%d", cfg.Port),
-		}
+		/*
+			cfg.DefaultConnections = []string{
+				fmt.Sprintf("127.0.0.1:%d", cfg.Port),
+			}
+		*/
 	}
 
 	// Only master node knows its private key
