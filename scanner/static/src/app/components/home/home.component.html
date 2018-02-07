@@ -1,0 +1,49 @@
+
+
+
+<div class="buttons_wrap">
+  <button mat-raised-button (click)="scanMin()">scan min</button>
+  <button mat-raised-button (click)="scanMax()">scan max</button>
+  <button mat-raised-button (click)="scanFar()">scan far</button>
+  <button mat-raised-button (click)="scanShort()">scan short</button>
+</div>
+
+<div class="table_wrap">
+ <ngx-datatable
+  class="material"
+  [rows]="rows"
+  [columns]="columns"
+  [columnMode]="'flex'"
+  [headerHeight]="50"
+  [footerHeight]="50"
+  [rowHeight]="40"
+  [limit]="10"
+  [scrollbarH]="true">
+   <ngx-datatable-column name="currency" [flexGrow]="1">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+        {{value}}
+      </ng-template>
+    </ngx-datatable-column>
+    <ngx-datatable-column name="address" [flexGrow]="3">
+      <ng-template let-row="row" let-value="value" ngx-datatable-cell-template>
+        <a mat-menu-item routerLink="address/{{value}}">{{value}}</a>
+      </ng-template>
+    </ngx-datatable-column>
+    <ngx-datatable-column name="transactions" [flexGrow]="1">
+      <ng-template let-row="row" let-value="value" ngx-datatable-cell-template>
+      {{value}}
+      </ng-template>
+    </ngx-datatable-column>
+  </ngx-datatable>
+</div>
+
+<div class="send_wrap">
+  <mat-form-field class="example-full-width">
+    <textarea matInput rows="7" placeholder="Bitcoin Address" [(ngModel)]="new_addrs"></textarea>
+  </mat-form-field>
+  <br>
+  <button mat-raised-button color="primary" (click)="sendAddrs()">send address</button>
+  <br>
+</div>
+
+
