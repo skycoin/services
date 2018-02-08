@@ -60,10 +60,12 @@ func main() {
 	if err != nil {
 		logger.Fatalf("invalid coin node configuration - %s", err)
 	}
-	gb, err := makeGenesisBlock(cfg)
-	if err != nil {
-		logger.Fatalf("invalid genesis block - %s", err)
-	}
+	/*
+		gb, err := makeGenesisBlock(cfg)
+		if err != nil {
+			logger.Fatalf("invalid genesis block - %s", err)
+		}
+	*/
 
 	// Init general stuff
 	closeLog, err := initLogger(nodeCfg)
@@ -75,7 +77,7 @@ func main() {
 	catchDebug()
 
 	// Init node
-	daemon, err := initDaemon(nodeCfg, gb)
+	daemon, err := initDaemon(nodeCfg)
 	if err != nil {
 		logger.Fatalf("failed to init node daemon - %s", err)
 	}

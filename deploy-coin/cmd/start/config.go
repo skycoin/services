@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/daemon"
 	"github.com/skycoin/skycoin/src/visor"
 
@@ -73,6 +72,11 @@ type NodeConfig struct {
 
 	RunMaster bool
 
+	GenesisSignature  cipher.Sig
+	GenesisTimestamp  uint64
+	GenesisCoinVolume uint64
+	GenesisAddress    cipher.Address
+
 	BlockchainPubkey cipher.PubKey
 	BlockchainSeckey cipher.SecKey
 
@@ -119,13 +123,29 @@ func makeNodeConfig(toolCfg common.Config, runMaster bool) (NodeConfig, error) {
 	cfg.ProfileCPUFile = "skycoin.prof"
 
 	// User provided configuration
-	cfg.RunMaster = runMaster
 
+	// Master node is the only trusted peer of new network
+	cfg.RunMaster = runMaster
+	cfg.LocalhostOnly = true
+	/*
+		if !cfg.RunMaster {
+			cfg.DefaultConnections = []string{
+				fmt.Sprintf("127.0.0.1:%d", cfg.Port),
+			}
+		}
+	*/
+
+	// Network
 	cfg.Port = toolCfg.Public.Port
 	cfg.WebInterfacePort = toolCfg.Public.WebInterfacePort
 	cfg.RPCInterfacePort = toolCfg.Public.RPCInterfacePort
 
+	// Data directory
 	cfg.DataDirectory = toolCfg.Public.DataDirectory
+	if _, err = file.InitDataDir(cfg.DataDirectory); err != nil {
+		return cfg, err
+	}
+
 	cfg.WebInterfaceCert = filepath.Join(cfg.DataDirectory, "cert.pem")
 	cfg.WebInterfaceKey = filepath.Join(cfg.DataDirectory, "key.pem")
 	cfg.WalletDirectory = filepath.Join(cfg.DataDirectory, "wallets")
@@ -133,76 +153,27 @@ func makeNodeConfig(toolCfg common.Config, runMaster bool) (NodeConfig, error) {
 
 	cfg.LogFmt = toolCfg.Public.LogFmt
 
-	// Master node is the only trusted peer of new network
-	cfg.LocalhostOnly = true
-	if !cfg.RunMaster {
-		/*
-			cfg.DefaultConnections = []string{
-				fmt.Sprintf("127.0.0.1:%d", cfg.Port),
-			}
-		*/
+	// Master's key par
+	if cfg.BlockchainSeckey, err = cipher.SecKeyFromHex(toolCfg.Secret.MasterSecKey); err != nil {
+		return cfg, errors.New("invalid master node secret key")
 	}
-
-	// Only master node knows its private key
-	if runMaster {
-		if cfg.BlockchainSeckey, err = cipher.SecKeyFromHex(toolCfg.Secret.MasterSecKey); err != nil {
-			return cfg, errors.New("invalid master node secret key")
-		}
-	}
-
-	// Other nodes know masters's public key
 	if cfg.BlockchainPubkey, err = cipher.PubKeyFromHex(toolCfg.Public.MasterPubKey); err != nil {
 		return cfg, errors.New("invalid master node public key")
 	}
 
-	if _, err = file.InitDataDir(cfg.DataDirectory); err != nil {
-		return cfg, err
+	// Genesis block
+	gbCfg := toolCfg.Public.GenesisBlock
+
+	if cfg.GenesisSignature, err = cipher.SigFromHex(toolCfg.Secret.GenesisSignature); err != nil {
+		return cfg, errors.New("invalid genesis signature")
 	}
+	if cfg.GenesisAddress, err = cipher.DecodeBase58Address(gbCfg.Address); err != nil {
+		return cfg, errors.New("invalid genesis address")
+	}
+	cfg.GenesisCoinVolume = gbCfg.CoinVolume
+	cfg.GenesisTimestamp = gbCfg.Timestamp
 
 	return cfg, nil
-}
-
-func makeGenesisBlock(cfg common.Config) (coin.SignedBlock, error) {
-	sig, err := cipher.SigFromHex(cfg.Secret.GenesisSignature)
-	if err != nil {
-		return coin.SignedBlock{}, errors.New("invalid genesis block signature")
-	}
-
-	addr, err := cipher.DecodeBase58Address(cfg.Public.GenesisBlock.Address)
-	if err != nil {
-		return coin.SignedBlock{}, errors.New("invalid genesis block address")
-	}
-
-	bodyHash, err := cipher.SHA256FromHex(cfg.Public.GenesisBlock.BodyHash)
-	if err != nil {
-		return coin.SignedBlock{}, errors.New("invalid genesis block body hash")
-	}
-
-	var tx coin.Transaction
-	tx.PushOutput(addr, cfg.Public.GenesisBlock.CoinVolume, cfg.Public.GenesisBlock.CoinVolume)
-
-	b := coin.Block{
-		Head: coin.BlockHeader{
-			Time:     cfg.Public.GenesisBlock.CoinVolume,
-			BodyHash: bodyHash,
-			PrevHash: cipher.SHA256{},
-			BkSeq:    0,
-			Version:  0,
-			Fee:      0,
-			UxHash:   cipher.SHA256{},
-		},
-
-		Body: coin.BlockBody{
-			Transactions: coin.Transactions{tx},
-		},
-	}
-
-	sb := coin.SignedBlock{
-		Block: b,
-		Sig:   sig,
-	}
-
-	return sb, nil
 }
 
 func makeDaemonConfg(nc NodeConfig) daemon.Config {
@@ -228,6 +199,11 @@ func makeDaemonConfg(nc NodeConfig) daemon.Config {
 
 	dc.Visor.Config.BlockchainPubkey = nc.BlockchainPubkey
 	dc.Visor.Config.BlockchainSeckey = nc.BlockchainSeckey
+
+	dc.Visor.Config.GenesisSignature = nc.GenesisSignature
+	dc.Visor.Config.GenesisAddress = nc.GenesisAddress
+	dc.Visor.Config.GenesisCoinVolume = nc.GenesisCoinVolume
+	dc.Visor.Config.GenesisTimestamp = nc.GenesisTimestamp
 
 	dc.Visor.Config.DBPath = nc.DBPath
 	dc.Visor.Config.Arbitrating = nc.Arbitrating
