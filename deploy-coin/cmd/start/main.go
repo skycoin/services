@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"runtime/pprof"
 	"syscall"
+	"time"
 
 	"github.com/skycoin/skycoin/src/gui"
 
@@ -87,8 +88,9 @@ func main() {
 		logger.Fatalf("failed to init node web RPC - %s", err)
 	}
 
+	var webGUI *gui.Server
 	if *runGUI {
-		if err = startWebGUI(nodeCfg, daemon); err != nil {
+		if webGUI, err = initWebGUI(nodeCfg, daemon); err != nil {
 			logger.Fatalf("failed to start web GUI - %s", err)
 		}
 	}
@@ -104,6 +106,21 @@ func main() {
 		errCh <- webRPC.Run()
 	}()
 
+	if *runGUI {
+		errCh <- webGUI.Serve()
+	}
+
+	if nodeCfg.RunMaster {
+		go func() {
+			time.Sleep(time.Second * 10)
+
+			tx := makeDistributionTx(daemon)
+			if _, _, err := daemon.Visor.InjectTransaction(tx); err != nil {
+				errCh <- err
+			}
+		}()
+	}
+
 	// Wait for SIGINT or startup error
 	select {
 	case <-catchInterrupt():
@@ -115,7 +132,7 @@ func main() {
 	logger.Info("Shutting down...")
 
 	if *runGUI {
-		gui.Shutdown()
+		webGUI.Shutdown()
 	}
 
 	if webRPC != nil {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/skycoin/skycoin/src/util/browser"
 	"github.com/skycoin/skycoin/src/util/cert"
 	"github.com/skycoin/skycoin/src/util/logging"
+	"github.com/skycoin/skycoin/src/visor"
 )
 
 var (
@@ -21,6 +21,8 @@ var (
 )
 
 func initLogger(cfg NodeConfig) (func(), error) {
+	format := "[skycoin.%{module}:%{level}] %{message}"
+
 	modules := []string{
 		"main",
 		"daemon",
@@ -35,7 +37,7 @@ func initLogger(cfg NodeConfig) (func(), error) {
 	}
 
 	logCfg := logging.DevLogConfig(modules)
-	logCfg.Format = cfg.LogFmt
+	logCfg.Format = format
 	logCfg.Colors = true
 	logCfg.Level = "debug"
 
@@ -75,7 +77,12 @@ func initLogger(cfg NodeConfig) (func(), error) {
 func initDaemon(cfg NodeConfig) (*daemon.Daemon, error) {
 	dc := makeDaemonConfg(cfg)
 
-	d, err := daemon.NewDaemon(dc)
+	db, err := visor.OpenDB(dc.Visor.Config.DBPath)
+	if err != nil {
+		logger.Error("Database failed to open: %v. Is another skycoin instance running?", err)
+	}
+
+	d, err := daemon.NewDaemon(dc, db, []string{})
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +103,7 @@ func initWebRPC(cfg NodeConfig, d *daemon.Daemon) (*webrpc.WebRPC, error) {
 	return rpc, nil
 }
 
-func startWebGUI(cfg NodeConfig, d *daemon.Daemon) error {
+func initWebGUI(cfg NodeConfig, d *daemon.Daemon) (*gui.Server, error) {
 	scheme := "http"
 	if cfg.WebInterfaceHTTPS {
 		scheme = "https"
@@ -106,31 +113,37 @@ func startWebGUI(cfg NodeConfig, d *daemon.Daemon) error {
 
 	// Init HTTPS certficate if necessary
 	if cfg.WebInterfaceHTTPS {
-		errs := cert.CreateCertIfNotExists(host,
-			cfg.WebInterfaceCert, cfg.WebInterfaceKey, "Skycoind")
-
-		if len(errs) != 0 {
-			for _, err := range errs {
-				logger.Error(err.Error())
-			}
-			return errors.New("failed to create certificate")
+		if err := cert.CreateCertIfNotExists(host,
+			cfg.WebInterfaceCert, cfg.WebInterfaceKey, "Skycoind"); err != nil {
+			return nil, fmt.Errorf("failed to create certificate for web GUI - %s", err)
 		}
 	}
 
+	// Setup address
 	fullAddr := fmt.Sprintf("%s://%s", scheme, host)
 	logger.Critical("Full address: %s", fullAddr)
+	if cfg.PrintWebInterfaceAddress {
+		fmt.Println(fullAddr)
+	}
 
 	// Start web GUI
-	var err error
+	var (
+		server *gui.Server
+		err    error
+
+		guiCfg = gui.ServerConfig{
+			StaticDir:   cfg.GUIDirectory,
+			DisableCSRF: cfg.DisableCSRF,
+		}
+	)
 	if cfg.WebInterfaceHTTPS {
-		err = gui.LaunchWebInterfaceHTTPS(host,
-			cfg.GUIDirectory, d, cfg.WebInterfaceCert, cfg.WebInterfaceKey)
+		server, err = gui.CreateHTTPS(host, guiCfg, d, cfg.WebInterfaceCert, cfg.WebInterfaceKey)
 	} else {
-		err = gui.LaunchWebInterface(host, cfg.GUIDirectory, d)
+		server, err = gui.Create(host, guiCfg, d)
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Start web browser
@@ -144,7 +157,7 @@ func startWebGUI(cfg NodeConfig, d *daemon.Daemon) error {
 		}
 	}()
 
-	return nil
+	return server, nil
 }
 
 func makeDir(dir string) error {

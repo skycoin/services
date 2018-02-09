@@ -83,9 +83,6 @@ func createCoin(coinCode string) common.Config {
 			Port:             16000,
 			WebInterfacePort: 16420,
 			RPCInterfacePort: 16430,
-
-			DataDirectory: ".skycoin-testnet",
-			LogFmt:        "[skycoin.testnet.%{module}:%{level}] %{message}",
 		},
 	}
 

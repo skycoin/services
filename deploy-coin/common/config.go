@@ -20,9 +20,6 @@ type PublicConfig struct {
 	Port             int `json:"port"`
 	WebInterfacePort int `json:"webInterfacePort"`
 	RPCInterfacePort int `json:"rpcInterfacePort"`
-
-	DataDirectory string `json:"dataDirectory"`
-	LogFmt        string `json:"logFmt"`
 }
 
 type GenesisBlockConfig struct {
