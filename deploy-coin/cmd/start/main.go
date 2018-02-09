@@ -12,9 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mihis/services/deploy-coin/common"
 	"github.com/skycoin/skycoin/src/gui"
-
-	"github.com/skycoin/services/deploy-coin/common"
 )
 
 var (
@@ -27,7 +26,7 @@ var (
 func main() {
 	var (
 		cfgPath   = flag.String("config", "", "path to JSON configuration file for coin")
-		runMaster = flag.Bool("isMaster", false, "run node as master")
+		runMaster = flag.Bool("master", false, "run node as master")
 		runGUI    = flag.Bool("gui", false, "lanuch web GUI for node in browser")
 	)
 	flag.Parse()
@@ -61,12 +60,6 @@ func main() {
 	if err != nil {
 		logger.Fatalf("invalid coin node configuration - %s", err)
 	}
-	/*
-		gb, err := makeGenesisBlock(cfg)
-		if err != nil {
-			logger.Fatalf("invalid genesis block - %s", err)
-		}
-	*/
 
 	// Init general stuff
 	closeLog, err := initLogger(nodeCfg)
@@ -107,15 +100,21 @@ func main() {
 	}()
 
 	if *runGUI {
-		errCh <- webGUI.Serve()
+		go func() {
+			errCh <- webGUI.Serve()
+		}()
 	}
 
 	if nodeCfg.RunMaster {
 		go func() {
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 1)
 
-			tx := makeDistributionTx(daemon)
-			if _, _, err := daemon.Visor.InjectTransaction(tx); err != nil {
+			tx, err := makeDistributionTx(nodeCfg, cfg.Public.Distribution, daemon)
+			if err == nil {
+				_, _, err = daemon.Visor.InjectTransaction(tx)
+			}
+
+			if err != nil {
 				errCh <- err
 			}
 		}()
