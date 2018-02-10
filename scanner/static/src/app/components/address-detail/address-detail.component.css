@@ -1,0 +1,58 @@
+.addrs_wrap {
+  color-background: grey;
+  padding: 5px;
+}
+
+.wrap_addr {
+  width: 90%;
+  font-size: 12pt;
+  padding: 25px;
+  margin: 20px;
+  background-color: lightgray;
+}
+
+.header {
+  width: 100%;
+  font-size: 24pt;
+  text-align: center;
+}
+
+.table_wrap {
+  padding: 30px;
+}
+
+th {
+  text-align: left;
+  padding-right: 40px;
+}
+
+.buttons_wrap {
+  text-align: center;
+}
+
+.bind_button {
+  background-color: #008CBA;
+  border: none;
+  color: white;
+  padding: 1px 2px;
+  height: 20px;
+  text-align: center;
+  text-decoration: none;
+  line-height: 0;
+}
+
+.example-form {
+  min-width: 150px;
+  max-width: 500px;
+  width: 30%;
+}
+
+.example-full-width {
+  width: 30%;
+}
+
+.send_wrap {
+  width: 100%;
+  text-align: center;
+  margin-top: 20px;
+}
