@@ -13,6 +13,8 @@ import (
 )
 
 var (
+	// determined by flags, will contain either os.Stdout and a log file, or
+	// just os.Stdout
 	LogWriter io.Writer
 
 	STEP *Step

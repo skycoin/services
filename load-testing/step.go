@@ -7,9 +7,11 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/skycoin/services/load-testing/staggering"
 	"github.com/skycoin/skycoin/src/api/cli"
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
+	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/visor"
 	"github.com/skycoin/skycoin/src/wallet"
 )
@@ -38,6 +40,8 @@ var (
 	ErrSmallBalance   = errors.New("at least one address must have 1 SKY")
 )
 
+// StepResult is returned by each Step.Run call and provides information about
+// the Step for use in calculations.
 type StepResult struct {
 	Id       string
 	Type     StepType
@@ -262,9 +266,28 @@ func (s *Step) Run() (*StepResult, error) {
 
 	println("creating...")
 
-	// create transaction
-	tx, err := cli.CreateRawTx(s.Client, s.Wallet, s.From, s.From[0], to)
+	var tx *coin.Transaction
+	if *STAGGERING {
+		// creates a transaction with zero coinhour outputs
+		tx, err = staggering.CreateRawTx(
+			s.Client,
+			s.Wallet,
+			s.From,
+			s.From[0],
+			to,
+		)
+	} else {
+		// creates a transaction with normal coinhour outputs
+		tx, err = cli.CreateRawTx(
+			s.Client,
+			s.Wallet,
+			s.From,
+			s.From[0],
+			to,
+		)
+	}
 	if err != nil {
+		panic(err)
 		return nil, err
 	}
 
@@ -273,13 +296,14 @@ func (s *Step) Run() (*StepResult, error) {
 	// inject transaction
 	txId, err := s.Client.InjectTransaction(tx)
 	if err != nil {
+		panic(err)
 		return nil, err
 	}
 
 	println("waiting...")
 
 	// track transaction status
-	status, err := s.Wait(txId)
+	status, err := s.Wait(txId, s.To)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +350,7 @@ func (s *Step) Cleanup() (*StepResult, error) {
 	}
 
 	// wait for confirmation
-	status, err := s.Wait(txId)
+	status, err := s.Wait(txId, []string{s.Addrs[0]})
 	if err != nil {
 		return nil, err
 	}
@@ -345,23 +369,55 @@ func (s *Step) Cleanup() (*StepResult, error) {
 	}, nil
 }
 
-func (s *Step) Wait(txId string) (*visor.TransactionStatus, error) {
-	var (
-		tx  *webrpc.TxnResult
-		err error
-	)
-
+func (s *Step) Wait(txId string, addresses []string) (*visor.TransactionStatus, error) {
 	for {
-		if tx, err = s.Client.GetTransactionByID(txId); err != nil {
-			println(err)
-			continue
+		tx, err := s.Client.GetTransactionByID(txId)
+		if err != nil {
+			return nil, err
 		}
 
 		if tx.Transaction.Status.Confirmed {
-			return &tx.Transaction.Status, nil
+			println("transaction confirmed")
+
+			if *STAGGERING {
+				for {
+					or, err := s.Client.GetUnspentOutputs(addresses)
+					if err != nil {
+						return nil, err
+					}
+
+					so, err := or.Outputs.SpendableOutputs().ToUxArray()
+					if err != nil {
+						return nil, err
+					}
+
+					for i := range so {
+						bal, err := wallet.NewBalanceFromUxOut(so[i].Head.Time, &so[i])
+						if err != nil {
+							return nil, err
+						}
+
+						fmt.Println(so[i].Body.Address.String())
+
+						if bal.Hours > 0 {
+							fmt.Println(so[i])
+							println("coinhours found")
+							// TODO: log and calculate block time / height
+							return &tx.Transaction.Status, nil
+						}
+					}
+
+					println("no coinhours found... waiting")
+
+					// no coinhours were generated yet, so just wait before
+					// checking again
+					<-time.After(time.Minute * 10)
+				}
+			} else {
+				return &tx.Transaction.Status, nil
+			}
 		}
 
-		// once every 100 milliseconds
-		<-time.After(time.Second / 10)
+		<-time.After(time.Second)
 	}
 }
