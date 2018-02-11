@@ -21,7 +21,7 @@ const uint8_t *fromhex(const char *str)
 	return buf;
 }
 
-START_TEST(test_genereate_deterministic_key_pair_seckey)
+START_TEST(test_generate_deterministic_key_pair_seckey)
 {
     char seed[256] = "seed";
     uint8_t seckey_digest[SHA256_DIGEST_LENGTH] = {0};
@@ -61,7 +61,7 @@ Suite *test_suite(void)
 	TCase *tc;
 
 	tc = tcase_create("checksums");
-	tcase_add_test(tc, test_genereate_deterministic_key_pair_seckey);
+	tcase_add_test(tc, test_generate_deterministic_key_pair_seckey);
 	tcase_add_test(tc, test_compute_sha256sum);
 	tcase_add_test(tc, test_compute_ecdh);
 	suite_add_tcase(s, tc);
