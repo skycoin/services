@@ -19,9 +19,11 @@ type PublicConfig struct {
 
 	Distribution DistributionConfig `json:"distribuion"`
 
-	Port             int `json:"port"`
-	WebInterfacePort int `json:"webInterfacePort"`
-	RPCInterfacePort int `json:"rpcInterfacePort"`
+	Port    int `json:"port"`
+	RPCPort int `json:"rpcPort"`
+	GUIPort int `json:"guiPort"`
+
+	TrustedPeers []string `json:"trustedPeers"`
 }
 
 type GenesisBlockConfig struct {

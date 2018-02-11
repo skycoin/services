@@ -15,17 +15,25 @@ import (
 	"github.com/skycoin/skycoin/src/coin"
 )
 
+const (
+	trustedPeerPort = 20000
+	daemonPort      = 20100
+	rpcPort         = 20200
+	guiPort         = 20300
+)
+
 func main() {
 	var (
 		file      = flag.String("file", "", "file to save configuration of new coin")
 		coin      = flag.String("code", "SKY", "code of new coin")
 		addrCount = flag.Int("addr", 100, "number of distribution addresses")
 		coinVol   = flag.Int("vol", int(1e6), "coin volume to send to each of disribution addresses")
+		peerCount = flag.Int("peers", 3, "number of trusted peers running on localhost")
 	)
 
 	flag.Parse()
 
-	cfg := createCoin(*coin, *addrCount, *coinVol)
+	cfg := createCoin(*coin, *addrCount, *coinVol, *peerCount)
 
 	// Print config
 	out, err := json.MarshalIndent(&cfg, "", "    ")
@@ -43,7 +51,7 @@ func main() {
 	}
 }
 
-func createCoin(coinCode string, addrCount, coinVol int) common.Config {
+func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Config {
 	sk := cipher.NewSecKey(cipher.RandByte(32))
 	pk := cipher.PubKeyFromSecKey(sk)
 
@@ -58,7 +66,14 @@ func createCoin(coinCode string, addrCount, coinVol int) common.Config {
 		log.Fatalf("failed to create genesis block - %s", err)
 	}
 
+	// Distribution addresses
 	addrSeed, addrs := genDistAdrresses(addrCount)
+
+	// Trusted peers of coin networks (default connections)
+	peers := make([]string, peerCount)
+	for i := 0; i < peerCount; i++ {
+		peers[i] = fmt.Sprintf("127.0.0.1:%d", trustedPeerPort+i)
+	}
 
 	// Coin configuration
 	cfg := common.Config{
@@ -86,9 +101,11 @@ func createCoin(coinCode string, addrCount, coinVol int) common.Config {
 				Addresses:       addrs,
 			},
 
-			Port:             16000,
-			WebInterfacePort: 16420,
-			RPCInterfacePort: 16430,
+			Port:    daemonPort,
+			RPCPort: rpcPort,
+			GUIPort: guiPort,
+
+			TrustedPeers: peers,
 		},
 	}
 

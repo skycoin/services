@@ -30,6 +30,8 @@ Usage of create-coin:
         code of new coin (default "SKY")
   -file string
         file to save configuration of new coin
+  -peers int
+        number of trusted peers running on localhost (default 3)
   -vol int
         coin volume to send to each of disribution addresses (default 1000000)
 ```

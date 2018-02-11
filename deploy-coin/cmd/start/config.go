@@ -184,43 +184,11 @@ func makeDefaultNodeConfig() NodeConfig {
 	return cfg
 }
 
-func makeNodeConfig(toolCfg common.Config, runMaster bool) (NodeConfig, error) {
+func makeNodeConfig(toolCfg common.Config) (NodeConfig, error) {
 	var (
 		cfg = makeDefaultNodeConfig()
 		err error
 	)
-
-	// Hardcoded configuration
-	/*
-		cfg.OutgoingConnectionsRate = time.Second * 5
-		cfg.WebInterface = true
-		cfg.WebInterfaceAddr = "127.0.0.1"
-		cfg.RPCInterface = true
-		cfg.RPCInterfaceAddr = "127.0.0.1"
-		cfg.RPCThreadNum = 5
-		cfg.LaunchBrowser = true
-		cfg.GUIDirectory = "./src/gui/static/"
-		cfg.ColorLog = true
-		cfg.LogLevel = "DEBUG"
-		cfg.ProfileCPUFile = "skycoin.prof"
-	*/
-
-	// User provided configuration
-
-	// Master node
-	cfg.RunMaster = runMaster
-	if cfg.RunMaster {
-		cfg.Arbitrating = true
-	}
-	cfg.LocalhostOnly = true
-
-	/*
-		if !cfg.RunMaster {
-			cfg.DefaultConnections = []string{
-				fmt.Sprintf("127.0.0.1:%d", cfg.Port),
-			}
-		}
-	*/
 
 	// Master's key par
 	if cfg.BlockchainSeckey, err = cipher.SecKeyFromHex(toolCfg.Secret.MasterSecKey); err != nil {
@@ -244,8 +212,8 @@ func makeNodeConfig(toolCfg common.Config, runMaster bool) (NodeConfig, error) {
 
 	// Network
 	cfg.Port = toolCfg.Public.Port
-	cfg.WebInterfacePort = toolCfg.Public.WebInterfacePort
-	cfg.RPCInterfacePort = toolCfg.Public.RPCInterfacePort
+	cfg.RPCInterfacePort = toolCfg.Public.RPCPort
+	cfg.WebInterfacePort = toolCfg.Public.GUIPort
 
 	// Data directory
 	if _, err = file.InitDataDir(cfg.DataDirectory); err != nil {
