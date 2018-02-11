@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -16,12 +16,16 @@ import (
 )
 
 func main() {
-	coin := flag.String("c", "SKY", "code of new coin")
-	file := flag.String("f", "", "file to save configuration of new coin")
+	var (
+		file      = flag.String("file", "", "file to save configuration of new coin")
+		coin      = flag.String("code", "SKY", "code of new coin")
+		addrCount = flag.Int("addr", 100, "number of distribution addresses")
+		coinVol   = flag.Int("vol", int(1e6), "coin volume to send to each of disribution addresses")
+	)
 
 	flag.Parse()
 
-	cfg := createCoin(*coin)
+	cfg := createCoin(*coin, *addrCount, *coinVol)
 
 	// Print config
 	out, err := json.MarshalIndent(&cfg, "", "    ")
@@ -39,26 +43,22 @@ func main() {
 	}
 }
 
-func createCoin(coinCode string) common.Config {
-	// Generate master's private and public key pair
-	pkb := make([]byte, 32)
-	if _, err := rand.Read(pkb); err != nil {
-		log.Fatalf("failed to create master's private key")
-	}
-
-	sk := cipher.NewSecKey(pkb)
+func createCoin(coinCode string, addrCount, coinVol int) common.Config {
+	sk := cipher.NewSecKey(cipher.RandByte(32))
 	pk := cipher.PubKeyFromSecKey(sk)
 
 	// Geneate genesis block
 	var (
 		gbAddr  = cipher.AddressFromSecKey(sk)
-		gbCoins = uint64(100e12)
+		gbCoins = uint64(addrCount * coinVol)
 		gbTs    = uint64(time.Now().Unix())
 	)
 	gb, err := coin.NewGenesisBlock(gbAddr, gbCoins, gbTs)
 	if err != nil {
 		log.Fatalf("failed to create genesis block - %s", err)
 	}
+
+	addrSeed, addrs := genDistAdrresses(addrCount)
 
 	// Coin configuration
 	cfg := common.Config{
@@ -80,14 +80,29 @@ func createCoin(coinCode string) common.Config {
 
 			CoinCode: coinCode,
 
+			Distribution: common.DistributionConfig{
+				CoinsPerAddress: uint64(coinVol),
+				AddressSeed:     addrSeed,
+				Addresses:       addrs,
+			},
+
 			Port:             16000,
 			WebInterfacePort: 16420,
 			RPCInterfacePort: 16430,
-
-			DataDirectory: ".skycoin-testnet",
-			LogFmt:        "[skycoin.testnet.%{module}:%{level}] %{message}",
 		},
 	}
 
 	return cfg
+}
+
+func genDistAdrresses(n int) (string, []string) {
+	seed := cipher.RandByte(64)
+
+	addrs := make([]string, n)
+	keys := cipher.GenerateDeterministicKeyPairs(seed, n)
+	for i, k := range keys {
+		addrs[i] = cipher.AddressFromSecKey(k).String()
+	}
+
+	return hex.EncodeToString(seed), addrs
 }

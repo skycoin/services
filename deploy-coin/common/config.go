@@ -17,12 +17,11 @@ type PublicConfig struct {
 
 	CoinCode string `json:"coinCode"`
 
+	Distribution DistributionConfig `json:"distribuion"`
+
 	Port             int `json:"port"`
 	WebInterfacePort int `json:"webInterfacePort"`
 	RPCInterfacePort int `json:"rpcInterfacePort"`
-
-	DataDirectory string `json:"dataDirectory"`
-	LogFmt        string `json:"logFmt"`
 }
 
 type GenesisBlockConfig struct {
@@ -31,4 +30,10 @@ type GenesisBlockConfig struct {
 	Timestamp  uint64 `json:"timestamp"`
 	BodyHash   string `json:"bodyHash"`
 	HeaderHash string `json:"headerHash"`
+}
+
+type DistributionConfig struct {
+	CoinsPerAddress uint64   `json:"coinsPerAddress"`
+	AddressSeed     string   `json:"addressSeed"`
+	Addresses       []string `json:"addresses"`
 }
