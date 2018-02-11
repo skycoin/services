@@ -48,8 +48,21 @@ END_TEST
 
 START_TEST(test_compute_ecdh)
 {
-    char seed[256] = "seed";
-    generate_shared_key(seed);
+    char seed_str[256] = "seed";
+	HDNode alice;
+    int key_size;
+    uint8_t session_key1[65] = {0};
+
+    create_node(seed_str, &alice);
+	ck_assert_mem_eq(alice.public_key, fromhex("03008fa0a5668a567cb28ab45e4b6747f5592690c1d519c860f748f6762fa13103"), 33);
+	ck_assert_mem_eq(alice.private_key, fromhex("8f609a12bdfc8572590c66763bb05ce609cc0fdcd0c563067e91c06bfd5f1027"), 32);
+
+
+    hdnode_get_shared_key(&alice, alice.public_key, session_key1, &key_size);
+
+
+	ck_assert_mem_eq(session_key1, fromhex("907d3c524abb561a80644cdb0cf48e6c71ce33ed6a2d5eed40a771bcf86bd081"), 32);
+
     ck_assert_int_eq(1, 1);
 }
 END_TEST

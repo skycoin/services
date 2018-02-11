@@ -12,8 +12,8 @@
 
 #include "bignum.h"
 
+void create_node(const char* seed_str, HDNode* node);
 void compute_sha256sum(const char *seed, uint8_t* digest /*size SHA256_DIGEST_LENGTH*/, size_t seed_lenght);
-void generate_shared_key(const char *seed_str);
 void genereate_deterministic_key_pair_seckey(const char* seed, uint8_t* seckey);
 
 #endif
