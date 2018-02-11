@@ -24,14 +24,17 @@ CFLAGS   += $(OPTFLAGS) \
             -Werror
 
 
-INC=-I$(TREZOR_CRYPTO_PATH)
+INC=-I$(TREZOR_CRYPTO_PATH) -I$(CHECK_PATH)/src
 CFLAGS += -I. $(INC)
 
 SRCS  += skycoin_crypto.c
 
 OBJS   = $(SRCS:.c=.o)
 
-TESTLIBS = -lcheck -L$(TREZOR_CRYPTO_PATH) -lTrezorCrypto
+%.o: %.c %.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+TESTLIBS = -L/usr/local/lib/ -lm -lrt -L$(CHECK_PATH)/src -lcheck  -L$(TREZOR_CRYPTO_PATH) -lTrezorCrypto
 
 all: test_skycoin_crypto
 
