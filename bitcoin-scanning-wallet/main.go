@@ -2,12 +2,12 @@ package main
 
 import (
 	"net/http"
-	"github.com/skycoin/services/scanner/handler"
-	"github.com/skycoin/services/scanner/config"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/handler"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/config"
 	"fmt"
 	"os"
 	"github.com/gorilla/handlers"
-	"github.com/skycoin/services/scanner/scan"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
 	"github.com/skratchdot/open-golang/open"
 )
 
