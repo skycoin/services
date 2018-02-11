@@ -13,6 +13,11 @@ Then setup the TREZOR_CRYPTO_PATH environment variable:
 
     export TREZOR_CRYPTO_PATH=$PWD/trezor-crypto
 
+Finally:
+
+    make
+    ./test_skycoin_crypto
+
 # Dependencies
 
 ## Test library "check"
@@ -23,7 +28,8 @@ The source code necessary to compile libcheck.a can be downloaded from [this rep
 
 ## Recompile the static library libTrezorCrypto.a
 
-The dependancy libTrezorCrypto.a can be recompiled from sources
+The dependancy libTrezorCrypto.a can be recompiled from sources.
+
 Add this line to the CFLAGS: "CFLAGS += -DUSE_BN_PRINT=1"
 Then run :
 
