@@ -33,6 +33,7 @@ type GenesisBlockConfig struct {
 }
 
 type DistributionConfig struct {
-	Addresses       []string `json:"addresses"`
 	CoinsPerAddress uint64   `json:"coinsPerAddress"`
+	AddressSeed     string   `json:"addressSeed"`
+	Addresses       []string `json:"addresses"`
 }

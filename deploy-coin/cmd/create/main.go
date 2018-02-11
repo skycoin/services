@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/mihis/services/deploy-coin/common"
+	"github.com/skycoin/services/deploy-coin/common"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 )
@@ -57,6 +58,8 @@ func createCoin(coinCode string, addrCount, coinVol int) common.Config {
 		log.Fatalf("failed to create genesis block - %s", err)
 	}
 
+	addrSeed, addrs := genDistAdrresses(addrCount)
+
 	// Coin configuration
 	cfg := common.Config{
 		Secret: common.SecretConfig{
@@ -78,8 +81,9 @@ func createCoin(coinCode string, addrCount, coinVol int) common.Config {
 			CoinCode: coinCode,
 
 			Distribution: common.DistributionConfig{
-				Addresses:       genDistAdrresses(addrCount),
 				CoinsPerAddress: uint64(coinVol),
+				AddressSeed:     addrSeed,
+				Addresses:       addrs,
 			},
 
 			Port:             16000,
@@ -91,13 +95,14 @@ func createCoin(coinCode string, addrCount, coinVol int) common.Config {
 	return cfg
 }
 
-func genDistAdrresses(n int) []string {
-	addrs := make([]string, n)
+func genDistAdrresses(n int) (string, []string) {
+	seed := cipher.RandByte(64)
 
-	keys := cipher.GenerateDeterministicKeyPairs(cipher.RandByte(1024), n)
+	addrs := make([]string, n)
+	keys := cipher.GenerateDeterministicKeyPairs(seed, n)
 	for i, k := range keys {
 		addrs[i] = cipher.AddressFromSecKey(k).String()
 	}
 
-	return addrs
+	return hex.EncodeToString(seed), addrs
 }

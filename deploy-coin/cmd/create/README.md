@@ -1,7 +1,7 @@
 # Create configuration of new coin
 
 create-coin creates JSON configuration for new coin.
-created JSON configuraion is used by start-coin tool to start coin node 
+Created JSON configuraion is used by start-coin tool to start coin node 
 
 ## Installation
 
@@ -22,12 +22,16 @@ $ make create-coin
 ## Run
 
 ```bash
-$ coin-create -h
-  Usage of coin-create:
-  -c string
+$ create-coin -h
+Usage of create-coin:
+  -addr int
+        number of distribution addresses (default 100)
+  -code string
         code of new coin (default "SKY")
-  -f string
+  -file string
         file to save configuration of new coin
+  -vol int
+        coin volume to send to each of disribution addresses (default 1000000)
 ```
 
 
