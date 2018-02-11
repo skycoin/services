@@ -8,7 +8,7 @@ import (
 	"github.com/skycoin/skycoin/src/daemon"
 	"github.com/skycoin/skycoin/src/visor"
 
-	"github.com/mihis/services/deploy-coin/common"
+	"github.com/skycoin/services/deploy-coin/common"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/util/file"
 )

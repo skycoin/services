@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/mihis/services/deploy-coin/common"
+	"github.com/skycoin/services/deploy-coin/common"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/daemon"
@@ -10,7 +10,7 @@ import (
 func makeDistributionTx(nc NodeConfig, dc common.DistributionConfig,
 	d *daemon.Daemon) (coin.Transaction, error) {
 
-	gb, err := d.Visor.GetBlock(0)
+	gb, err := d.Visor.GetSignedBlock(0)
 	if err != nil {
 		return coin.Transaction{}, err
 	}

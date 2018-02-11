@@ -10,7 +10,6 @@ import (
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/daemon"
 	"github.com/skycoin/skycoin/src/gui"
-	"github.com/skycoin/skycoin/src/util/browser"
 	"github.com/skycoin/skycoin/src/util/cert"
 	"github.com/skycoin/skycoin/src/util/logging"
 	"github.com/skycoin/skycoin/src/visor"
@@ -103,7 +102,7 @@ func initWebRPC(cfg NodeConfig, d *daemon.Daemon) (*webrpc.WebRPC, error) {
 	return rpc, nil
 }
 
-func initWebGUI(cfg NodeConfig, d *daemon.Daemon) (*gui.Server, error) {
+func initWebGUI(cfg NodeConfig, d *daemon.Daemon) (*gui.Server, string, error) {
 	scheme := "http"
 	if cfg.WebInterfaceHTTPS {
 		scheme = "https"
@@ -115,7 +114,7 @@ func initWebGUI(cfg NodeConfig, d *daemon.Daemon) (*gui.Server, error) {
 	if cfg.WebInterfaceHTTPS {
 		if err := cert.CreateCertIfNotExists(host,
 			cfg.WebInterfaceCert, cfg.WebInterfaceKey, "Skycoind"); err != nil {
-			return nil, fmt.Errorf("failed to create certificate for web GUI - %s", err)
+			return nil, "", fmt.Errorf("failed to create certificate for web GUI - %s", err)
 		}
 	}
 
@@ -143,21 +142,10 @@ func initWebGUI(cfg NodeConfig, d *daemon.Daemon) (*gui.Server, error) {
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	// Start web browser
-	go func() {
-		// Wait a moment just to make sure the http interface is up
-		time.Sleep(time.Millisecond * 100)
-
-		logger.Info("Launching System Browser with %s", fullAddr)
-		if err := browser.Open(fullAddr); err != nil {
-			logger.Errorf("failed to opend boweser for web GUI - %s", err)
-		}
-	}()
-
-	return server, nil
+	return server, fullAddr, nil
 }
 
 func makeDir(dir string) error {

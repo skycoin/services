@@ -9,11 +9,14 @@ import (
 	"os"
 	"os/signal"
 	"runtime/pprof"
+	"sync"
 	"syscall"
 	"time"
 
-	"github.com/mihis/services/deploy-coin/common"
+	"github.com/skycoin/services/deploy-coin/common"
+	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/gui"
+	"github.com/skycoin/skycoin/src/util/browser"
 )
 
 var (
@@ -26,7 +29,8 @@ var (
 func main() {
 	var (
 		cfgPath   = flag.String("config", "", "path to JSON configuration file for coin")
-		runMaster = flag.Bool("master", false, "run node as master")
+		runMaster = flag.Bool("master", false, "run node as master and distribute initial coin volume")
+		runRPC    = flag.Bool("rpc", false, "run web RPC service")
 		runGUI    = flag.Bool("gui", false, "lanuch web GUI for node in browser")
 	)
 	flag.Parse()
@@ -70,44 +74,92 @@ func main() {
 	initPprof(nodeCfg)
 	catchDebug()
 
-	// Init node
+	// Init daemon
 	daemon, err := initDaemon(nodeCfg)
 	if err != nil {
 		logger.Fatalf("failed to init node daemon - %s", err)
 	}
 
-	webRPC, err := initWebRPC(nodeCfg, daemon)
-	if err != nil {
-		logger.Fatalf("failed to init node web RPC - %s", err)
+	// Init web RPC
+	var webRPC *webrpc.WebRPC
+	if *runRPC {
+		webRPC, err = initWebRPC(nodeCfg, daemon)
+		if err != nil {
+			logger.Fatalf("failed to init web RPC - %s", err)
+		}
 	}
 
-	var webGUI *gui.Server
+	// Init web GUI
+	var (
+		webGUI  *gui.Server
+		guiAddr string
+	)
 	if *runGUI {
-		if webGUI, err = initWebGUI(nodeCfg, daemon); err != nil {
+		if webGUI, guiAddr, err = initWebGUI(nodeCfg, daemon); err != nil {
 			logger.Fatalf("failed to start web GUI - %s", err)
 		}
 	}
 
-	// Start node
-	errCh := make(chan error)
+	var (
+		runWg sync.WaitGroup
+		errCh = make(chan error, 10)
+	)
 
+	// Start daemon
+	runWg.Add(1)
 	go func() {
-		errCh <- daemon.Run()
+		defer runWg.Done()
+		if err := daemon.Run(); err != nil {
+			logger.Errorf("failled to run daemon - %s", err)
+			errCh <- err
+		}
 	}()
 
-	go func() {
-		errCh <- webRPC.Run()
-	}()
-
-	if *runGUI {
+	// Start web RPC
+	if *runRPC {
+		runWg.Add(1)
 		go func() {
-			errCh <- webGUI.Serve()
+			defer runWg.Done()
+			if err := webRPC.Run(); err != nil {
+				logger.Errorf("failed to run web RPC - %s", err)
+				errCh <- err
+			}
 		}()
 	}
 
-	if nodeCfg.RunMaster {
+	// Start web GUI
+	if *runGUI {
+		runWg.Add(1)
 		go func() {
-			time.Sleep(time.Second * 1)
+			defer runWg.Done()
+			if err := webGUI.Serve(); err != nil {
+				logger.Errorf("failed to run web GUI - %s", err)
+				errCh <- err
+			}
+		}()
+
+		// Start web browser
+		runWg.Add(1)
+		go func() {
+			defer runWg.Done()
+
+			// Wait a moment just to make sure the http interface is up
+			time.Sleep(time.Microsecond * 100)
+
+			logger.Info("launching system browser with %s", guiAddr)
+			if err := browser.Open(guiAddr); err != nil {
+				logger.Errorf("failed to opend browser for web GUI - %s", err)
+			}
+		}()
+	}
+
+	// Distribute initial coin volume
+	if nodeCfg.RunMaster {
+		runWg.Add(1)
+		go func() {
+			defer runWg.Done()
+
+			time.Sleep(time.Second * 2)
 
 			tx, err := makeDistributionTx(nodeCfg, cfg.Public.Distribution, daemon)
 			if err == nil {
@@ -115,6 +167,7 @@ func main() {
 			}
 
 			if err != nil {
+				logger.Errorf("failed to run transaction to distribute coin volume - %s", err)
 				errCh <- err
 			}
 		}()
@@ -142,6 +195,7 @@ func main() {
 		daemon.Shutdown()
 	}
 
+	runWg.Wait()
 	closeLog()
 
 	logger.Info("Goodbye")
