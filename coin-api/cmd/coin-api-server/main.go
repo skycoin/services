@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
+	"github.com/skycoin/services/coin-api/rpc"
 	"log"
 	"net"
 	"net/http"
-	"net/rpc"
 )
 
 var (
@@ -17,7 +17,6 @@ func init() {
 }
 
 func main() {
-	rpc.HandleHTTP()
 
 	l, e := net.Listen("tcp", *srvaddr)
 	if e != nil {
@@ -25,8 +24,15 @@ func main() {
 	}
 	log.Println("Serving RPC handler")
 	// TODO(stgleb): Add request timeouts for server
-	server := &http.Server{}
+
+	server := &http.Server{
+		Addr: *srvaddr,
+	}
 	err := server.Serve(l)
+	shutDownChan := make(chan struct{})
+	rpcServer := rpc.NewServer(server, map[string]func(request rpc.Request) *rpc.Response{}, shutDownChan)
+
+	rpcServer.Start()
 
 	if err != nil {
 		log.Fatalf("Error serving: %s", err)

@@ -7,8 +7,8 @@ import (
 
 func btcCMD() cli.Command {
 	return cli.Command{
-		Name:  "generateAddr",
-		Usage: "Generate BTC addr",
+		Name:      "generateAddr",
+		Usage:     "Generate BTC addr",
 		ArgsUsage: "<publicKey>",
 		Subcommands: cli.Commands{
 			generateAddrCMD(),
@@ -19,11 +19,10 @@ func btcCMD() cli.Command {
 
 }
 
-
 func generateAddrCMD() cli.Command {
 	return cli.Command{
-		Name:  "generateAddr",
-		Usage: "Generate BTC addr",
+		Name:      "generateAddr",
+		Usage:     "Generate BTC addr",
 		ArgsUsage: "<publicKey>",
 		Action: func(c *cli.Context) error {
 			publicKey := c.Args().Get(1)
@@ -59,8 +58,8 @@ func generateKeyPairCMD() cli.Command {
 
 func checkBalanceCMD() cli.Command {
 	return cli.Command{
-		Name:  "check",
-		Usage: "Check BTC balance",
+		Name:      "check",
+		Usage:     "Check BTC balance",
 		ArgsUsage: "<address>",
 		Action: func(c *cli.Context) error {
 			addr := c.Args().Get(1)
