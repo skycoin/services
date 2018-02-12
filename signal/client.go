@@ -9,9 +9,9 @@ import (
 	"fmt"
 
 	"github.com/skycoin/net/factory"
-	"github.com/skycoin/viscript/signal/msg"
-	"github.com/skycoin/viscript/signal/op2c"
-	"github.com/skycoin/viscript/signal/op2s"
+	"github.com/skycoin/services/signal/msg"
+	"github.com/skycoin/services/signal/op2c"
+	"github.com/skycoin/services/signal/op2s"
 )
 
 type Client struct {
