@@ -1,7 +1,11 @@
-#include "check.h"
-
 #include "skycoin_crypto.h"
 
+#include <stdio.h>
+#include <string.h>
+
+#include "check.h"
+
+#include "ecdsa.h"
 
 #define FROMHEX_MAXLEN 512
 
