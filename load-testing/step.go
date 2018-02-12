@@ -302,10 +302,49 @@ func (s *Step) Run() (*StepResult, error) {
 
 	println("waiting...")
 
+	var (
+		stagStart  time.Time
+		stat       *webrpc.StatusResult
+		startBlock uint64
+	)
+	if *STAGGERING {
+		stagStart = time.Now()
+
+		// get current block
+		if stat, err = s.Client.GetStatus(); err != nil {
+			return nil, err
+		}
+		startBlock = stat.BlockNum
+	}
+
 	// track transaction status
+	//
+	// if STAGGERING is enabled, this will block until the destination
+	// addresses have coinhours (so they can be used to create the next
+	// transaction)
 	status, err := s.Wait(txId, s.To)
 	if err != nil {
 		return nil, err
+	}
+
+	var (
+		stagEnd  time.Time
+		endBlock uint64
+	)
+	if *STAGGERING {
+		stagEnd = time.Now()
+
+		// if we got this far, then the destination addresses have coinhours,
+		// so let's log the current block
+		if stat, err = s.Client.GetStatus(); err != nil {
+			return nil, err
+		}
+		endBlock = stat.BlockNum
+	}
+
+	if *STAGGERING {
+		fmt.Println("START: ", stagStart, startBlock)
+		fmt.Println("END:   ", stagEnd, endBlock)
 	}
 
 	end := time.Now()
@@ -369,48 +408,56 @@ func (s *Step) Cleanup() (*StepResult, error) {
 	}, nil
 }
 
+// Wait blocks until the transaction with txId has been confirmed. If
+// STAGGERING is enabled, then it also blocks until the destination addresses
+// passed by 'addresses' param have more than 0 CoinHours. This way the
+// next transaction can be immediately created using the destination addresses
+// as inputs.
 func (s *Step) Wait(txId string, addresses []string) (*visor.TransactionStatus, error) {
 	for {
+		// attempt to get the transaction from blockchain
 		tx, err := s.Client.GetTransactionByID(txId)
 		if err != nil {
 			return nil, err
 		}
 
 		if tx.Transaction.Status.Confirmed {
-			println("transaction confirmed")
-
 			if *STAGGERING {
 				for {
+					// get all outputs of destination addresses
 					or, err := s.Client.GetUnspentOutputs(addresses)
 					if err != nil {
 						return nil, err
 					}
 
+					// get only the confirmed outputs
 					so, err := or.Outputs.SpendableOutputs().ToUxArray()
 					if err != nil {
 						return nil, err
 					}
 
+					// for all of the unspent outputs
 					for i := range so {
-						bal, err := wallet.NewBalanceFromUxOut(so[i].Head.Time, &so[i])
+						// get the balance of current unspent output
+						bal, err := wallet.NewBalanceFromUxOut(
+							so[i].Head.Time,
+							&so[i],
+						)
 						if err != nil {
 							return nil, err
 						}
 
-						fmt.Println(so[i].Body.Address.String())
-
+						// if the CoinHours are > 0, this output can be used
+						// as an input in the next transaction, so we're
+						// finished here and can return
 						if bal.Hours > 0 {
-							fmt.Println(so[i])
-							println("coinhours found")
-							// TODO: log and calculate block time / height
 							return &tx.Transaction.Status, nil
 						}
 					}
 
-					println("no coinhours found... waiting")
-
 					// no coinhours were generated yet, so just wait before
 					// checking again
+					println("no coinhours yet... waiting 10 minutes")
 					<-time.After(time.Minute * 10)
 				}
 			} else {
