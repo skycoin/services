@@ -12,13 +12,11 @@ var App = cli.App{
 	Commands: []cli.Command{
 		{
 			Name: "btc",
-			Subcommands: []cli.Command{
-				generateAddrCMD(),
-				generateKeyPairCMD(),
-				checkBalanceCMD(),
+			Subcommands: cli.Commands{
+				btcCMD(),
 			},
 			Before: func(c *cli.Context) error {
-				endpoint = "c2cx"
+				endpoint = "btc"
 				return nil
 			},
 		},
