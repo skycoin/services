@@ -1,5 +1,9 @@
 #include "skycoin_crypto.h"
 
+#include <string.h>
+
+#include "curves.h"
+
 extern void bn_print(const bignum256 *a);
 
 void create_node(const char* seed_str, HDNode* node)
