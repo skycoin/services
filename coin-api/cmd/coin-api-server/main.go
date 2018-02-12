@@ -32,6 +32,7 @@ func main() {
 	shutDownChan := make(chan struct{})
 	rpcServer := rpc.NewServer(server, map[string]func(request rpc.Request) *rpc.Response{}, shutDownChan)
 
+	// TODO(stgleb): Add SIGINT handler for server shutdown
 	rpcServer.Start()
 
 	if err != nil {
