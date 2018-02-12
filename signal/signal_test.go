@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-	"github.com/skycoin/viscript/signal/msg"
 )
 
 func TestConnect(t *testing.T) {

@@ -3,7 +3,7 @@ package op2s
 import (
 	"sync"
 
-	"github.com/skycoin/viscript/signal/msg"
+	"github.com/skycoin/services/signal/msg"
 )
 
 type Reg struct {
