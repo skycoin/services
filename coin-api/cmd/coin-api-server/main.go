@@ -24,7 +24,9 @@ func main() {
 		log.Fatalf("Couldn't start listening on port %s. Error %s", e.Error(), *srvaddr)
 	}
 	log.Println("Serving RPC handler")
-	err := http.Serve(l, nil)
+	// TODO(stgleb): Add request timeouts for server
+	server := &http.Server{}
+	err := server.Serve(l)
 
 	if err != nil {
 		log.Fatalf("Error serving: %s", err)
