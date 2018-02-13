@@ -5,20 +5,6 @@ import (
 	"log"
 )
 
-func btcCMD() cli.Command {
-	return cli.Command{
-		Name:      "generateAddr",
-		Usage:     "Generate BTC addr",
-		ArgsUsage: "<publicKey>",
-		Subcommands: cli.Commands{
-			generateAddrCMD(),
-			generateKeyPairCMD(),
-			checkBalanceCMD(),
-		},
-	}
-
-}
-
 func generateAddrCMD() cli.Command {
 	return cli.Command{
 		Name:      "generateAddr",
@@ -58,7 +44,7 @@ func generateKeyPairCMD() cli.Command {
 
 func checkBalanceCMD() cli.Command {
 	return cli.Command{
-		Name:      "check",
+		Name:      "checkBalance",
 		Usage:     "Check BTC balance",
 		ArgsUsage: "<address>",
 		Action: func(c *cli.Context) error {
