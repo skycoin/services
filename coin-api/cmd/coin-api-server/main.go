@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/skycoin/services/coin-api/rpc"
-	"log"
-	"net"
-	"net/http"
+	"fmt"
+	. "github.com/skycoin/services/coin-api"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -17,25 +18,42 @@ func init() {
 }
 
 func main() {
-
-	l, e := net.Listen("tcp", *srvaddr)
-	if e != nil {
-		log.Fatalf("Couldn't start listening on port %s. Error %s", e.Error(), *srvaddr)
+	// Add handlers for all currencies here
+	handlers := map[string]func(request Request) *Response{
+		"btc": BtcHandler,
 	}
-	log.Println("Serving RPC handler")
-	// TODO(stgleb): Add request timeouts for server
 
-	server := &http.Server{
-		Addr: *srvaddr,
-	}
-	err := server.Serve(l)
-	shutDownChan := make(chan struct{})
-	rpcServer := rpc.NewServer(server, map[string]func(request rpc.Request) *rpc.Response{}, shutDownChan)
-
-	// TODO(stgleb): Add SIGINT handler for server shutdown
+	// Create new server
+	rpcServer := NewServer(*srvaddr, handlers)
+	// Register shutdown handler
+	registerShutdownHandler(rpcServer)
+	// Start server
 	rpcServer.Start()
+}
 
-	if err != nil {
-		log.Fatalf("Error serving: %s", err)
-	}
+func registerShutdownHandler(server *Server) {
+	go func() {
+		interruptChannel := make(chan os.Signal, 1)
+		signal.Notify(interruptChannel, syscall.SIGINT)
+
+		// Listen for initial shutdown signal and close the returned
+		// channel to notify the caller.
+		select {
+		case sig := <-interruptChannel:
+			fmt.Printf("Received signal (%s).  Shutting down...\n", sig)
+			server.ShutDown()
+		}
+
+		// Listen for repeated signals and display a message so the user
+		// knows the shutdown is in progress and the process is not
+		// hung.
+		for {
+			select {
+			case sig := <-interruptChannel:
+				fmt.Printf("Received signal (%s).  Already "+
+					"shutting down...", sig)
+				os.Exit(1)
+			}
+		}
+	}()
 }

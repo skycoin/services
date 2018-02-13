@@ -1,65 +1,71 @@
-package rpc
+package coin_api
 
 import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
 )
 
+const (
+	shutDownTimeout = time.Second * 1
+	readTimeout     = time.Second * 60
+	writeTimeout    = time.Second * 120
+	idleTimeout     = time.Second * 600
+)
+
 // Server represents an RPC server for coin-api
 type Server struct {
 	Handlers map[string]func(req Request) *Response
-	TimeOut  time.Duration
 	server   *http.Server
-	shutDown chan struct{}
 }
 
-func NewServer(server *http.Server, handlers map[string]func(r Request) *Response, shutDown chan struct{}) *Server {
-	s := &Server{}
-	var mux = http.NewServeMux()
-
-	// Register all handlers
-	for k := range handlers {
-		mux.HandleFunc("/"+k, s.handler)
+func NewServer(srvAddr string, handlers map[string]func(r Request) *Response) *Server {
+	server := &http.Server{
+		Addr:         srvAddr,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+		IdleTimeout:  idleTimeout,
 	}
+	s := &Server{}
 
-	server.Handler = mux
 	s.server = server
-	s.shutDown = shutDown
+	s.server.Handler = s
+	s.Handlers = handlers
 
 	return s
 }
 
 // Start starts an coin-api RPC Server and runs until shutdown channel is closed
 func (s *Server) Start() {
-	go func() {
-		log.Printf("Starting server %s\n", s.server.Addr)
-		if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Printf("Error while running RPC server: %s\n", err)
-		}
-	}()
+	l, e := net.Listen("tcp", s.server.Addr)
+	if e != nil {
+		log.Fatalf("Couldn't start listening on port %s. Error %s", e.Error(), s.server.Addr)
+	}
 
-	go func() {
-		<-s.shutDown
-
-		log.Println("ShutDown server...")
-		ctx, cancel := context.WithTimeout(context.Background(), s.TimeOut)
-		defer cancel()
-
-		if err := s.server.Shutdown(ctx); err != nil {
-			log.Printf("Error while closing server: %s\n", err)
-		}
-
-		log.Println("Stopped server.")
-	}()
+	log.Printf("Starting server %s\n", s.server.Addr)
+	if err := s.server.Serve(l); err != http.ErrServerClosed {
+		log.Printf("Error while running RPC server: %s\n", err)
+	}
 }
 
-func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ShutDown() {
+	log.Println("ShutDown server...")
+	ctx, cancel := context.WithTimeout(context.Background(), shutDownTimeout)
+	defer cancel()
 
+	if err := s.server.Shutdown(ctx); err != nil {
+		log.Printf("Error while closing server: %s\n", err)
+	}
+
+	log.Println("Stopped server.")
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// reading request body
 	reqBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
