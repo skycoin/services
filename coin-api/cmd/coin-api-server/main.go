@@ -18,14 +18,14 @@ func init() {
 }
 
 func main() {
-
-	// Add handlers for all methods
+	// Add handlers for all currencies here
 	handlers := map[string]func(request Request) *Response{
 		"btc": BtcHandler,
 	}
 
+	// Create new server
 	rpcServer := NewServer(*srvaddr, handlers)
-	// Register rpc handler
+	// Register shutdown handler
 	registerShutdownHandler(rpcServer)
 	// Start server
 	rpcServer.Start()
