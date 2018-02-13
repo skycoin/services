@@ -13,7 +13,9 @@ var App = cli.App{
 		{
 			Name: "btc",
 			Subcommands: cli.Commands{
-				btcCMD(),
+				generateKeyPairCMD(),
+				generateAddrCMD(),
+				checkBalanceCMD(),
 			},
 			Before: func(c *cli.Context) error {
 				endpoint = "btc"
