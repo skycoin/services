@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/shopspring/decimal"
-	// "github.com/skycoin/skycoin-exchange/_vendor-20171101171736/github.com/btcsuite/btcrpcclient"
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
@@ -42,20 +42,28 @@ var (
 
 // BTCService encapsulates operations with bitcoin
 type BTCService struct {
-	client *btcrpcclient.Client
+	client *rpcclient.Client
 }
 
-// NewBTCService returns BTCService instance
-func NewBTCService() *BTCService {
-	// TODO(stgleb): Move paramas to config
-	client, err := btcrpcclient.New(&btcrpcclient.ConnConfig{
+var getBtcClient = func() (*rpcclient.Client, error) {
+
+	client, err := rpcclient.New(&rpcclient.ConnConfig{
 		HTTPPostMode: true,
 		DisableTLS:   false,
 		Host:         "23.92.24.9",
 		User:         `YnWD3EmQAOw11IOrUJwWxAThAyobwLC`,
 		Pass:         `f*Z"[1215o{qKW{Buj/wheO8@h.}j*u`,
+		//TODO: rewrite []byte(cert) with buffer usage
 		Certificates: []byte(cert),
 	}, nil)
+
+	return client, err
+}
+
+// NewBTCService returns BTCService instance
+func NewBTCService() *BTCService {
+	// TODO(stgleb): Move paramas to config
+	client, err := getBtcClient()
 	if err != nil {
 		//TODO: handle that stuff more meaningful way
 		panic(fmt.Errorf(fmt.Sprintf("error creating new btc client: %v", err)))
@@ -79,6 +87,22 @@ func NewBTCService() *BTCService {
 
 // 	return nil
 // }
+
+// Request represents a JSONRPC 2.0 request message
+type Request struct {
+	JSONRPC string          `json:"jsonrpc"`
+	Method  string          `json:"method"`
+	Params  json.RawMessage `json:"params,omitempty"`
+	ID      *string         `json:"id"`
+}
+
+// Response represents a JSONRPC 2.0 response message
+type Response struct {
+	ID      string          `json:"id,omitempty"`
+	Error   *jsonrpcError   `json:"error,omitempty"`
+	Result  json.RawMessage `json:"result,omitempty"`
+	JSONRPC string          `json:"jsonrpc"`
+}
 
 // GenerateAddr generates an address for bitcoin
 func (s *BTCService) GenerateAddr(req Request) *Response {
