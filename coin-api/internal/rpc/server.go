@@ -53,6 +53,7 @@ func (s *Server) Start() {
 	}
 }
 
+// Shutdown server gracefully with specific timeout
 func (s *Server) ShutDown() {
 	log.Println("ShutDown server...")
 	ctx, cancel := context.WithTimeout(context.Background(), shutDownTimeout)
