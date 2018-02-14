@@ -1,11 +1,13 @@
-package coin_api
+package btc
 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
-	"github.com/skycoin/skycoin/src/cipher"
+	"fmt"
 	"net/http"
+
+	"github.com/skycoin/skycoin/src/cipher"
 )
 
 const (
@@ -18,6 +20,22 @@ var (
 	errEmptyParams = errors.New("empty params")
 	errWrongType   = errors.New("wrong type")
 )
+
+// Request represents a JSONRPC 2.0 request message
+type Request struct {
+	JSONRPC string          `json:"jsonrpc"`
+	Method  string          `json:"method"`
+	Params  json.RawMessage `json:"params,omitempty"`
+	ID      *string         `json:"id"`
+}
+
+// Response represents a JSONRPC 2.0 response message
+type Response struct {
+	ID      string          `json:"id,omitempty"`
+	Error   *jsonrpcError   `json:"error,omitempty"`
+	Result  json.RawMessage `json:"result,omitempty"`
+	JSONRPC string          `json:"jsonrpc"`
+}
 
 func BtcHandler(req Request) *Response {
 	switch req.Method {
@@ -69,6 +87,23 @@ func GenerateBtcAddr(req Request) *Response {
 	}
 
 	return MakeSuccessResponse(req, responseParams)
+}
+
+// MakeSuccessResponse creates success response
+func MakeSuccessResponse(r Request, result interface{}) *Response {
+	data, err := json.Marshal(result)
+	if err != nil {
+		return &Response{
+			ID:      *r.ID,
+			JSONRPC: r.JSONRPC,
+			Error:   MakeError(InternalError, internalErrorMsg, err),
+		}
+	}
+	return &Response{
+		ID:      *r.ID,
+		JSONRPC: JSONRPC,
+		Result:  data,
+	}
 }
 
 func GenerateKeyPair(req Request) *Response {
@@ -123,4 +158,24 @@ func CheckBalance(req Request) *Response {
 	}
 
 	return MakeSuccessResponse(req, responseParams)
+}
+
+type jsonrpcError struct {
+	Code    int     `json:"code"`
+	Message string  `json:"message"`
+	Data    *string `json:"data,omitempty"`
+}
+
+// Implements error interface
+func (err *jsonrpcError) Error() string {
+	return fmt.Sprintf("jsonrpc error: %d %s %s", err.Code, err.Message, *err.Data)
+}
+
+func MakeError(code int, message string, additional error) *jsonrpcError {
+	var datastr *string
+	if additional != nil {
+		datastr = new(string)
+		*datastr = additional.Error()
+	}
+	return &jsonrpcError{Code: code, Message: message, Data: datastr}
 }
