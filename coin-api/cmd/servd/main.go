@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	. "github.com/skycoin/services/coin-api"
-	"os"
-	"os/signal"
-	"syscall"
+
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	// . "github.com/skycoin/services/coin-api"
 )
 
 var (
@@ -19,41 +18,75 @@ func init() {
 
 func main() {
 	// Add handlers for all currencies here
-	handlers := map[string]func(request Request) *Response{
-		"btc": BtcHandler,
-	}
+	// handlers := map[string]func(request Request) *Response{
+	// 	"btc": BtcHandler,
+	// }
 
 	// Create new server
-	rpcServer := NewServer(*srvaddr, handlers)
+	// rpcServer := NewServer(*srvaddr, handlers)
 	// Register shutdown handler
-	registerShutdownHandler(rpcServer)
+	// registerShutdownHandler(rpcServer)
 	// Start server
-	rpcServer.Start()
+	// rpcServer.Start()
+
+	e := echo.New()
+	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
+	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
+
+	hMulti := newHandlerMulti()
+	hBTC := newHandlerBTC()
+	multiGroup := e.Group("/multi")
+	btcGroup := e.Group("/btc")
+
+	// generate address, private keys, pubkeys from deterministic seed
+	multiGroup.POST("/address/:seed", hMulti.generateSeed)
+
+	// check the balance (and get unspent outputs) for an address
+	multiGroup.GET("/address/:address", hMulti.checkBalance)
+
+	// sign a transaction
+	multiGroup.POST("/transaction/sign/:sign", hMulti.signTransaction)
+
+	// inject transaction into network
+	multiGroup.POST("/transaction/:netid/:transid", hMulti.injectTransaction)
+
+	// check the status of a transaction (tracks transactions by transaction hash)
+	multiGroup.GET("/transaction/:transid", hMulti.checkTransaction)
+
+	// BTC generate address, private keys, pubkeys from deterministic seed
+
+	btcGroup.POST("/address/:seed", hBTC.generateSeed)
+
+	// BTC check the status of a transaction (tracks transactions by transaction hash)
+	btcGroup.GET("/transaction/:transid", hBTC.checkTransaction)
+
+	e.Logger.Fatal(e.StartAutoTLS(":443"))
+
 }
 
-func registerShutdownHandler(server *Server) {
-	go func() {
-		interruptChannel := make(chan os.Signal, 1)
-		signal.Notify(interruptChannel, syscall.SIGINT)
+// func registerShutdownHandler(server *Server) {
+// 	go func() {
+// 		interruptChannel := make(chan os.Signal, 1)
+// 		signal.Notify(interruptChannel, syscall.SIGINT)
 
-		// Listen for initial shutdown signal and close the returned
-		// channel to notify the caller.
-		select {
-		case sig := <-interruptChannel:
-			fmt.Printf("Received signal (%s).  Shutting down...\n", sig)
-			server.ShutDown()
-		}
+// 		// Listen for initial shutdown signal and close the returned
+// 		// channel to notify the caller.
+// 		select {
+// 		case sig := <-interruptChannel:
+// 			fmt.Printf("Received signal (%s).  Shutting down...\n", sig)
+// 			server.ShutDown()
+// 		}
 
-		// Listen for repeated signals and display a message so the user
-		// knows the shutdown is in progress and the process is not
-		// hung.
-		for {
-			select {
-			case sig := <-interruptChannel:
-				fmt.Printf("Received signal (%s).  Already "+
-					"shutting down...", sig)
-				os.Exit(1)
-			}
-		}
-	}()
-}
+// 		// Listen for repeated signals and display a message so the user
+// 		// knows the shutdown is in progress and the process is not
+// 		// hung.
+// 		for {
+// 			select {
+// 			case sig := <-interruptChannel:
+// 				fmt.Printf("Received signal (%s).  Already "+
+// 					"shutting down...", sig)
+// 				os.Exit(1)
+// 			}
+// 		}
+// 	}()
+// }

@@ -1,4 +1,4 @@
-package rpc
+package coin_api
 
 import (
 	"encoding/json"
@@ -28,7 +28,7 @@ func (r *Response) setBody(v interface{}) {
 	body, err := json.Marshal(v)
 	if err != nil {
 		r.Result = nil
-		r.Error = makeError(InternalError, internalErrorMsg, err)
+		r.Error = MakeError(InternalError, internalErrorMsg, err)
 		return
 	}
 	r.Result = body
@@ -61,11 +61,28 @@ func (err *jsonrpcError) Error() string {
 	return fmt.Sprintf("jsonrpc error: %d %s %s", err.Code, err.Message, *err.Data)
 }
 
-func makeError(code int, message string, additional error) *jsonrpcError {
+func MakeError(code int, message string, additional error) *jsonrpcError {
 	var datastr *string
 	if additional != nil {
 		datastr = new(string)
 		*datastr = additional.Error()
 	}
 	return &jsonrpcError{Code: code, Message: message, Data: datastr}
+}
+
+// MakeSuccessResponse creates success response
+func MakeSuccessResponse(r Request, result interface{}) *Response {
+	data, err := json.Marshal(result)
+	if err != nil {
+		return &Response{
+			ID:      *r.ID,
+			JSONRPC: r.JSONRPC,
+			Error:   MakeError(InternalError, internalErrorMsg, err),
+		}
+	}
+	return &Response{
+		ID:      *r.ID,
+		JSONRPC: JSONRPC,
+		Result:  data,
+	}
 }
