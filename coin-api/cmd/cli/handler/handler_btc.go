@@ -46,10 +46,10 @@ func (b *BTC) GenerateKeyPair(c *cli.Context) error {
 func (b *BTC) CheckBalance(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
-	addr := c.Args().Get(1)
+	addr := c.Args().First()
 
 	params := map[string]interface{}{
-		"addr": addr,
+		"address": addr,
 	}
 
 	resp, err := rpcRequest("checkBalance", params)

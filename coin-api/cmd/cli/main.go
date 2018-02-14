@@ -48,7 +48,7 @@ func main() {
 			cli.StringFlag{Name: "rpc", Destination: rpcaddr, Value: "localhost:12345"},
 		},
 	}
-	err := cli.App.Run(os.Args)
+	err := App.Run(os.Args)
 	if err != nil {
 		panic(err)
 	}

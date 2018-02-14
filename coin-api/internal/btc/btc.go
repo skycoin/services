@@ -1,41 +1,43 @@
-package btc
+package coin_api
 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-
+	"github.com/shopspring/decimal"
+	"github.com/skycoin/skycoin-exchange/_vendor-20171101171736/github.com/btcsuite/btcrpcclient"
 	"github.com/skycoin/skycoin/src/cipher"
+	"log"
+	"net/http"
 )
 
 const (
 	generateKeyPair = "generateKeyPair"
 	generateAddr    = "generateAddr"
 	checkBalance    = "checkBalance"
+	cert            = `-----BEGIN CERTIFICATE---—
+MIICbTCCAc+gAwIBAgIRAKnAvGj6JobKblRUcmxOqxowCgYIKoZIzj0EAwQwNjEg
+MB4GA1UEChMXYnRjZCBhdXRvZ2VuZXJhdGVkIGNlcnQxEjAQBgNVBAMTCWxvY2Fs
+aG9zdDAeFw0xNzExMDYwNTMzNDRaFw0yNzExMDUwNTMzNDRaMDYxIDAeBgNVBAoT
+F2J0Y2QgYXV0b2dlbmVyYXRlZCBjZXJ0MRIwEAYDVQQDEwlsb2NhbGhvc3QwgZsw
+EAYHKoZIzj0CAQYFK4EEACMDgYYABAEYn5Xj5QfV6vK6jjeLnG63H5U8yrga5wYJ
+bqBhuSR+540zqVjviZQXDi9OVTcYffDk+VrP2KmD8Q8FW2yFAjo2ewA63DHQibtJ
+Jb2bSCSJnMa7MqWeYle61oIwt9wIiq+9gjVIagnlEAOVm86TBeuiCgUu5t3k1CrI
+R4XFVPAgDQXnzqN7MHkwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB/wQFMAMBAf8w
+VgYDVR0RBE8wTYIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAAAAABhwQX
+XBgJhxAmADwBAAAAAPA8kf/+zLGFhxD+gAAAAAAAAPA8kf/+zLGFMAoGCCqGSM49
+BAMEA4GLADCBhwJCATk6kLPOcQh5V5r6SVcmcPUhOKRu54Ip/wrtagAFN5WDqm/T
+rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
+FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
+ig==
+—---END CERTIFICATE---—`
 )
 
 var (
 	errEmptyParams = errors.New("empty params")
 	errWrongType   = errors.New("wrong type")
 )
-
-// Request represents a JSONRPC 2.0 request message
-type Request struct {
-	JSONRPC string          `json:"jsonrpc"`
-	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params,omitempty"`
-	ID      *string         `json:"id"`
-}
-
-// Response represents a JSONRPC 2.0 response message
-type Response struct {
-	ID      string          `json:"id,omitempty"`
-	Error   *jsonrpcError   `json:"error,omitempty"`
-	Result  json.RawMessage `json:"result,omitempty"`
-	JSONRPC string          `json:"jsonrpc"`
-}
 
 func BtcHandler(req Request) *Response {
 	switch req.Method {
@@ -89,23 +91,6 @@ func GenerateBtcAddr(req Request) *Response {
 	return MakeSuccessResponse(req, responseParams)
 }
 
-// MakeSuccessResponse creates success response
-func MakeSuccessResponse(r Request, result interface{}) *Response {
-	data, err := json.Marshal(result)
-	if err != nil {
-		return &Response{
-			ID:      *r.ID,
-			JSONRPC: r.JSONRPC,
-			Error:   MakeError(InternalError, internalErrorMsg, err),
-		}
-	}
-	return &Response{
-		ID:      *r.ID,
-		JSONRPC: JSONRPC,
-		Result:  data,
-	}
-}
-
 func GenerateKeyPair(req Request) *Response {
 	seed := make([]byte, 256)
 	rand.Read(seed)
@@ -151,8 +136,16 @@ func CheckBalance(req Request) *Response {
 		}
 	}
 
-	// TODO(stgleb): Find api how btc addr balance can be checked
-	balance := len(address)
+	balance, err := getBalance(address)
+
+	if err != nil {
+		return &Response{
+			ID:      *req.ID,
+			JSONRPC: req.JSONRPC,
+			Error:   MakeError(http.StatusInternalServerError, err.Error(), err),
+		}
+	}
+
 	responseParams := map[string]interface{}{
 		"balance": balance,
 	}
@@ -160,22 +153,25 @@ func CheckBalance(req Request) *Response {
 	return MakeSuccessResponse(req, responseParams)
 }
 
-type jsonrpcError struct {
-	Code    int     `json:"code"`
-	Message string  `json:"message"`
-	Data    *string `json:"data,omitempty"`
-}
+func getBalance(address string) (decimal.Decimal, error) {
+	// TODO(stgleb): Move paramas to config
+	client, err := btcrpcclient.New(&btcrpcclient.ConnConfig{
+		HTTPPostMode: true,
+		DisableTLS:   false,
+		Host:         "23.92.24.9",
+		User:         `YnWD3EmQAOw11IOrUJwWxAThAyobwLC`,
+		Pass:         `f*Z"[1215o{qKW{Buj/wheO8@h.}j*u`,
+		Certificates: []byte(cert),
+	}, nil)
 
-// Implements error interface
-func (err *jsonrpcError) Error() string {
-	return fmt.Sprintf("jsonrpc error: %d %s %s", err.Code, err.Message, *err.Data)
-}
-
-func MakeError(code int, message string, additional error) *jsonrpcError {
-	var datastr *string
-	if additional != nil {
-		datastr = new(string)
-		*datastr = additional.Error()
+	if err != nil {
+		return decimal.Decimal{}, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
 	}
-	return &jsonrpcError{Code: code, Message: message, Data: datastr}
+
+	log.Printf("Send request for getting balance of address %s", address)
+	amount, err := client.GetBalance(address)
+	log.Printf("Balance is equal to %f", amount)
+	balance := decimal.NewFromFloat(amount.ToBTC())
+
+	return balance, nil
 }
