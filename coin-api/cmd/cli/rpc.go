@@ -1,5 +1,11 @@
 package main
 
+import (
+	"encoding/json"
+
+	"github.com/skycoin/services/coin-api/internal/rpc"
+)
+
 // package cli
 
 // import (
@@ -22,21 +28,21 @@ package main
 // 	return &str
 // }
 
-// func rpcRequest(method string, params map[string]interface{}) (json.RawMessage, error) {
-// 	p, err := json.Marshal(params)
-// 	req := rpc.Request{
-// 		ID:      reqID(),
-// 		JSONRPC: rpc.JSONRPC,
-// 		Method:  method,
-// 		Params:  p,
-// 	}
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	resp, err := rpc.Do(*rpcaddr, endpoint, req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return resp.Result, nil
+func rpcRequest(method string, params map[string]interface{}) (json.RawMessage, error) {
+	p, err := json.Marshal(params)
+	req := rpc.Request{
+		ID:      reqID(),
+		JSONRPC: rpc.JSONRPC,
+		Method:  method,
+		Params:  p,
+	}
+	if err != nil {
+		return nil, err
+	}
+	resp, err := rpc.Do(*rpcaddr, endpoint, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Result, nil
 
-// }
+}

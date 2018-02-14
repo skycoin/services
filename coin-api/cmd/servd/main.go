@@ -35,8 +35,16 @@ func main() {
 
 	hMulti := newHandlerMulti()
 	hBTC := newHandlerBTC()
-	multiGroup := e.Group("/multi")
-	btcGroup := e.Group("/btc")
+
+	apiGroupV1 := e.Group("/api/v1")
+	multiGroup := apiGroupV1.Group("/multi")
+	btcGroup := apiGroupV1.Group("/btc")
+
+	// ping server
+	apiGroupV1.GET("/ping", hMulti.generateSeed)
+
+	// show currencies and api's list
+	apiGroupV1.GET("/list", hMulti.generateSeed)
 
 	// generate address, private keys, pubkeys from deterministic seed
 	multiGroup.POST("/address/:seed", hMulti.generateSeed)

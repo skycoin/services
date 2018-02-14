@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"log"
-
 	"github.com/urfave/cli"
 )
 
@@ -14,48 +12,50 @@ func NewBTC() *BTC {
 	return &BTC{}
 }
 
-// GenerateAddress generates and keypairs for bitcoin
+// GenerateAddress generates addresses and keypairs for bitcoin
 func (b *BTC) GenerateAddress(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
-	publicKey := c.Args().Get(1)
+	// publicKey := c.Args().Get(1)
 
-	params := map[string]interface{}{
-		"publicKey": publicKey,
-	}
+	// params := map[string]interface{}{
+	// 	"publicKey": publicKey,
+	// }
 
-	resp, err := rpcRequest("generateAddr", params)
-	if err != nil {
-		return err
-	}
-	log.Printf("Address %s created\n", resp)
+	// resp, err := rpcRequest("generateAddr", params)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Printf("Address %s created\n", resp)
 	return nil
 }
 
+// GenerateKeyPair generates keypair for bitcoin
 func (b *BTC) GenerateKeyPair(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
-	resp, err := rpcRequest("generateKeyPair", nil)
-	if err != nil {
-		return err
-	}
-	log.Printf("Key %s created\n", resp)
+	// resp, err := rpcRequest("generateKeyPair", nil)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Printf("Key %s created\n", resp)
 	return nil
 }
 
+// CheckBalance checks bitcoin balance
 func (b *BTC) CheckBalance(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
-	addr := c.Args().First()
+	// addr := c.Args().First()
 
-	params := map[string]interface{}{
-		"address": addr,
-	}
+	// params := map[string]interface{}{
+	// 	"address": addr,
+	// }
 
-	resp, err := rpcRequest("checkBalance", params)
-	if err != nil {
-		return err
-	}
-	log.Printf("Check balance success %s\n", resp)
+	// resp, err := rpcRequest("checkBalance", params)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Printf("Check balance success %s\n", resp)
 	return nil
 }

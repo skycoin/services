@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shopspring/decimal"
-	"github.com/skycoin/skycoin-exchange/_vendor-20171101171736/github.com/btcsuite/btcrpcclient"
-	"github.com/skycoin/skycoin/src/cipher"
 	"log"
 	"net/http"
+
+	"github.com/shopspring/decimal"
+	// "github.com/skycoin/skycoin-exchange/_vendor-20171101171736/github.com/btcsuite/btcrpcclient"
+	"github.com/skycoin/skycoin/src/cipher"
 )
 
 const (
@@ -39,20 +40,48 @@ var (
 	errWrongType   = errors.New("wrong type")
 )
 
-func BtcHandler(req Request) *Response {
-	switch req.Method {
-	case generateKeyPair:
-		return GenerateKeyPair(req)
-	case generateAddr:
-		return GenerateBtcAddr(req)
-	case checkBalance:
-		return CheckBalance(req)
-	}
-
-	return nil
+// BTCService encapsulates operations with bitcoin
+type BTCService struct {
+	client *btcrpcclient.Client
 }
 
-func GenerateBtcAddr(req Request) *Response {
+// NewBTCService returns BTCService instance
+func NewBTCService() *BTCService {
+	// TODO(stgleb): Move paramas to config
+	client, err := btcrpcclient.New(&btcrpcclient.ConnConfig{
+		HTTPPostMode: true,
+		DisableTLS:   false,
+		Host:         "23.92.24.9",
+		User:         `YnWD3EmQAOw11IOrUJwWxAThAyobwLC`,
+		Pass:         `f*Z"[1215o{qKW{Buj/wheO8@h.}j*u`,
+		Certificates: []byte(cert),
+	}, nil)
+	if err != nil {
+		//TODO: handle that stuff more meaningful way
+		panic(fmt.Errorf(fmt.Sprintf("error creating new btc client: %v", err)))
+		// return decimal.Decimal{}, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
+	}
+
+	return &BTCService{
+		client: client,
+	}
+}
+
+// func BtcHandler(req Request) *Response {
+// 	switch req.Method {
+// 	case generateKeyPair:
+// 		return GenerateKeyPair(req)
+// 	case generateAddr:
+// 		return GenerateBtcAddr(req)
+// 	case checkBalance:
+// 		return CheckBalance(req)
+// 	}
+
+// 	return nil
+// }
+
+// GenerateAddr generates an address for bitcoin
+func (s *BTCService) GenerateAddr(req Request) *Response {
 	if req.Params == nil {
 		return &Response{
 			ID:      *req.ID,
@@ -91,7 +120,8 @@ func GenerateBtcAddr(req Request) *Response {
 	return MakeSuccessResponse(req, responseParams)
 }
 
-func GenerateKeyPair(req Request) *Response {
+// GenerateKeyPair generates keypair for bitcoin
+func (s *BTCService) GenerateKeyPair(req Request) *Response {
 	seed := make([]byte, 256)
 	rand.Read(seed)
 
@@ -105,7 +135,8 @@ func GenerateKeyPair(req Request) *Response {
 	return MakeSuccessResponse(req, responseParams)
 }
 
-func CheckBalance(req Request) *Response {
+// CheckBalance checks a balance for given bitcoin wallet
+func (s *BTCService) CheckBalance(req Request) *Response {
 	if req.Params == nil {
 		return &Response{
 			ID:      *req.ID,
@@ -136,7 +167,7 @@ func CheckBalance(req Request) *Response {
 		}
 	}
 
-	balance, err := getBalance(address)
+	balance, err := s.getBalance(address)
 
 	if err != nil {
 		return &Response{
@@ -153,23 +184,9 @@ func CheckBalance(req Request) *Response {
 	return MakeSuccessResponse(req, responseParams)
 }
 
-func getBalance(address string) (decimal.Decimal, error) {
-	// TODO(stgleb): Move paramas to config
-	client, err := btcrpcclient.New(&btcrpcclient.ConnConfig{
-		HTTPPostMode: true,
-		DisableTLS:   false,
-		Host:         "23.92.24.9",
-		User:         `YnWD3EmQAOw11IOrUJwWxAThAyobwLC`,
-		Pass:         `f*Z"[1215o{qKW{Buj/wheO8@h.}j*u`,
-		Certificates: []byte(cert),
-	}, nil)
-
-	if err != nil {
-		return decimal.Decimal{}, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
-	}
-
+func (s *BTCService) getBalance(address string) (decimal.Decimal, error) {
 	log.Printf("Send request for getting balance of address %s", address)
-	amount, err := client.GetBalance(address)
+	amount, err := s.client.GetBalance(address)
 	log.Printf("Balance is equal to %f", amount)
 	balance := decimal.NewFromFloat(amount.ToBTC())
 
