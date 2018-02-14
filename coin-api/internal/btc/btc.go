@@ -1,4 +1,4 @@
-package coin_api
+package btc
 
 import (
 	"crypto/rand"
