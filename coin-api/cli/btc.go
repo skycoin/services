@@ -48,10 +48,10 @@ func checkBalanceCMD() cli.Command {
 		Usage:     "Check BTC balance",
 		ArgsUsage: "<address>",
 		Action: func(c *cli.Context) error {
-			addr := c.Args().Get(1)
+			addr := c.Args().First()
 
 			params := map[string]interface{}{
-				"addr": addr,
+				"address": addr,
 			}
 
 			resp, err := rpcRequest("checkBalance", params)
