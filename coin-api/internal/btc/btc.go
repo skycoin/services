@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shopspring/decimal"
-	"github.com/skycoin/skycoin-exchange/_vendor-20171101171736/github.com/btcsuite/btcrpcclient"
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/skycoin/skycoin/src/cipher"
 	"log"
 	"net/http"
@@ -155,7 +155,7 @@ func CheckBalance(req Request) *Response {
 
 func getBalance(address string) (decimal.Decimal, error) {
 	// TODO(stgleb): Move paramas to config
-	client, err := btcrpcclient.New(&btcrpcclient.ConnConfig{
+	client, err := rpcclient.New(&rpcclient.ConnConfig{
 		HTTPPostMode: true,
 		DisableTLS:   false,
 		Host:         "23.92.24.9",
