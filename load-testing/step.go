@@ -436,11 +436,18 @@ func (s *Step) Wait(txId string, addresses []string) (*visor.TransactionStatus, 
 						return nil, err
 					}
 
+					// get latest blocks
+					lb, err := s.Client.GetLastBlocks(1)
+					if err != nil {
+						return nil, err
+					}
+					headTime := lb.Blocks[0].Head.Time
+
 					// for all of the unspent outputs
 					for i := range so {
 						// get the balance of current unspent output
 						bal, err := wallet.NewBalanceFromUxOut(
-							so[i].Head.Time,
+							headTime,
 							&so[i],
 						)
 						if err != nil {
