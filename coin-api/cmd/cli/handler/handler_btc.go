@@ -1,13 +1,18 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"log"
+	"net/http"
+	"time"
 )
 
 const (
+	clientTimeout = time.Second * 10
 	minBtcAddrLen = 26
 	maxBtcAddrLen = 35
 )
@@ -20,6 +25,28 @@ func NewBTC() *BTC {
 	return &BTC{}
 }
 
+// GenerateKeyPair generates keypair for bitcoin
+func (b *BTC) GenerateKeyPair(c *cli.Context) error {
+	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
+	// deal with io.Reader interface
+	req, err := http.NewRequest(http.MethodPost, "/keys", nil)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Client{
+		Timeout: clientTimeout,
+	}.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Key %s created\n", resp)
+	return nil
+}
+
 // GenerateAddress generates addresses and keypairs for bitcoin
 func (b *BTC) GenerateAddress(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
@@ -30,24 +57,30 @@ func (b *BTC) GenerateAddress(c *cli.Context) error {
 		"publicKey": publicKey,
 	}
 
-	resp, err := doRequest("generateAddr", params)
+	data, err := json.Marshal(params)
+
 	if err != nil {
 		return err
 	}
+
+	body := bytes.NewReader(data)
+
+	req, err := http.NewRequest(http.MethodPost, "/address", body)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Client{
+		Timeout: clientTimeout,
+	}.Do(req)
+
+	if err != nil {
+		return err
+	}
+
 	log.Printf("Address %s created\n", resp)
 
-	return nil
-}
-
-// GenerateKeyPair generates keypair for bitcoin
-func (b *BTC) GenerateKeyPair(c *cli.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
-	resp, err := doRequest("generateKeyPair", nil)
-	if err != nil {
-		return err
-	}
-	log.Printf("Key %s created\n", resp)
 	return nil
 }
 
@@ -63,14 +96,20 @@ func (b *BTC) CheckBalance(c *cli.Context) error {
 		return err
 	}
 
-	params := map[string]interface{}{
-		"address": addr,
-	}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/address/%s", addr), nil)
 
-	resp, err := doRequest("checkBalance", params)
 	if err != nil {
 		return err
 	}
+
+	resp, err := http.Client{
+		Timeout: clientTimeout,
+	}.Do(req)
+
+	if err != nil {
+		return err
+	}
+
 	log.Printf("Check balance success %s\n", resp)
 	return nil
 }
