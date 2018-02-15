@@ -1,8 +1,14 @@
-package coin_api
+package rpc
 
 import (
+	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"math/big"
+	"net/http"
+	"net/url"
 )
 
 // JSONRPC version
@@ -85,4 +91,75 @@ func MakeSuccessResponse(r Request, result interface{}) *Response {
 		JSONRPC: JSONRPC,
 		Result:  data,
 	}
+}
+
+func reqID() *string {
+	v, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1<<62))
+	if err != nil {
+		panic(err)
+	}
+	str := v.String()
+	return &str
+}
+
+func RpcRequest(addr, endpoint, method string, params map[string]interface{}) (json.RawMessage, error) {
+	p, err := json.Marshal(params)
+	req := Request{
+		ID:      reqID(),
+		JSONRPC: JSONRPC,
+		Method:  method,
+		Params:  p,
+	}
+	if err != nil {
+		return nil, err
+	}
+	resp, err := do(addr, endpoint, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Result, nil
+}
+
+// do does request to given addr and endpoint
+func do(addr, endpoint string, r Request) (*Response, error) {
+	c := http.Client{}
+	requestURI := url.URL{}
+
+	requestURI.Host = addr
+	requestURI.Scheme = "http"
+	requestURI.Path = "/" + endpoint
+	requestData, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodPost, requestURI.String(), bytes.NewReader(requestData))
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			panic(err)
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("response status code %d", resp.StatusCode)
+	}
+	respdata, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var rpcResp Response
+	err = json.Unmarshal(respdata, &rpcResp)
+	if err != nil {
+		return nil, err
+	}
+	if rpcResp.Error != nil {
+		return nil, rpcResp.Error
+	}
+	return &rpcResp, nil
+
 }
