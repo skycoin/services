@@ -1,9 +1,15 @@
 package handler
 
 import (
+	"fmt"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"log"
-	"io"
+)
+
+const (
+	minBtcAddrLen = 26
+	maxBtcAddrLen = 35
 )
 
 // BTC is a cli bitcoin handler
@@ -18,17 +24,17 @@ func NewBTC() *BTC {
 func (b *BTC) GenerateAddress(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
-	 publicKey := c.Args().Get(1)
+	publicKey := c.Args().Get(1)
 
-	 params := map[string]interface{}{
-	 	"publicKey": publicKey,
-	 }
+	params := map[string]interface{}{
+		"publicKey": publicKey,
+	}
 
-	 resp, err := doRequest("generateAddr", params)
-	 if err != nil {
-	 	return err
-	 }
-	 log.Printf("Address %s created\n", resp)
+	resp, err := doRequest("generateAddr", params)
+	if err != nil {
+		return err
+	}
+	log.Printf("Address %s created\n", resp)
 
 	return nil
 }
@@ -37,11 +43,11 @@ func (b *BTC) GenerateAddress(c *cli.Context) error {
 func (b *BTC) GenerateKeyPair(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
-	 resp, err := doRequest("generateKeyPair", nil)
-	 if err != nil {
-	 	return err
-	 }
-	 log.Printf("Key %s created\n", resp)
+	resp, err := doRequest("generateKeyPair", nil)
+	if err != nil {
+		return err
+	}
+	log.Printf("Key %s created\n", resp)
 	return nil
 }
 
@@ -49,16 +55,22 @@ func (b *BTC) GenerateKeyPair(c *cli.Context) error {
 func (b *BTC) CheckBalance(c *cli.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
-	 addr := c.Args().First()
+	addr := c.Args().First()
 
-	 params := map[string]interface{}{
-	 	"address": addr,
-	 }
+	if len(addr) > 35 || len(addr) < 26 {
+		err := errors.New(fmt.Sprintf("Address lenght must be between %d and %d",
+			minBtcAddrLen, maxBtcAddrLen))
+		return err
+	}
 
-	 resp, err := doRequest("checkBalance", params)
-	 if err != nil {
-	 	return err
-	 }
-	 log.Printf("Check balance success %s\n", resp)
+	params := map[string]interface{}{
+		"address": addr,
+	}
+
+	resp, err := doRequest("checkBalance", params)
+	if err != nil {
+		return err
+	}
+	log.Printf("Check balance success %s\n", resp)
 	return nil
 }
