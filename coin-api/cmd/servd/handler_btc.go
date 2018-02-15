@@ -1,4 +1,4 @@
-package main
+package servd
 
 import (
 	"github.com/labstack/echo"

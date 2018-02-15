@@ -10,8 +10,15 @@ func NewMulti() *Multi {
 	return &Multi{}
 }
 
-// GenerateSeed generates seed for multicurrency
-func (h *Multi) GenerateSeed(e echo.Context) error {
+// GenerateKeyPair generates seed for multicurrency
+func (h *Multi) GenerateKeyPair(e echo.Context) error {
+	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
+	// deal with io.Reader interface
+	return nil
+}
+
+// GenerateAddress generates seed for multicurrency
+func (h *Multi) GenerateAddress(e echo.Context) error {
 	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
 	// deal with io.Reader interface
 	return nil

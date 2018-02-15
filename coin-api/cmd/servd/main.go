@@ -1,4 +1,4 @@
-package main
+package servd
 
 import (
 	"flag"
@@ -16,7 +16,8 @@ func init() {
 	flag.Parse()
 }
 
-func main() {
+// Start starts the server
+func Start() (*echo.Echo, error) {
 	// Add handlers for all currencies here
 	// handlers := map[string]func(request Request) *Response{
 	// 	"btc": BtcHandler,
@@ -28,7 +29,6 @@ func main() {
 	// registerShutdownHandler(rpcServer)
 	// Start server
 	// rpcServer.Start()
-
 	e := echo.New()
 	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
 	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
@@ -37,7 +37,7 @@ func main() {
 	hBTC := newHandlerBTC()
 
 	apiGroupV1 := e.Group("/api/v1")
-	multiGroup := apiGroupV1.Group("/multi")
+	multiGroup := apiGroupV1.Group("/multi/:coin")
 	btcGroup := apiGroupV1.Group("/btc")
 
 	// ping server
@@ -47,7 +47,7 @@ func main() {
 	apiGroupV1.GET("/list", hMulti.generateSeed)
 
 	// generate address, private keys, pubkeys from deterministic seed
-	multiGroup.POST("/address/:seed", hMulti.generateSeed)
+	multiGroup.POST("/address/", hMulti.generateSeed)
 
 	// check the balance (and get unspent outputs) for an address
 	multiGroup.GET("/address/:address", hMulti.checkBalance)
@@ -62,14 +62,15 @@ func main() {
 	multiGroup.GET("/transaction/:transid", hMulti.checkTransaction)
 
 	// BTC generate address, private keys, pubkeys from deterministic seed
-
-	btcGroup.POST("/address/:seed", hBTC.generateSeed)
+	btcGroup.POST("/address/", hBTC.generateSeed)
 
 	// BTC check the status of a transaction (tracks transactions by transaction hash)
 	btcGroup.GET("/transaction/:transid", hBTC.checkTransaction)
 
-	e.Logger.Fatal(e.StartAutoTLS(":443"))
+	err := e.StartAutoTLS(":443")
+	e.Logger.Fatal(err)
 
+	return e, err
 }
 
 // func registerShutdownHandler(server *Server) {
