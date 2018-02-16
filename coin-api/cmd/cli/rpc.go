@@ -1,25 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
-	"go_appengine/goroot/src/crypto/rand"
 	"math/big"
 
 	"github.com/skycoin/services/coin-api/internal/rpc"
 )
-
-// package cli
-
-// import (
-// 	"crypto/rand"
-// 	"encoding/json"
-// 	"errors"
-// 	"math/big"
-
-// 	"github.com/skycoin/exchange-api/rpc"
-// )
-
-// var errInvalidInput = errors.New("invalid input params")
 
 func reqID() *string {
 	v, err := rand.Int(rand.Reader, new(big.Int).SetInt64(1<<62))

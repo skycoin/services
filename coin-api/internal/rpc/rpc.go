@@ -113,15 +113,15 @@ func RpcRequest(addr, endpoint, method string, params map[string]interface{}) (j
 	if err != nil {
 		return nil, err
 	}
-	resp, err := do(addr, endpoint, req)
+	resp, err := Do(addr, endpoint, req)
 	if err != nil {
 		return nil, err
 	}
 	return resp.Result, nil
 }
 
-// do does request to given addr and endpoint
-func do(addr, endpoint string, r Request) (*Response, error) {
+// Do does request to given addr and endpoint
+func Do(addr, endpoint string, r Request) (*Response, error) {
 	c := http.Client{}
 	requestURI := url.URL{}
 

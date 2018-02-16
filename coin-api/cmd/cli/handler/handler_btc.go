@@ -27,8 +27,6 @@ func NewBTC() *BTC {
 
 // GenerateKeyPair generates keypair for bitcoin
 func (b *BTC) GenerateKeyPair(c *cli.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
 	req, err := http.NewRequest(http.MethodPost, "/keys", nil)
 
 	if err != nil {
@@ -49,8 +47,6 @@ func (b *BTC) GenerateKeyPair(c *cli.Context) error {
 
 // GenerateAddress generates addresses and keypairs for bitcoin
 func (b *BTC) GenerateAddress(c *cli.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
 	publicKey := c.Args().Get(1)
 
 	params := map[string]interface{}{
@@ -86,8 +82,6 @@ func (b *BTC) GenerateAddress(c *cli.Context) error {
 
 // CheckBalance checks bitcoin balance
 func (b *BTC) CheckBalance(c *cli.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
 	addr := c.Args().First()
 
 	if len(addr) > 35 || len(addr) < 26 {
