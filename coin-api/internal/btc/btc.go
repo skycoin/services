@@ -135,52 +135,14 @@ func (s *BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 }
 
 // CheckBalance checks a balance for given bitcoin wallet
-func (s *BTCService) CheckBalance(req rpc.Request) *rpc.Response {
-	if req.Params == nil {
-		return &rpc.Response{
-			ID:      *req.ID,
-			JSONRPC: req.JSONRPC,
-			Error:   rpc.MakeError(http.StatusInternalServerError, errEmptyParams.Error(), nil),
-		}
-	}
-
-	result := make(map[string]interface{})
-	err := json.Unmarshal(req.Params, &result)
-
-	if err != nil {
-		return &rpc.Response{
-			ID:      *req.ID,
-			JSONRPC: req.JSONRPC,
-			Error:   rpc.MakeError(http.StatusInternalServerError, err.Error(), err),
-		}
-	}
-
-	v := result["address"]
-	address, ok := v.(string)
-
-	if !ok {
-		return &rpc.Response{
-			ID:      *req.ID,
-			JSONRPC: req.JSONRPC,
-			Error:   rpc.MakeError(http.StatusInternalServerError, err.Error(), err),
-		}
-	}
-
+func (s *BTCService) CheckBalance(address string) (decimal.Decimal, error) {
 	balance, err := s.getBalance(address)
 
 	if err != nil {
-		return &rpc.Response{
-			ID:      *req.ID,
-			JSONRPC: req.JSONRPC,
-			Error:   rpc.MakeError(http.StatusInternalServerError, err.Error(), err),
-		}
+		return decimal.NewFromFloat(0.0), err
 	}
 
-	responseParams := map[string]interface{}{
-		"balance": balance,
-	}
-
-	return rpc.MakeSuccessResponse(req, responseParams)
+	return balance, nil
 }
 
 func (s *BTCService) getBalance(address string) (decimal.Decimal, error) {

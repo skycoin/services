@@ -3,13 +3,19 @@ package servd
 import (
 	"crypto/rand"
 	"github.com/labstack/echo"
+	"github.com/shopspring/decimal"
 	"github.com/skycoin/services/coin-api/internal/btc"
 	"net/http"
 )
 
-type responseKeyPair struct {
+type keyPairResponse struct {
 	Public  string `json:"public"`
 	Private string `json:"private"`
+}
+
+type balanceResponse struct {
+	Balance decimal.Decimal `json:"balance"`
+	Address string          `address:"address"`
 }
 
 type handlerBTC struct {
@@ -28,7 +34,7 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 	}
 
 	public, private := btc.BTCService{}.GenerateKeyPair()
-	resp := responseKeyPair{
+	resp := keyPairResponse{
 		Public:  string(public[:]),
 		Private: string(private[:]),
 	}
@@ -39,14 +45,23 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
-	return nil
+	return echo.NewHTTPError(http.StatusNotImplemented, "Implement me")
 }
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
+	address := ctx.Param("address")
+	balance, err := btc.BTCService{}.CheckBalance(address)
+
+	if err != nil {
+		return err
+	}
+
+	resp := balanceResponse{
+		Balance: balance,
+		Address: address,
+	}
+
+	ctx.JSON(http.StatusOK, resp)
 	return nil
 }
 
