@@ -77,14 +77,14 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 }
 
 // GenerateAddr generates an address for bitcoin
-func (s *BTCService) GenerateAddr(publicKey cipher.PubKey) (string, error) {
+func (s BTCService) GenerateAddr(publicKey cipher.PubKey) (string, error) {
 	address := cipher.BitcoinAddressFromPubkey(publicKey)
 
 	return address, nil
 }
 
 // GenerateKeyPair generates keypair for bitcoin
-func (s *BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
+func (s BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 	seed := make([]byte, 256)
 	rand.Read(seed)
 
@@ -94,7 +94,7 @@ func (s *BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 }
 
 // CheckBalance checks a balance for given bitcoin wallet
-func (s *BTCService) CheckBalance(address string) (decimal.Decimal, error) {
+func (s BTCService) CheckBalance(address string) (decimal.Decimal, error) {
 	balance, err := s.getBalance(address)
 
 	if err != nil {
@@ -104,7 +104,7 @@ func (s *BTCService) CheckBalance(address string) (decimal.Decimal, error) {
 	return balance, nil
 }
 
-func (s *BTCService) getBalance(address string) (decimal.Decimal, error) {
+func (s BTCService) getBalance(address string) (decimal.Decimal, error) {
 	log.Printf("Send request for getting balance of address %s", address)
 	amount, err := s.client.GetBalance(address)
 

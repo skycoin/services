@@ -54,28 +54,7 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 	}
 
 	// Write response with newly created key pair
-	ctx.JSON(http.StatusOK, resp)
-	return nil
-}
-
-func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
-	return echo.NewHTTPError(http.StatusNotImplemented, "Implement me")
-}
-
-func (h *handlerBTC) checkBalance(ctx echo.Context) error {
-	address := ctx.Param("address")
-	balance, err := btc.BTCService{}.CheckBalance(address)
-
-	if err != nil {
-		return err
-	}
-
-	resp := balanceResponse{
-		Balance: balance,
-		Address: address,
-	}
-
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusCreated, resp)
 	return nil
 }
 
@@ -103,5 +82,26 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 	}
 
 	ctx.JSON(http.StatusCreated, resp)
+	return nil
+}
+
+func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
+	return echo.NewHTTPError(http.StatusNotImplemented, "Implement me")
+}
+
+func (h *handlerBTC) checkBalance(ctx echo.Context) error {
+	address := ctx.Param("address")
+	balance, err := btc.BTCService{}.CheckBalance(address)
+
+	if err != nil {
+		return err
+	}
+
+	resp := balanceResponse{
+		Balance: balance,
+		Address: address,
+	}
+
+	ctx.JSON(http.StatusOK, resp)
 	return nil
 }
