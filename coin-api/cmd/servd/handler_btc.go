@@ -16,7 +16,7 @@ type keyPairResponse struct {
 
 type balanceResponse struct {
 	Balance decimal.Decimal `json:"balance"`
-	Address string          `address:"address"`
+	Address string          `json:"address"`
 }
 
 type addressResponse struct {
