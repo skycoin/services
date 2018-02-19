@@ -1,20 +1,9 @@
 package servd
 
 import (
-	"flag"
-
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	// . "github.com/skycoin/services/coin-api"
 )
-
-var (
-	srvaddr = flag.String("srv", "localhost:12345", "RPC listener address")
-)
-
-func init() {
-	flag.Parse()
-}
 
 // Start starts the server
 func Start() (*echo.Echo, error) {
@@ -24,7 +13,8 @@ func Start() (*echo.Echo, error) {
 
 	e.Pre(middleware.MethodOverride())
 	hMulti := newHandlerMulti()
-	hBTC := newHandlerBTC()
+	// TODO(stgleb): Add arguments for creating btc handler
+	hBTC, err := newHandlerBTC("", "", "", false, []byte(""))
 
 	apiGroupV1 := e.Group("/api/v1")
 	multiGroup := apiGroupV1.Group("/multi/:coin")
@@ -63,7 +53,7 @@ func Start() (*echo.Echo, error) {
 	// BTC check the status of a transaction (tracks transactions by transaction hash)
 	btcGroup.GET("/transaction/:transid", hBTC.checkTransaction)
 
-	err := e.StartAutoTLS(":443")
+	err = e.StartAutoTLS(":443")
 	e.Logger.Fatal(err)
 	return e, err
 }

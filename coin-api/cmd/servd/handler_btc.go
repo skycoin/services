@@ -24,10 +24,19 @@ type addressResponse struct {
 }
 
 type handlerBTC struct {
+	btcService *btc.BTCService
 }
 
-func newHandlerBTC() *handlerBTC {
-	return &handlerBTC{}
+func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*handlerBTC, error) {
+	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &handlerBTC{
+		btcService: service,
+	}, nil
 }
 
 func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
