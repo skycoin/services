@@ -1,5 +1,12 @@
 package multi
 
+import (
+	"crypto/rand"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/skycoin/skycoin/src/cipher"
+)
+
 // GenericСoinService provides generic access to various coins API
 type GenericСoinService struct {
 	// client interface{} // coin client API
@@ -12,12 +19,16 @@ func NewMultiCoinService() *GenericСoinService {
 
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
 func (s *GenericСoinService) GenerateAddr() {
-
-}
-
-// GenerateKeyPair generate private keys, pubkeys from deterministic seed
-func (s *GenericСoinService) generateKeyPair() {
-
+	seed := make([]byte, 256)
+	rand.Read(seed)
+	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
+	address := cipher.AddressFromSecKey(sec)
+	responseParams := map[string]interface{}{
+		"publicKey": pub.Hex(),
+		"secretKey": sec.Hex(),
+		"address":   address.String(),
+	}
+	spew.Dump(responseParams)
 }
 
 // CheckBalance check the balance (and get unspent outputs) for an address
