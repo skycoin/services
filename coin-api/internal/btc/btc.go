@@ -2,15 +2,12 @@ package btc
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/shopspring/decimal"
-	"github.com/skycoin/services/coin-api/internal/rpc"
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
