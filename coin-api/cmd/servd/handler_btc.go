@@ -19,6 +19,10 @@ type balanceResponse struct {
 	Address string          `json:"address"`
 }
 
+type addressRequest struct{
+	PublicKey string `json:"key"`
+}
+
 type addressResponse struct {
 	Address string `json:"address"`
 }
@@ -59,13 +63,17 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) generateAddress(ctx echo.Context) error {
-	publicKeyRaw := ctx.Param("publicKeyRaw")
+	var req addressRequest
 
-	if len(publicKeyRaw) == 0 {
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+
+	if len(req.PublicKey) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "public key is empty")
 	}
 
-	publicKey, err := cipher.PubKeyFromHex(publicKeyRaw)
+	publicKey, err := cipher.PubKeyFromHex(req.PublicKey)
 
 	if err != nil {
 		return err
