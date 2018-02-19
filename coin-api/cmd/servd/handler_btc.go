@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/services/coin-api/internal/btc"
+	"github.com/skycoin/skycoin/src/cipher"
 	"net/http"
 )
 
@@ -16,6 +17,10 @@ type keyPairResponse struct {
 type balanceResponse struct {
 	Balance decimal.Decimal `json:"balance"`
 	Address string          `address:"address"`
+}
+
+type addressResponse struct {
+	Address string `json:"address"`
 }
 
 type handlerBTC struct {
@@ -66,8 +71,28 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) generateAddress(ctx echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further,
-	// deal with io.Reader interface
+	publicKeyRaw := ctx.Param("publicKeyRaw")
 
+	if len(publicKeyRaw) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "public key is empty")
+	}
+
+	publicKey, err := cipher.PubKeyFromHex(publicKeyRaw)
+
+	if err != nil {
+		return err
+	}
+
+	address, err := btc.BTCService{}.GenerateAddr(publicKey)
+
+	if err != nil {
+		return err
+	}
+
+	resp := addressResponse{
+		Address: address,
+	}
+
+	ctx.JSON(http.StatusCreated, resp)
 	return nil
 }

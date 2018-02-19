@@ -85,43 +85,10 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 }
 
 // GenerateAddr generates an address for bitcoin
-func (s *BTCService) GenerateAddr(req rpc.Request) *rpc.Response {
-	if req.Params == nil {
-		return &rpc.Response{
-			ID:      *req.ID,
-			JSONRPC: req.JSONRPC,
-			Error:   rpc.MakeError(http.StatusInternalServerError, errEmptyParams.Error(), nil),
-		}
-	}
+func (s *BTCService) GenerateAddr(publicKey cipher.PubKey) (string, error) {
+	address := cipher.BitcoinAddressFromPubkey(publicKey)
 
-	result := make(map[string]interface{})
-	err := json.Unmarshal(req.Params, &result)
-
-	if err != nil {
-		return &rpc.Response{
-			ID:      *req.ID,
-			JSONRPC: req.JSONRPC,
-			Error:   rpc.MakeError(http.StatusInternalServerError, err.Error(), err),
-		}
-	}
-
-	v := result["publicKey"]
-	pubKey, ok := v.(cipher.PubKey)
-
-	if !ok {
-		return &rpc.Response{
-			ID:      *req.ID,
-			JSONRPC: req.JSONRPC,
-			Error:   rpc.MakeError(http.StatusInternalServerError, err.Error(), err),
-		}
-	}
-
-	addr := cipher.BitcoinAddressFromPubkey(pubKey)
-	responseParams := map[string]interface{}{
-		"address": addr,
-	}
-
-	return rpc.MakeSuccessResponse(req, responseParams)
+	return address, nil
 }
 
 // GenerateKeyPair generates keypair for bitcoin
