@@ -33,11 +33,6 @@ ig==
 —---END CERTIFICATE---—`
 )
 
-var (
-	errEmptyParams = errors.New("empty params")
-	errWrongType   = errors.New("wrong type")
-)
-
 // BTCService encapsulates operations with bitcoin
 type BTCService struct {
 	client *rpcclient.Client
