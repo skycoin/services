@@ -18,21 +18,11 @@ func init() {
 
 // Start starts the server
 func Start() (*echo.Echo, error) {
-	// Add handlers for all currencies here
-	// handlers := map[string]func(request Request) *Response{
-	// 	"btc": BtcHandler,
-	// }
-
-	// Create new server
-	// rpcServer := NewServer(*srvaddr, handlers)
-	// Register shutdown handler
-	// registerShutdownHandler(rpcServer)
-	// Start server
-	// rpcServer.Start()
 	e := echo.New()
 	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
 	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
 
+	e.Pre(middleware.MethodOverride())
 	hMulti := newHandlerMulti()
 	hBTC := newHandlerBTC()
 
@@ -61,41 +51,19 @@ func Start() (*echo.Echo, error) {
 	// check the status of a transaction (tracks transactions by transaction hash)
 	multiGroup.GET("/transaction/:transid", hMulti.checkTransaction)
 
-	// BTC generate address, private keys, pubkeys from deterministic seed
-	btcGroup.POST("/address/", hBTC.generateSeed)
+	// Generate key pair
+	btcGroup.POST("/keys/", hBTC.generateKeyPair)
+
+	// BTC generate address based on public key
+	btcGroup.POST("/address/", hBTC.generateAddress)
+
+	// BTC check the status of a transaction (tracks transactions by transaction hash)
+	btcGroup.GET("/address/:address", hBTC.checkBalance)
 
 	// BTC check the status of a transaction (tracks transactions by transaction hash)
 	btcGroup.GET("/transaction/:transid", hBTC.checkTransaction)
 
 	err := e.StartAutoTLS(":443")
 	e.Logger.Fatal(err)
-
 	return e, err
 }
-
-// func registerShutdownHandler(server *Server) {
-// 	go func() {
-// 		interruptChannel := make(chan os.Signal, 1)
-// 		signal.Notify(interruptChannel, syscall.SIGINT)
-
-// 		// Listen for initial shutdown signal and close the returned
-// 		// channel to notify the caller.
-// 		select {
-// 		case sig := <-interruptChannel:
-// 			fmt.Printf("Received signal (%s).  Shutting down...\n", sig)
-// 			server.ShutDown()
-// 		}
-
-// 		// Listen for repeated signals and display a message so the user
-// 		// knows the shutdown is in progress and the process is not
-// 		// hung.
-// 		for {
-// 			select {
-// 			case sig := <-interruptChannel:
-// 				fmt.Printf("Received signal (%s).  Already "+
-// 					"shutting down...", sig)
-// 				os.Exit(1)
-// 			}
-// 		}
-// 	}()
-// }

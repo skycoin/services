@@ -125,18 +125,13 @@ func (s *BTCService) GenerateAddr(req rpc.Request) *rpc.Response {
 }
 
 // GenerateKeyPair generates keypair for bitcoin
-func (s *BTCService) GenerateKeyPair(req rpc.Request) *rpc.Response {
+func (s *BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 	seed := make([]byte, 256)
 	rand.Read(seed)
 
 	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
 
-	responseParams := map[string]interface{}{
-		"publicKey": pub.Hex(),
-		"secretKey": sec.Hex(),
-	}
-
-	return rpc.MakeSuccessResponse(req, responseParams)
+	return pub, sec
 }
 
 // CheckBalance checks a balance for given bitcoin wallet
