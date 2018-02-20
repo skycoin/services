@@ -17,6 +17,16 @@ const (
 	maxBtcAddrLen = 35
 )
 
+var (
+	client *http.Client
+)
+
+func init() {
+	client = &http.Client{
+		Timeout: clientTimeout,
+	}
+}
+
 // BTC is a cli bitcoin handler
 type BTC struct{}
 
@@ -33,9 +43,7 @@ func (b *BTC) GenerateKeyPair(c *cli.Context) error {
 		return err
 	}
 
-	resp, err := http.Client{
-		Timeout: clientTimeout,
-	}.Do(req)
+	resp, err := client.Do(req)
 
 	if err != nil {
 		return err
@@ -67,9 +75,7 @@ func (b *BTC) GenerateAddress(c *cli.Context) error {
 		return err
 	}
 
-	resp, err := http.Client{
-		Timeout: clientTimeout,
-	}.Do(req)
+	resp, err := client.Do(req)
 
 	if err != nil {
 		return err
@@ -96,9 +102,7 @@ func (b *BTC) CheckBalance(c *cli.Context) error {
 		return err
 	}
 
-	resp, err := http.Client{
-		Timeout: clientTimeout,
-	}.Do(req)
+	resp, err := client.Do(req)
 
 	if err != nil {
 		return err

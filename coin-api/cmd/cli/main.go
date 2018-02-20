@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/skycoin/services/coin-api/cmd/cli/handler"
-	"github.com/skycoin/services/coin-api/cmd/servd"
 	"github.com/urfave/cli"
 )
 
@@ -17,6 +16,8 @@ func main() {
 	// App is a cli app
 	hBTC := handler.NewBTC()
 	hMulti := handler.NewMulti()
+	httpServer := handler.NewServerHTTP()
+
 	cliapp := cli.App{
 		Commands: []cli.Command{
 			{
@@ -66,6 +67,10 @@ func main() {
 						Action:    hMulti.CheckBalance,
 					},
 				},
+				Before: func(c *cli.Context) error {
+					endpoint = "coin"
+					return nil
+				},
 			},
 			{
 				Name: "server",
@@ -73,12 +78,12 @@ func main() {
 					cli.Command{
 						Name:   "start",
 						Usage:  "Start HTTP Server",
-						Action: servd.Start,
+						Action: httpServer.Start,
 					},
 					cli.Command{
 						Name:   "stop",
 						Usage:  "Stop HTTP Server",
-						Action: servd.Start,
+						Action: httpServer.Start,
 					},
 				},
 			},
