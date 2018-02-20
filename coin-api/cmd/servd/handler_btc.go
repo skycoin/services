@@ -19,7 +19,7 @@ type balanceResponse struct {
 	Address string          `json:"address"`
 }
 
-type addressRequest struct{
+type addressRequest struct {
 	PublicKey string `json:"key"`
 }
 
@@ -29,6 +29,7 @@ type addressResponse struct {
 
 type handlerBTC struct {
 	btcService *btc.BTCService
+	checker    BalanceChecker
 }
 
 func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*handlerBTC, error) {
@@ -99,7 +100,7 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
-	balance, err := btc.BTCService{}.CheckBalance(address)
+	balance, err := h.checker.CheckBalance(address)
 
 	if err != nil {
 		return err
