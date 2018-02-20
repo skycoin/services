@@ -95,6 +95,7 @@ func (s BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 
 // CheckBalance checks a balance for given bitcoin wallet
 func (s BTCService) CheckBalance(address string) (decimal.Decimal, error) {
+	// TODO(stgleb): Add circuit breaking to fallback to https://blockchain.info/charts/balance?address=<addr>
 	balance, err := s.getBalance(address)
 
 	if err != nil {
