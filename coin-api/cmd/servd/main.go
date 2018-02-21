@@ -75,6 +75,12 @@ func Start() (*echo.Echo, error) {
 		return nil
 	}
 
+	// Just for basic service health checking
+	e.GET("/health", func(ctx echo.Context) error {
+		ctx.NoContent(http.StatusOK)
+		return nil
+	})
+
 	e.GET("/status", statusFunc)
 	err = e.Start(":8080")
 	e.Logger.Fatal(err)
