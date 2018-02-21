@@ -79,3 +79,11 @@ POST /api/v1/multi/:coin/transaction/:netid/:transid
 ```
 GET /api/v1/multi/:coin/transaction/:transid
 ```
+
+#### Check general service health
+
+```
+GET /health
+```
+
+Response code 200 if ok
