@@ -18,6 +18,15 @@ POST /api/v1/btc/keys
 POST /api/v1/btc/address
 ```
 
+response body
+
+```
+{
+    "public":"02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc",
+    "private: "E9873D79C6D87DC0FB6A5778633389F4453213303DA61F20BD67FC233AA33262"
+}
+```
+
 json body
 
 ```
@@ -29,7 +38,18 @@ json body
 GET /api/v1/btc/address/:address
 ```
 
+response body
+
+```
+{
+    "address":"5Kb8kLf9zgWQnogidDA76Mz6TsZZY36hWXMssSzNydYXYB9KF"
+    "balance: "1.22"
+}
+```
+
+TODO: Implement this method
 #### BTC check the status of a transaction (tracks transactions by transaction hash)
+
 ```
 GET /api/v1/btc/transaction/:transid
 ```
