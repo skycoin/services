@@ -124,7 +124,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 func (h handlerBTC) CollectStatuses(stats *Status) {
 	stats.Lock()
 	defer stats.Unlock()
-	stats.stats["btc"] = BtcStats{
+	stats.Stats["btc"] = &BtcStats{
 		NodeHost:   h.btcService.GetHost(),
 		NodeStatus: h.btcService.IsOpen(),
 	}

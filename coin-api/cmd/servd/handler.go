@@ -7,6 +7,10 @@ import (
 type handlerMulti struct {
 }
 
+type MultiStats struct {
+	Message string `json:"message"`
+}
+
 func newHandlerMulti() *handlerMulti {
 	return &handlerMulti{}
 }
@@ -44,4 +48,7 @@ func (h *handlerMulti) checkTransaction(e echo.Context) error {
 func (h handlerMulti) CollectStatus(status *Status) {
 	status.Lock()
 	defer status.Unlock()
+	status.Stats["multi"] = &MultiStats{
+		Message: "Implement me",
+	}
 }

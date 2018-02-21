@@ -10,7 +10,7 @@ import (
 // Storage for stats data
 type Status struct {
 	sync.Mutex
-	stats map[string]interface{}
+	Stats map[string]interface{} `json:"statuses"`
 }
 
 // Start starts the server
@@ -63,14 +63,14 @@ func Start() (*echo.Echo, error) {
 
 	statusFunc := func(ctx echo.Context) error {
 		status := Status{
-			stats: make(map[string]interface{}),
+			Stats: make(map[string]interface{}),
 		}
 
 		// Collect statuses from handlers
 		hMulti.CollectStatus(&status)
 		hBTC.CollectStatuses(&status)
 
-		ctx.JSON(http.StatusOK, &status)
+		ctx.JSON(http.StatusOK, status)
 
 		return nil
 	}
