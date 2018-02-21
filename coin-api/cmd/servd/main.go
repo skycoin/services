@@ -3,7 +3,15 @@ package servd
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"net/http"
+	"sync"
 )
+
+// Storage for stats data
+type Status struct {
+	sync.Mutex
+	stats map[string]interface{}
+}
 
 // Start starts the server
 func Start() (*echo.Echo, error) {
@@ -53,7 +61,22 @@ func Start() (*echo.Echo, error) {
 	// BTC check the status of a transaction (tracks transactions by transaction hash)
 	btcGroup.GET("/transaction/:transid", hBTC.checkTransaction)
 
-	err = e.StartAutoTLS(":443")
+	statusFunc := func(ctx echo.Context) error {
+		status := Status{
+			stats: make(map[string]interface{}),
+		}
+
+		// Collect statuses from handlers
+		hMulti.CollectStatus(&status)
+		hBTC.CollectStatuses(&status)
+
+		ctx.JSON(http.StatusOK, &status)
+
+		return nil
+	}
+
+	e.GET("/status", statusFunc)
+	err = e.Start(":8080")
 	e.Logger.Fatal(err)
 	return e, err
 }

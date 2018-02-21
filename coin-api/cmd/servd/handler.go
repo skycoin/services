@@ -40,3 +40,8 @@ func (h *handlerMulti) checkTransaction(e echo.Context) error {
 	// deal with io.Reader interface
 	return nil
 }
+
+func (h handlerMulti) CollectStatus(status *Status) {
+	status.Lock()
+	defer status.Unlock()
+}

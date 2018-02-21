@@ -38,6 +38,7 @@ ig==
 
 // ServiceBtc encapsulates operations with bitcoin
 type ServiceBtc struct {
+	nodeAddress string
 	client      *rpcclient.Client
 	// Circuit breaker related fields
 	isOpen      uint32
@@ -93,6 +94,7 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 	}
 
 	return &ServiceBtc{
+		nodeAddress: btcAddr,
 		client:      client,
 		retryCount:  3,
 		openTimeout: time.Second * 10,
@@ -196,4 +198,8 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 // Api method for monitoring btc service circuit breaker
 func (s *ServiceBtc) IsOpen() bool {
 	return s.isOpen == 1
+}
+
+func (s *ServiceBtc) GetHost() string {
+	return s.nodeAddress
 }

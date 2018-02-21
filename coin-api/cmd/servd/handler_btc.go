@@ -32,6 +32,11 @@ type handlerBTC struct {
 	checker    BalanceChecker
 }
 
+type BtcStats struct {
+	NodeStatus bool   `json:"node-status"`
+	NodeHost   string `json:"node-host"`
+}
+
 func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*handlerBTC, error) {
 	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert)
 
@@ -113,4 +118,14 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 
 	ctx.JSON(http.StatusOK, resp)
 	return nil
+}
+
+// Hook for collecting stats
+func (h handlerBTC) CollectStatuses(stats *Status) {
+	stats.Lock()
+	defer stats.Unlock()
+	stats.stats["btc"] = BtcStats{
+		NodeHost:   h.btcService.GetHost(),
+		NodeStatus: h.btcService.IsOpen(),
+	}
 }
