@@ -15,7 +15,13 @@ POST /api/v1/btc/keys
 
 #### BTC generate address based on public key
 ```
-POST /api/v1/btc/address/:key
+POST /api/v1/btc/address
+```
+
+json body
+
+```
+{"key":"02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"}
 ```
 
 #### BTC check the balance (and get unspent outputs) for an address
