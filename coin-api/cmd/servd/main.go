@@ -47,7 +47,7 @@ func Start() (*echo.Echo, error) {
 	// BTC generate address based on public key
 	btcGroup.POST("/address/:key", hBTC.generateAddress)
 
-	// BTC check the status of a transaction (tracks transactions by transaction hash)
+	// BTC check the balance (and get unspent outputs) for an address
 	btcGroup.GET("/address/:address", hBTC.checkBalance)
 
 	// BTC check the status of a transaction (tracks transactions by transaction hash)
