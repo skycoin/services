@@ -28,7 +28,7 @@ type addressResponse struct {
 }
 
 type handlerBTC struct {
-	btcService *btc.BTCService
+	btcService *btc.ServiceBtc
 	checker    BalanceChecker
 }
 
@@ -52,7 +52,7 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 		return err
 	}
 
-	public, private := btc.BTCService{}.GenerateKeyPair()
+	public, private := btc.ServiceBtc{}.GenerateKeyPair()
 	resp := keyPairResponse{
 		Public:  string(public[:]),
 		Private: string(private[:]),
@@ -80,7 +80,7 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 		return err
 	}
 
-	address, err := btc.BTCService{}.GenerateAddr(publicKey)
+	address, err := btc.ServiceBtc{}.GenerateAddr(publicKey)
 
 	if err != nil {
 		return err

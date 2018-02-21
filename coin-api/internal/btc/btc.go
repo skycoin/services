@@ -36,9 +36,13 @@ ig==
 —---END CERTIFICATE---—`
 )
 
-// BTCService encapsulates operations with bitcoin
-type BTCService struct {
-	client *rpcclient.Client
+// ServiceBtc encapsulates operations with bitcoin
+type ServiceBtc struct {
+	client      *rpcclient.Client
+	// Circuit breaker related fields
+	isOpen      uint32
+	openTimeout time.Duration
+	retryCount  uint
 }
 
 type walletState struct {
@@ -55,14 +59,8 @@ type explorerResponse struct {
 	values      []walletState
 }
 
-var (
-	maxAttempts uint  = 3
-	openTimeout       = time.Second * 10
-	isOpen      int64 = 0
-)
-
-// NewBTCService returns BTCService instance
-func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*BTCService, error) {
+// NewBTCService returns ServiceBtc instance
+func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*ServiceBtc, error) {
 	if len(btcAddr) == 0 {
 		btcAddr = defaultAddr
 	}
@@ -94,20 +92,23 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 		return nil, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
 	}
 
-	return &BTCService{
-		client: client,
+	return &ServiceBtc{
+		client:      client,
+		retryCount:  3,
+		openTimeout: time.Second * 10,
+		isOpen:      0,
 	}, nil
 }
 
 // GenerateAddr generates an address for bitcoin
-func (s BTCService) GenerateAddr(publicKey cipher.PubKey) (string, error) {
+func (s ServiceBtc) GenerateAddr(publicKey cipher.PubKey) (string, error) {
 	address := cipher.BitcoinAddressFromPubkey(publicKey)
 
 	return address, nil
 }
 
 // GenerateKeyPair generates keypair for bitcoin
-func (s BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
+func (s ServiceBtc) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 	seed := make([]byte, 256)
 	rand.Read(seed)
 
@@ -117,9 +118,9 @@ func (s BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 }
 
 // CheckBalance checks a balance for given bitcoin wallet
-func (s BTCService) CheckBalance(address string) (decimal.Decimal, error) {
+func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 	// If breaker is open - get info from block explorer
-	if isOpen == 1 {
+	if s.isOpen == 1 {
 		balance, err := s.getBalanceFromExplorer(address)
 
 		if err != nil {
@@ -133,7 +134,7 @@ func (s BTCService) CheckBalance(address string) (decimal.Decimal, error) {
 
 	balance, err := s.getBalanceFromNode(address)
 
-	for i < maxAttempts && err != nil {
+	for i < s.retryCount && err != nil {
 		balance, err = s.getBalanceFromNode(address)
 
 		if err != nil {
@@ -143,12 +144,12 @@ func (s BTCService) CheckBalance(address string) (decimal.Decimal, error) {
 	}
 
 	if err != nil {
-		isOpen = 1
+		s.isOpen = 1
 
 		go func() {
-			time.Sleep(openTimeout)
+			time.Sleep(s.openTimeout)
 			// This assignment is atomic since on 64-bit platforms this operation is atomic
-			isOpen = 0
+			s.isOpen = 0
 		}()
 		return decimal.NewFromFloat(0.0), err
 	}
@@ -156,7 +157,7 @@ func (s BTCService) CheckBalance(address string) (decimal.Decimal, error) {
 	return balance, nil
 }
 
-func (s BTCService) getBalanceFromNode(address string) (decimal.Decimal, error) {
+func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error) {
 	log.Printf("Send request for getting balance of address %s", address)
 	amount, err := s.client.GetBalance(address)
 
@@ -170,7 +171,7 @@ func (s BTCService) getBalanceFromNode(address string) (decimal.Decimal, error) 
 	return balance, nil
 }
 
-func (s BTCService) getBalanceFromExplorer(address string) (decimal.Decimal, error) {
+func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, error) {
 	resp, err := http.Get(fmt.Sprintf("https://api.blockchain.info/charts/balance?cors=true&format=json&lang=en&address=%s", address))
 
 	if err != nil {
@@ -190,4 +191,9 @@ func (s BTCService) getBalanceFromExplorer(address string) (decimal.Decimal, err
 	}
 
 	return decimal.NewFromFloat(r.values[0].balance), nil
+}
+
+// Api method for monitoring btc service circuit breaker
+func (s *ServiceBtc) IsOpen() bool {
+	return s.isOpen == 1
 }
