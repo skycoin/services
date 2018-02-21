@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"log"
 
+	"encoding/json"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
+	"net/http"
+	"time"
 )
 
 const (
@@ -37,6 +40,26 @@ ig==
 type BTCService struct {
 	client *rpcclient.Client
 }
+
+type walletState struct {
+	timestamp int64
+	balance   float64
+}
+
+type explorerResponse struct {
+	status      string
+	name        string
+	unit        string
+	period      string
+	description string
+	values      []walletState
+}
+
+var (
+	maxAttempts uint  = 3
+	openTimeout       = time.Second * 10
+	isOpen      int64 = 0
+)
 
 // NewBTCService returns BTCService instance
 func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*BTCService, error) {
@@ -95,16 +118,45 @@ func (s BTCService) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 
 // CheckBalance checks a balance for given bitcoin wallet
 func (s BTCService) CheckBalance(address string) (decimal.Decimal, error) {
-	balance, err := s.getBalance(address)
+	// If breaker is open - get info from block explorer
+	if isOpen == 1 {
+		balance, err := s.getBalanceFromExplorer(address)
+
+		if err != nil {
+			return decimal.NewFromFloat(0.0), err
+		}
+
+		return balance, nil
+	}
+
+	var i uint = 0
+
+	balance, err := s.getBalanceFromNode(address)
+
+	for i < maxAttempts && err != nil {
+		balance, err = s.getBalanceFromNode(address)
+
+		if err != nil {
+			time.Sleep(time.Second * time.Duration(1<<i))
+		}
+		i++
+	}
 
 	if err != nil {
+		isOpen = 1
+
+		go func() {
+			time.Sleep(openTimeout)
+			// This assignment is atomic since on 64-bit platforms this operation is atomic
+			isOpen = 0
+		}()
 		return decimal.NewFromFloat(0.0), err
 	}
 
 	return balance, nil
 }
 
-func (s BTCService) getBalance(address string) (decimal.Decimal, error) {
+func (s BTCService) getBalanceFromNode(address string) (decimal.Decimal, error) {
 	log.Printf("Send request for getting balance of address %s", address)
 	amount, err := s.client.GetBalance(address)
 
@@ -116,4 +168,26 @@ func (s BTCService) getBalance(address string) (decimal.Decimal, error) {
 	balance := decimal.NewFromFloat(amount.ToBTC())
 
 	return balance, nil
+}
+
+func (s BTCService) getBalanceFromExplorer(address string) (decimal.Decimal, error) {
+	resp, err := http.Get(fmt.Sprintf("https://api.blockchain.info/charts/balance?cors=true&format=json&lang=en&address=%s", address))
+
+	if err != nil {
+		return decimal.NewFromFloat(0.0), err
+	}
+
+	var r explorerResponse
+
+	err = json.NewDecoder(resp.Body).Decode(&r)
+
+	if err != nil {
+		return decimal.NewFromFloat(0.0), err
+	}
+
+	if len(r.values) == 0 {
+		return decimal.NewFromFloat(0.0), errors.New("empty values array")
+	}
+
+	return decimal.NewFromFloat(r.values[0].balance), nil
 }
