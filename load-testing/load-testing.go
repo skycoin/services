@@ -31,7 +31,7 @@ func init() {
 
 	// create and check webrpc client
 	c := &webrpc.Client{
-		Addr: "localhost:6430",
+		Addr: *NODE,
 	}
 	if s, err := c.GetStatus(); err != nil {
 		log.Fatalln(err)
@@ -49,12 +49,17 @@ func init() {
 		log.Fatalln(err)
 	}
 
+	addrs, err := w.GenerateAddresses(uint64(*N))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	// initialize STEP for testing
 	if STEP, err = NewStep(
 		c,
 		w,
 		log.New(LogWriter, "", 0),
-		w.GenerateAddresses(uint64(*N)),
+		addrs,
 	); err != nil {
 		log.Fatalln(err)
 	}

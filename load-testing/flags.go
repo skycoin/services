@@ -8,6 +8,11 @@ import (
 )
 
 var (
+	NODE = flag.String(
+		"node",
+		"localhost:6430",
+		"node to connect to",
+	)
 	SEED = flag.String(
 		"seed",
 		"",
