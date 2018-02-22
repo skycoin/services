@@ -76,12 +76,22 @@ START_TEST(test_compute_ecdh)
 	printf("pub key: %s\n", pubkey);
 
 
-	// ecdh_multiply(alice.curve->params, alice.private_key, alice.public_key, session_key1); //65
+    uint8_t mult[65] = {0};
+	char key_m[128] = {0};
+	ecdh_multiply(alice.curve->params, alice.private_key, alice.public_key, mult); //65
 
-	curve25519_scalarmult(session_key1, alice.private_key, alice.public_key); // 32
-    // int key_size;
-    // hdnode_get_shared_key(&alice, alice.public_key, session_key1, &key_size); //65
-
+	tohex(key_m, mult, 65);
+	printf("ECDH key_mult: %s\n", key_m);
+	memcpy(&session_key1[1], &mult[1], 31);
+	if (mult[64] % 2 == 0)
+	{
+		session_key1[0] = 0x02;
+	}
+	else
+	{
+		session_key1[0] = 0x03;
+	}
+	
 	char key[64] = {0};
 	tohex(key, session_key1, 32);
 	printf("ECDH key: %s\n", key);
@@ -89,7 +99,7 @@ START_TEST(test_compute_ecdh)
 	ck_assert_mem_eq(session_key1, fromhex("024f7fd15da6c7fc7d0410d184073ef702104f82452da9b3e3792db01a8b7907c3"), 32);
 
     uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-    compute_sha256sum(key, digest, 32);
+    compute_sha256sum(key, digest, 64);
 
 	ck_assert_mem_eq(digest, fromhex("907d3c524abb561a80644cdb0cf48e6c71ce33ed6a2d5eed40a771bcf86bd081"), 32);
 }
