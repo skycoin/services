@@ -40,7 +40,7 @@ START_TEST(test_generate_deterministic_key_pair_seckey)
     char seed[256] = "seed";
     uint8_t seckey_digest[SHA256_DIGEST_LENGTH] = {0};
     genereate_deterministic_key_pair_seckey(seed, seckey_digest);
-	ck_assert_mem_eq(seckey_digest, fromhex("a7e130694166cdb95b1e1bbce3f21e4dbd63f46df42b48c5a1f8295033d57d04"), 32);
+	ck_assert_mem_eq(seckey_digest, fromhex("a7e130694166cdb95b1e1bbce3f21e4dbd63f46df42b48c5a1f8295033d57d04"), SHA256_DIGEST_LENGTH);
 }
 END_TEST
 
@@ -50,13 +50,20 @@ START_TEST(test_compute_sha256sum)
     uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
     compute_sha256sum(seed, digest, strlen(seed));
 
-	ck_assert_mem_eq(digest, fromhex("19b25856e1c150ca834cffc8b59b23adbd0ec0389e58eb22b3b64768098d002b"), 32);
+	ck_assert_mem_eq(digest, fromhex("19b25856e1c150ca834cffc8b59b23adbd0ec0389e58eb22b3b64768098d002b"), SHA256_DIGEST_LENGTH);
 
     strcpy(seed, "random_seed");
     memset(digest, 0, SHA256_DIGEST_LENGTH);
     compute_sha256sum(seed, digest, strlen(seed));
 
-	ck_assert_mem_eq(digest, fromhex("7b491face15c5be43df3affe42e6e4aab48522a3b564043de464e8de50184a5d"), 32);
+	ck_assert_mem_eq(digest, fromhex("7b491face15c5be43df3affe42e6e4aab48522a3b564043de464e8de50184a5d"), SHA256_DIGEST_LENGTH);
+
+
+    strcpy(seed, "024f7fd15da6c7fc7d0410d184073ef702104f82452da9b3e3792db01a8b7907c3");
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+    compute_sha256sum(seed, digest, strlen(seed));
+
+	ck_assert_mem_eq(digest, fromhex("a5daa8c9d03a9ec500088bdf0123a9d865725b03895b1291f25500737298e0a9"), SHA256_DIGEST_LENGTH);
 }
 END_TEST
 
@@ -99,9 +106,9 @@ START_TEST(test_compute_ecdh)
 	ck_assert_mem_eq(session_key1, fromhex("024f7fd15da6c7fc7d0410d184073ef702104f82452da9b3e3792db01a8b7907c3"), 32);
 
     uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-    compute_sha256sum(key, digest, 64);
+    compute_sha256sum(key, digest, strlen(key));
 
-	ck_assert_mem_eq(digest, fromhex("907d3c524abb561a80644cdb0cf48e6c71ce33ed6a2d5eed40a771bcf86bd081"), 32);
+	ck_assert_mem_eq(digest, fromhex("907d3c524abb561a80644cdb0cf48e6c71ce33ed6a2d5eed40a771bcf86bd081"), SHA256_DIGEST_LENGTH);
 }
 END_TEST
 
