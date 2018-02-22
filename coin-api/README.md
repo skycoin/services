@@ -3,18 +3,19 @@
 
 ### Common server API
 ```
-GET /ping
+GET /api/v1/ping
 ResponseHeader: 200
 ResponseBody {
     "status":"pong"
 }
 ```
 ```
-GET /list
+GET /api/v1/list
 ResponseHeader: 200
 ResponseBody {
     [
         {
+            "id": "LTC",
             "name":"litecoin",
             "address": "99902999f9s99ds999s9",
             "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
@@ -23,6 +24,7 @@ ResponseBody {
             "version": "0.1"
         },
         {
+            "id": "ETH",
             "name":"ethereum",
             "address": "99902999f9s99ds999s9",
             "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
@@ -34,7 +36,6 @@ ResponseBody {
     "status":"ok"
 }
 ```
-
 ### BTC API
 #### Generate key pair
 ```
@@ -66,7 +67,7 @@ GET /api/v1/btc/address/:address
 ResponseHeader: 200
 ResponseBody {
     "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
-    "balance":"12.07",
+    "balance": 12.07,
 }
 ```
 
@@ -84,23 +85,23 @@ ResponseBody {
 ### Multicoin API
 #### Generate address, private keys, pubkeys from deterministic seed
 ```
-POST /api/v1/multi/:coin/address
+POST /api/v1/:coin/address
 ```
 
 #### check the balance (and get unspent outputs) for an address
 ```
-GET /api/v1/multi/:coin/address/:address
+GET /api/v1/:coin/address/:address
 
 ResponseHeader: 200
 ResponseBody {
     "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
-    "balance":"12.07",
+    "balance": 12.07,
 }
 ```
 
 #### sign a transaction
 ```
-POST /api/v1/multi/:coin/transaction/:transid/sign
+POST /api/v1/:coin/transaction/:transid/sign
 
 Request {
     "signid":"392900939dijdked"
@@ -114,7 +115,7 @@ ResponseBody {
 
 #### inject transaction into network
 ```
-POST /api/v1/multi/:coin/transaction/:netid
+PUT /api/v1/:coin/transaction/:netid
 
 Request {
     "transid":"392900939dijdked"
@@ -122,18 +123,18 @@ Request {
 
 ResponseHeader: 202
 ResponseBody {
-    "status":"Ok"
+    "status":"ok"
 }
 ```
 
 #### check the status of a transaction (tracks transactions by transaction hash)
 ```
-GET /api/v1/multi/:coin/transaction/:transid
+GET /api/v1/sky/transaction/:transid
 
 ResponseHeader: 200
 
 ResponseBody {
     "transid":"392900939dijdked"
-    "status":"pending" //?possible statuses list
+    "status":"pending"
 }
 ```
