@@ -6,7 +6,11 @@
 GET /api/v1/ping
 ResponseHeader: 200
 ResponseBody {
-    "status":"pong"
+    "code": 0,
+    "status":"ok",
+    "result": {
+        "message":"pong"
+    }
 }
 ```
 
@@ -15,27 +19,30 @@ ResponseBody {
 ```
 ResponseHeader: 200
 ResponseBody {
-    [
-        {
-            "сid": "LTC",
-            "name":"litecoin",
-            "address": "99902999f9s99ds999s9",
-            "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
-            "tm": "1503458909",
-            "type": "deterministic",
-            "version": "0.1"
-        },
-        {
-            "сid": "ETH",
-            "name":"ethereum",
-            "address": "99902999f9s99ds999s9",
-            "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
-            "tm": "1503458909",
-            "type": "deterministic",
-            "version": "0.1"
-        }
-    ]
-    "status":"ok"
+    "status": "ok",
+    "code": 0,
+    "result": {
+            [
+                {
+                    "сid": "LTC",
+                    "name":"litecoin",
+                    "address": "99902999f9s99ds999s9",
+                    "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
+                    "tm": "1503458909",
+                    "type": "deterministic",
+                    "version": "0.1"
+                },
+                {
+                    "сid": "ETH",
+                    "name":"ethereum",
+                    "address": "99902999f9s99ds999s9",
+                    "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
+                    "tm": "1503458909",
+                    "type": "deterministic",
+                    "version": "0.1"
+                }
+            ]
+    }
 }
 ```
 
@@ -43,8 +50,11 @@ ResponseBody {
 ```
 ResponseHeader: 404
 ResponseBody: {
-    -4, 
-    "Wallet error, no coin discovered or coin initialization error",
+    "status": "error",
+    "code": -4,
+    "result": {
+        "description": "Wallet error, no coin discovered or coin initialization error",
+    }
 }
 ```
 
@@ -57,17 +67,21 @@ ResponseBody: {
 ResponseHeader: 202
 ResponseBody {
     "status":"ok",
-    "public":"9182b02c0004217ba9a55593f8cf0abec",
-    "private":"99182b02c0004217ba9a55593f8cf0abec182b02c0004217ba9a55593f8cf0abec"
-
+    "result": {
+        "public":"9182b02c0004217ba9a55593f8cf0abec",
+        "private":"99182b02c0004217ba9a55593f8cf0abec182b02c0004217ba9a55593f8cf0abec"
+    },
 }
 ```
 ##### Unsuccesful response:
 ```
 ResponseHeader: 505
 ResponseBody {
+    "status": "error",
     "code": -32603,
-    "description": "Unable to generate keypair, internal server error"
+    "result": {
+        "description": "Unable to generate keypair, internal server error"
+    }
 }
 ```
 
@@ -76,17 +90,24 @@ ResponseBody {
 ##### POST /api/v1/btc/address/:key
 ##### Successful response:
 ```
-ResponseHeader: 202
+ResponseHeader: 201
 ResponseBody {
-    "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
+    "status": "ok",
+    "code": 0,
+    "result": {
+        "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
+    }
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
+    "status": "error",
     "code": -5,
-    "description": "Unable to generate address, given key not found"
+    "result": {
+        "description": "Unable to generate address, given key not found"
+    }
 }
 ```
 
@@ -96,16 +117,23 @@ ResponseBody {
 ```
 ResponseHeader: 200
 ResponseBody {
-    "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
-    "balance": 12.07,
+    "status": "ok",
+    "code": 0,
+    "result": {
+        "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
+        "balance": 12.07,
+    }
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
+    "status": "error",
     "code": -32602,
-    "description": "Unable to find given address"
+    "result": {
+        "description": "Unable to find given address"
+    }
 }
 ```
 
@@ -115,16 +143,23 @@ ResponseBody {
 ```
 ResponseHeader: 200
 ResponseBody {
-    "transid": "7ba9a55593f8cf0abecc30d041e094",
-    "status":"pending",
+    "status": "ok",
+    "code": 0,
+    "result": {
+        "transid": "7ba9a55593f8cf0abecc30d041e094",
+        "status":"pending",
+    }
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
+    "status": "error",
     "code": -32602,
-    "description": "Unable to find given transaction"
+    "result": {
+        "description": "Unable to find given transaction"
+    }
 }
 ```
 
@@ -134,20 +169,25 @@ ResponseBody {
 ##### POST /api/v1/:coin/keys
 ##### Successful response:
 ```
-ResponseHeader: 202
+ResponseHeader: 201
 ResponseBody {
     "status":"ok",
-    "public":"9182b02c0004217ba9a55593f8cf0abec",
-    "private":"99182b02c0004217ba9a55593f8cf0abec182b02c0004217ba9a55593f8cf0abec"
-
+    "code": 0,
+    "result": {
+        "public":"9182b02c0004217ba9a55593f8cf0abec",
+        "private":"99182b02c0004217ba9a55593f8cf0abec182b02c0004217ba9a55593f8cf0abec"
+    }
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 505
 ResponseBody {
+    "status": "error",
     "code": -32603,
-    "description": "Unable to generate keypair, internal server error"
+    "result": {
+        "description": "Unable to generate keypair, internal server error"
+    }
 }
 ```
 
@@ -155,17 +195,24 @@ ResponseBody {
 ##### POST /api/v1/:coin/address/:key
 ##### Successful response:
 ```
-ResponseHeader: 202
+ResponseHeader: 201
 ResponseBody {
-    "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
+    "status":"ok",
+    "code": 0,
+    "result": {
+        "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
+    }
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
+    "status":"error",
     "code": -5,
-    "description": "Unable to generate address, given key not found"
+    "result": {
+        "description": "Unable to generate address, given key not found"
+    }
 }
 ```
 
@@ -175,16 +222,23 @@ ResponseBody {
 ```
 ResponseHeader: 200
 ResponseBody {
-    "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
-    "balance": 12.07,
+    "status":"ok",
+    "code": 0,
+    "result": {
+        "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
+        "balance": 12.07,
+    }
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
+    "status":"error",
     "code":-25 //-25 -26 -27 possible codes
-    "description":"description according to given error code"
+    "result": {
+        "description":"description according to given error code"
+    }
 }
 ```
 
@@ -196,17 +250,21 @@ Request {
     "signid":"392900939dijdked"
 }
 
-ResponseHeader: 202
+ResponseHeader: 201
 ResponseBody {
-    "status":"Ok"
+    "status":"ok",
+    "code": 0,
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
+    "status":"error",
     "code":-25 //-25 -26 -27 possible codes
-    "description":"description according to given error code"
+    "result": {
+        "description":"description according to given error code"
+    }
 }
 ```
 
@@ -218,17 +276,21 @@ Request {
     "transid":"392900939dijdked"
 }
 
-ResponseHeader: 202
+ResponseHeader: 201
 ResponseBody {
-    "status":"ok"
+    "status":"ok",
+    "code": 0,
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
+    "status":"error",
     "code":-25 //-25 -26 -27 possible codes
-    "description":"description according to given error code"
+    "result": {
+        "description":"description according to given error code"
+    }
 }
 ```
 
@@ -238,15 +300,22 @@ ResponseBody {
 ```
 ResponseHeader: 200
 ResponseBody {
-    "transid":"392900939dijdked"
-    "status":"pending"
+    "status":"ok",
+    "code": 0,
+    "result": {
+        "transid":"392900939dijdked"
+        "status":"pending"
+    }
 }
 ```
 ##### Unsuccessful response:
 ```
 ResponseHeader: 404
 ResponseBody {
-    "code":-25
-    "description":"any possible transaction error description"
+    "code":-25,
+    "status":"error",
+    "result": {
+        "description":"any possible transaction error description"
+    }
 }
 ```
