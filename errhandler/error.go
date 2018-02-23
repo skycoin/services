@@ -1,10 +1,14 @@
-package errorhandler
+package errhandler
 
-// SkyError provides detailed error information occured in sky blockhain components
-type SkyError struct {
-	Code        int    `json:"code"`
+// SkyErr provides detailed error information occured in sky blockhain components
+type SkyErr struct {
+	// Code is taken fron the code constants below. Feel free to add your own constants
+	Code int `json:"code"`
+	// Description is a public error description which may be exposed to external service/user
 	Description string `json:"description"`
-	Error       error  `json:"-"`
+	// Error field used for logging the error into the metrics/monitoring/logging system. It's intended for internal usage only,
+	// not for publice exposure
+	Error error `json:"-"`
 }
 
 const (

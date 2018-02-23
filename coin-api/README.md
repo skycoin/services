@@ -9,8 +9,10 @@ ResponseBody {
     "status":"pong"
 }
 ```
+
+#### GET /api/v1/list
+#### Successful response:
 ```
-GET /api/v1/list
 ResponseHeader: 200
 ResponseBody {
     [
@@ -35,13 +37,23 @@ ResponseBody {
     ]
     "status":"ok"
 }
-
 ```
+
+#### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody: {
+    -4, 
+    "Wallet error, no coin discovered or coin initialization error",
+}
+```
+
+
 ### BTC API
 #### Generate key pair
+##### POST /api/v1/btc/keys
+##### Successful response:
 ```
-POST /api/v1/btc/keys
-
 ResponseHeader: 202
 ResponseBody {
     "status":"ok",
@@ -50,60 +62,136 @@ ResponseBody {
 
 }
 ```
+##### Unsuccesful response:
+```
+ResponseHeader: 505
+ResponseBody {
+    "code": -32603,
+    "description": "Unable to generate keypair, internal server error"
+}
+```
 
 #### BTC generate address based on public key
-```
-POST /api/v1/btc/address/:key
 
+##### POST /api/v1/btc/address/:key
+##### Successful response:
+```
 ResponseHeader: 202
 ResponseBody {
     "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
 }
 ```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code": -5,
+    "description": "Unable to generate address, given key not found"
+}
+```
 
 #### BTC check the balance (and get unspent outputs) for an address
+##### GET /api/v1/btc/address/:address
+##### Successful response:
 ```
-GET /api/v1/btc/address/:address
-
 ResponseHeader: 200
 ResponseBody {
     "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
     "balance": 12.07,
 }
 ```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code": -32602,
+    "description": "Unable to find given address"
+}
+```
 
 #### BTC check the status of a transaction (tracks transactions by transaction hash)
+##### GET /api/v1/btc/transaction/:transid
+##### Successful response:
 ```
-GET /api/v1/btc/transaction/:transid
-
 ResponseHeader: 200
 ResponseBody {
     "transid": "7ba9a55593f8cf0abecc30d041e094",
     "status":"pending",
 }
 ```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code": -32602,
+    "description": "Unable to find given transaction"
+}
+```
 
 ### Multicoin API
-#### Generate address, private keys, pubkeys from deterministic seed
+
+#### Generate key pair
+##### POST /api/v1/:coin/keys
+##### Successful response:
 ```
-POST /api/v1/:coin/address
+ResponseHeader: 202
+ResponseBody {
+    "status":"ok",
+    "public":"9182b02c0004217ba9a55593f8cf0abec",
+    "private":"99182b02c0004217ba9a55593f8cf0abec182b02c0004217ba9a55593f8cf0abec"
+
+}
+```
+##### Unsuccessful response:
+```
+ResponseHeader: 505
+ResponseBody {
+    "code": -32603,
+    "description": "Unable to generate keypair, internal server error"
+}
+```
+
+#### Generate address from public key
+##### POST /api/v1/:coin/address/:key
+##### Successful response:
+```
+ResponseHeader: 202
+ResponseBody {
+    "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
+}
+```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code": -5,
+    "description": "Unable to generate address, given key not found"
+}
 ```
 
 #### check the balance (and get unspent outputs) for an address
+##### GET /api/v1/:coin/address/:address
+##### Successful response:
 ```
-GET /api/v1/:coin/address/:address
-
 ResponseHeader: 200
 ResponseBody {
     "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
     "balance": 12.07,
 }
 ```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code":-25 //-25 -26 -27 possible codes
+    "description":"description according to given error code"
+}
+```
 
 #### sign a transaction
+##### POST /api/v1/:coin/transaction/:transid/sign
+##### Successful response:
 ```
-POST /api/v1/:coin/transaction/:transid/sign
-
 Request {
     "signid":"392900939dijdked"
 }
@@ -113,11 +201,19 @@ ResponseBody {
     "status":"Ok"
 }
 ```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code":-25 //-25 -26 -27 possible codes
+    "description":"description according to given error code"
+}
+```
 
 #### inject transaction into network
+##### PUT /api/v1/:coin/transaction/:netid
+##### Successful response:
 ```
-PUT /api/v1/:coin/transaction/:netid
-
 Request {
     "transid":"392900939dijdked"
 }
@@ -127,15 +223,30 @@ ResponseBody {
     "status":"ok"
 }
 ```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code":-25 //-25 -26 -27 possible codes
+    "description":"description according to given error code"
+}
+```
 
 #### check the status of a transaction (tracks transactions by transaction hash)
+##### GET /api/v1/sky/transaction/:transid
+##### Successful response:
 ```
-GET /api/v1/sky/transaction/:transid
-
 ResponseHeader: 200
-
 ResponseBody {
     "transid":"392900939dijdked"
     "status":"pending"
+}
+```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "code":-25
+    "description":"any possible transaction error description"
 }
 ```
