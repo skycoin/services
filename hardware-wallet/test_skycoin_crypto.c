@@ -71,7 +71,7 @@ START_TEST(test_compute_ecdh)
 {
     char seed_str[256] = "seed";
 	HDNode alice;
-    uint8_t session_key1[32] = {0};
+    uint8_t session_key1[33] = {0};
 
     create_node(seed_str, &alice);
 	ck_assert_mem_eq(alice.public_key, fromhex("03008fa0a5668a567cb28ab45e4b6747f5592690c1d519c860f748f6762fa13103"), 33);
@@ -89,7 +89,7 @@ START_TEST(test_compute_ecdh)
 
 	tohex(key_m, mult, 65);
 	printf("ECDH key_mult: %s\n", key_m);
-	memcpy(&session_key1[1], &mult[1], 31);
+	memcpy(&session_key1[1], &mult[1], 32);
 	if (mult[64] % 2 == 0)
 	{
 		session_key1[0] = 0x02;
@@ -99,14 +99,10 @@ START_TEST(test_compute_ecdh)
 		session_key1[0] = 0x03;
 	}
 	
-	char key[64] = {0};
-	tohex(key, session_key1, 32);
-	printf("ECDH key: %s\n", key);
-
 	ck_assert_mem_eq(session_key1, fromhex("024f7fd15da6c7fc7d0410d184073ef702104f82452da9b3e3792db01a8b7907c3"), 32);
 
     uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-    compute_sha256sum(key, digest, strlen(key));
+    compute_sha256sum((char*)(session_key1), digest, 33);
 
 	ck_assert_mem_eq(digest, fromhex("907d3c524abb561a80644cdb0cf48e6c71ce33ed6a2d5eed40a771bcf86bd081"), SHA256_DIGEST_LENGTH);
 }
