@@ -69,42 +69,39 @@ END_TEST
 
 START_TEST(test_compute_ecdh)
 {
-    char seed_str[256] = "seed";
-	HDNode alice;
-    uint8_t session_key1[33] = {0};
-
-    create_node(seed_str, &alice);
-	ck_assert_mem_eq(alice.public_key, fromhex("03008fa0a5668a567cb28ab45e4b6747f5592690c1d519c860f748f6762fa13103"), 33);
-	ck_assert_mem_eq(alice.private_key, fromhex("8f609a12bdfc8572590c66763bb05ce609cc0fdcd0c563067e91c06bfd5f1027"), 32);
-
-
-	char pubkey[66] = {0};
-	tohex(pubkey, alice.public_key, 33);
-	printf("pub key: %s\n", pubkey);
-
-
-    uint8_t mult[65] = {0};
-	char key_m[128] = {0};
-	ecdh_multiply(alice.curve->params, alice.private_key, alice.public_key, mult); //65
-
-	tohex(key_m, mult, 65);
-	printf("ECDH key_mult: %s\n", key_m);
-	memcpy(&session_key1[1], &mult[1], 32);
-	if (mult[64] % 2 == 0)
-	{
-		session_key1[0] = 0x02;
-	}
-	else
-	{
-		session_key1[0] = 0x03;
-	}
-	
-	ck_assert_mem_eq(session_key1, fromhex("024f7fd15da6c7fc7d0410d184073ef702104f82452da9b3e3792db01a8b7907c3"), 32);
-
     uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-    compute_sha256sum((char*)(session_key1), digest, 33);
+	uint8_t remote_pubkey[33];
+	uint8_t my_seckey[32];
 
+	memcpy(my_seckey, fromhex("8f609a12bdfc8572590c66763bb05ce609cc0fdcd0c563067e91c06bfd5f1027"), sizeof(my_seckey));
+	memcpy(remote_pubkey, fromhex("03008fa0a5668a567cb28ab45e4b6747f5592690c1d519c860f748f6762fa13103"), sizeof(remote_pubkey));
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+	ecdh_shared_secret(my_seckey, remote_pubkey, digest);
 	ck_assert_mem_eq(digest, fromhex("907d3c524abb561a80644cdb0cf48e6c71ce33ed6a2d5eed40a771bcf86bd081"), SHA256_DIGEST_LENGTH);
+
+	memcpy(my_seckey, fromhex("ec4c3702ae8dc5d3aaabc230d362f1ccc1ad2222353d006a057969bf2cc749c1"), sizeof(my_seckey));
+	memcpy(remote_pubkey, fromhex("03b5d8432d20e55590b3e1e74a86f4689a5c1f5e25cc58840741fe1ac044d5e65c"), sizeof(remote_pubkey));
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+	ecdh_shared_secret(my_seckey, remote_pubkey, digest);
+	ck_assert_mem_eq(digest, fromhex("c59b456353d0fbceadc06d7794c42ebf413ab952b29ecf6052d30c7c1a50acda"), SHA256_DIGEST_LENGTH);
+
+	memcpy(my_seckey, fromhex("19adca686f1ca7befc30af65765597a4d033ac7479850e79cef3ce5cb5b95da4"), sizeof(my_seckey));
+	memcpy(remote_pubkey, fromhex("0328bd053c69d9c3dd1e864098e503de9839e990c63c48d8a4d6011c423658c4a9"), sizeof(remote_pubkey));
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+	ecdh_shared_secret(my_seckey, remote_pubkey, digest);
+	ck_assert_mem_eq(digest, fromhex("1fd2c655bcf19202ee004a3e0ae8f5c64ad1c0ce3b69f32ba18da188bb4d1eea"), SHA256_DIGEST_LENGTH);
+
+	memcpy(my_seckey, fromhex("085d62c27a37889e02a183ee29962d5f4377831b4a70834ccea24a209e201404"), sizeof(my_seckey));
+	memcpy(remote_pubkey, fromhex("030684d74471053ac6395ef74a86f88daa25f501329734c837c8c79c600423b220"), sizeof(remote_pubkey));
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+	ecdh_shared_secret(my_seckey, remote_pubkey, digest);
+	ck_assert_mem_eq(digest, fromhex("4225281b8498f05e0eaac02be79ce72471c2ddd8c127908b1f717bf64177b287"), SHA256_DIGEST_LENGTH);
+
+	memcpy(my_seckey, fromhex("3c4289a9d884f74bd05c352fa1c08ce0d65955b59b24a572f46e02807dd42e62"), sizeof(my_seckey));
+	memcpy(remote_pubkey, fromhex("0223496e9caa207e0f8cc283e970b85f2831732d5e0be2bcf9fa366f7e064a25dd"), sizeof(remote_pubkey));
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+	ecdh_shared_secret(my_seckey, remote_pubkey, digest);
+	ck_assert_mem_eq(digest, fromhex("70e5d568b31ed601fcb7f3144888d0633938817ae85417de1fbd0d52e29b5d7c"), SHA256_DIGEST_LENGTH);
 }
 END_TEST
 
