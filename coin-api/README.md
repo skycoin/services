@@ -15,7 +15,7 @@ ResponseHeader: 200
 ResponseBody {
     [
         {
-            "id": "LTC",
+            "сid": "LTC",
             "name":"litecoin",
             "address": "99902999f9s99ds999s9",
             "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
@@ -24,7 +24,7 @@ ResponseBody {
             "version": "0.1"
         },
         {
-            "id": "ETH",
+            "сid": "ETH",
             "name":"ethereum",
             "address": "99902999f9s99ds999s9",
             "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
@@ -35,6 +35,7 @@ ResponseBody {
     ]
     "status":"ok"
 }
+
 ```
 ### BTC API
 #### Generate key pair

@@ -2,9 +2,9 @@ package errorhandler
 
 // SkyError provides detailed error information occured in sky blockhain components
 type SkyError struct {
-	Code        int
-	Description string
-	Error       error
+	Code        int    `json:"code"`
+	Description string `json:"description"`
+	Error       error  `json:"-"`
 }
 
 const (
