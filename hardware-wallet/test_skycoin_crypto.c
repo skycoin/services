@@ -83,25 +83,25 @@ END_TEST
 START_TEST(test_generate_deterministic_key_pair_iterator)
 {
     char seed[256] = "seed";
-	size_t seed_length = 0;
-    uint8_t seed1[SHA256_DIGEST_LENGTH] = {0};
-    uint8_t seed2[SHA256_DIGEST_LENGTH] = {0};
-    char keypair_seed[256] = {0};
     uint8_t seckey[32] = {0};
     uint8_t pubkey[33] = {0};
-	
-	secp256k1Hash(seed, seed1);
-	ck_assert_mem_eq(seed1, fromhex("c79454cf362b3f55e5effce09f664311650a44b9c189b3c8eed1ae9bd696cd9e"), SHA256_DIGEST_LENGTH);
-	seed_length = strlen(seed);
-    memcpy(keypair_seed, seed, seed_length);
-    memcpy(&keypair_seed[seed_length], seed1, sizeof(seed1));
-	ck_assert_mem_eq(keypair_seed, fromhex("73656564c79454cf362b3f55e5effce09f664311650a44b9c189b3c8eed1ae9bd696cd9e"), seed_length + sizeof(seed1));
-    compute_sha256sum(keypair_seed, seed2, seed_length + sizeof(seed1));
-	ck_assert_mem_eq(seed2, fromhex("bf394b8b1c00aa245de6b55f6687d0e49f9884a5052d9071d4d90093454e5632"), SHA256_DIGEST_LENGTH);
-	genereate_deterministic_key_pair(seed2, SHA256_DIGEST_LENGTH, seckey, pubkey);
+	generate_deterministic_key_pair_iterator(seed, seckey, pubkey);
 	ck_assert_mem_eq(pubkey, fromhex("02e5be89fa161bf6b0bc64ec9ec7fe27311fbb78949c3ef9739d4c73a84920d6e1"), 33);
 	ck_assert_mem_eq(seckey, fromhex("001aa9e416aff5f3a3c7f9ae0811757cf54f393d50df861f5c33747954341aa7"), 32);
 
+    strcpy(seed, "random_seed");
+	memset(pubkey, 0, sizeof(pubkey));
+	memset(seckey, 0, sizeof(seckey));
+	generate_deterministic_key_pair_iterator(seed, seckey, pubkey);
+	ck_assert_mem_eq(pubkey, fromhex("030e40dda21c27126d829b6ae57816e1440dcb2cc73e37e860af26eff1ec55ed73"), 33);
+	ck_assert_mem_eq(seckey, fromhex("ff671860c58aad3f765d8add25046412dabf641186472e1553435e6e3c4a6fb0"), 32);
+
+    strcpy(seed, "hello seed");
+	memset(pubkey, 0, sizeof(pubkey));
+	memset(seckey, 0, sizeof(seckey));
+	generate_deterministic_key_pair_iterator(seed, seckey, pubkey);
+	ck_assert_mem_eq(pubkey, fromhex("035843e72258696b391cf1d898fc65f31e66876ea0c9e101f8ddc3ebb4b87dc5b0"), 33);
+	ck_assert_mem_eq(seckey, fromhex("84fdc649964bf299a787cb78cd975910e197dbddd7db776ece544f41c44b3056"), 32);
 }
 END_TEST
 
