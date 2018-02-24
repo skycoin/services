@@ -66,6 +66,17 @@ START_TEST(test_secp256k1Hash)
     uint8_t secp256k1Hash_digest[SHA256_DIGEST_LENGTH] = {0};
 	secp256k1Hash(seed, secp256k1Hash_digest);
     ck_assert_mem_eq(secp256k1Hash_digest, fromhex("c79454cf362b3f55e5effce09f664311650a44b9c189b3c8eed1ae9bd696cd9e"), SHA256_DIGEST_LENGTH);
+
+    strcpy(seed, "random_seed");
+    memset(secp256k1Hash_digest, 0, SHA256_DIGEST_LENGTH);
+	secp256k1Hash(seed, secp256k1Hash_digest);
+    ck_assert_mem_eq(secp256k1Hash_digest, fromhex("5e81d46f56767496bc05ed177c5237cd4fe5013e617c726af43e1cba884f17d1"), SHA256_DIGEST_LENGTH);
+
+    strcpy(seed, "024f7fd15da6c7fc7d0410d184073ef702104f82452da9b3e3792db01a8b7907c3");
+    memset(secp256k1Hash_digest, 0, SHA256_DIGEST_LENGTH);
+	secp256k1Hash(seed, secp256k1Hash_digest);
+    ck_assert_mem_eq(secp256k1Hash_digest, fromhex("022750e4611d328f280b5256b3fdf8baf545072db6fcb0547b1472835cd32727"), SHA256_DIGEST_LENGTH);
+
 }
 END_TEST
 
