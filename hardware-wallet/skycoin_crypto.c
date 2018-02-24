@@ -13,14 +13,6 @@ void create_node(const char* seed_str, HDNode* node)
     hdnode_fill_public_key(node);
 }
 
-void genereate_deterministic_key_pair_seckey(const char* seed, uint8_t* seckey)
-{
-    uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-    compute_sha256sum(seed, digest, strlen(seed));
-
-    compute_sha256sum((const char * )digest, seckey, SHA256_DIGEST_LENGTH);
-}
-
 void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
 {
     char seed_str[256] = "dummy seed";
@@ -29,9 +21,9 @@ void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
 	ecdsa_get_public_key33(dummy_node.curve->params, seckey, pubkey);
 }
 
-void genereate_deterministic_key_pair(const char* seed, uint8_t* seckey, uint8_t* pubkey)
+void genereate_deterministic_key_pair(const uint8_t* seed, uint8_t* seckey, uint8_t* pubkey)
 {
-    genereate_deterministic_key_pair_seckey(seed, seckey);
+    compute_sha256sum((const char * )seed, seckey, SHA256_DIGEST_LENGTH);
     generate_pubkey_from_seckey(seckey, pubkey);
 }
 
