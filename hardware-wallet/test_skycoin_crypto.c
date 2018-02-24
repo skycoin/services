@@ -57,6 +57,19 @@ START_TEST(test_generate_public_key_from_seckey)
 }
 END_TEST
 
+START_TEST(test_generate_key_pair_from_seed)
+{
+    char seed[256] = "seed";
+	uint8_t seckey[32] = {0};
+	uint8_t pubkey[33] = {0};
+	
+	genereate_deterministic_key_pair(seed, seckey, pubkey);
+
+	ck_assert_mem_eq(seckey, fromhex("a7e130694166cdb95b1e1bbce3f21e4dbd63f46df42b48c5a1f8295033d57d04"), SHA256_DIGEST_LENGTH);
+	ck_assert_mem_eq(pubkey, fromhex("0244350faa76799fec03de2f324acd077fd1b686c3a89babc0ef47096ccc5a13fa"), SHA256_DIGEST_LENGTH);
+}
+END_TEST
+
 START_TEST(test_compute_sha256sum)
 {
     char seed[256] = "seed";
@@ -127,6 +140,7 @@ Suite *test_suite(void)
 	tc = tcase_create("checksums");
 	tcase_add_test(tc, test_generate_deterministic_key_pair_seckey);
 	tcase_add_test(tc, test_generate_public_key_from_seckey);
+	tcase_add_test(tc, test_generate_key_pair_from_seed);
 	tcase_add_test(tc, test_compute_sha256sum);
 	tcase_add_test(tc, test_compute_ecdh);
 	suite_add_tcase(s, tc);

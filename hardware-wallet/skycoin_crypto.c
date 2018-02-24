@@ -29,6 +29,12 @@ void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
 	ecdsa_get_public_key33(dummy_node.curve->params, seckey, pubkey);
 }
 
+void genereate_deterministic_key_pair(const char* seed, uint8_t* seckey, uint8_t* pubkey)
+{
+    genereate_deterministic_key_pair_seckey(seed, seckey);
+    generate_pubkey_from_seckey(seckey, pubkey);
+}
+
 void ecdh_shared_secret(const uint8_t* secret_key, const uint8_t* remote_public_key, uint8_t* shared_secret /*should be size SHA256_DIGEST_LENGTH*/)
 {
     uint8_t session_key1[33] = {0};
