@@ -21,9 +21,9 @@ void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
 	ecdsa_get_public_key33(dummy_node.curve->params, seckey, pubkey);
 }
 
-void genereate_deterministic_key_pair(const uint8_t* seed, uint8_t* seckey, uint8_t* pubkey)
+void genereate_deterministic_key_pair(const uint8_t* seed, const size_t seed_length, uint8_t* seckey, uint8_t* pubkey)
 {
-    compute_sha256sum((const char * )seed, seckey, SHA256_DIGEST_LENGTH);
+    compute_sha256sum((const char * )seed, seckey, seed_length);
     generate_pubkey_from_seckey(seckey, pubkey);
 }
 
@@ -64,7 +64,7 @@ void secp256k1Hash(const char* seed, uint8_t* secp256k1Hash_digest)
     compute_sha256sum(seed, hash, strlen(seed));
     compute_sha256sum((const char*)hash, seckey, sizeof(hash));
     compute_sha256sum((const char*)hash, hash2, sizeof(hash));
-    genereate_deterministic_key_pair(hash2, dummy_seckey, pubkey);
+    genereate_deterministic_key_pair(hash2, SHA256_DIGEST_LENGTH, dummy_seckey, pubkey);
     ecdh(seckey, pubkey, ecdh_key);
     memcpy(secp256k1Hash, hash, sizeof(hash));
     memcpy(&secp256k1Hash[SHA256_DIGEST_LENGTH], ecdh_key, sizeof(ecdh_key));
