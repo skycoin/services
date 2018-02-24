@@ -52,6 +52,24 @@ void ecdh_shared_secret(const uint8_t* secret_key, const uint8_t* remote_public_
     compute_sha256sum((char*)(ecdh_key), shared_secret, 33);
 }
 
+void secp256k1Hash(const char* seed, uint8_t* secp256k1Hash_digest)
+{
+    uint8_t seckey[32] = {0};
+    uint8_t dummy_seckey[32] = {0};
+    uint8_t pubkey[33] = {0};
+    uint8_t hash[SHA256_DIGEST_LENGTH] = {0};
+    uint8_t hash2[SHA256_DIGEST_LENGTH] = {0};
+    uint8_t ecdh_key[33] = {0};
+    uint8_t secp256k1Hash[SHA256_DIGEST_LENGTH + 33] = {0};
+    compute_sha256sum(seed, hash, strlen(seed));
+    compute_sha256sum((const char*)hash, seckey, sizeof(hash));
+    compute_sha256sum((const char*)hash, hash2, sizeof(hash));
+    genereate_deterministic_key_pair(hash2, dummy_seckey, pubkey);
+    ecdh(seckey, pubkey, ecdh_key);
+    memcpy(secp256k1Hash, hash, sizeof(hash));
+    memcpy(&secp256k1Hash[SHA256_DIGEST_LENGTH], ecdh_key, sizeof(ecdh_key));
+    compute_sha256sum((const char *)secp256k1Hash, secp256k1Hash_digest, sizeof(secp256k1Hash));
+}
 
 void compute_sha256sum(const char *seed, uint8_t* digest /*size SHA256_DIGEST_LENGTH*/, size_t seed_lenght)
 {
