@@ -21,6 +21,14 @@ void genereate_deterministic_key_pair_seckey(const char* seed, uint8_t* seckey)
     compute_sha256sum((const char * )digest, seckey, SHA256_DIGEST_LENGTH);
 }
 
+void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
+{
+    char seed_str[256] = "dummy seed";
+	HDNode dummy_node;
+    create_node(seed_str, &dummy_node);
+	ecdsa_get_public_key33(dummy_node.curve->params, seckey, pubkey);
+}
+
 void ecdh_shared_secret(const uint8_t* secret_key, const uint8_t* remote_public_key, uint8_t* shared_secret /*should be size SHA256_DIGEST_LENGTH*/)
 {
     uint8_t session_key1[33] = {0};
