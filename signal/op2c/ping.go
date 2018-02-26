@@ -3,7 +3,7 @@ package op2c
 import (
 	"sync"
 
-	"github.com/skycoin/viscript/signal/msg"
+	"github.com/skycoin/services/signal/msg"
 )
 
 type Ping struct {

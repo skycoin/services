@@ -5,7 +5,7 @@ import (
 
 	"runtime"
 
-	"github.com/skycoin/viscript/signal/msg"
+	"github.com/skycoin/services/signal/msg"
 )
 
 type Top struct {

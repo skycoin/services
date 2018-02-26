@@ -1,9 +1,0 @@
-{
-  "btcd": {
-    "user": "myuser",
-    "pass": "SomeDecentp4ssw0rd"
-  },
-  "wallet": {
-    "file": "wallet.json"
-  }
-}

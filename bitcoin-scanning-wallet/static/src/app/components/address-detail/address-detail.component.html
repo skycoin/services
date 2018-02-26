@@ -1,0 +1,45 @@
+
+
+<div class="wrap_addr" *ngIf="address !== undefined">{{address.address}}
+  <br>
+  Min scanned block: {{address.min_scan_block}}
+  <br>
+  Mid scanned block: {{address.mid_scan_block}}
+  <br>
+  Max scanned block: {{address.max_scan_block}}
+</div>
+
+
+<div class="table_wrap">
+  <ngx-datatable
+    class="material"
+    [rows]="rows"
+    [columns]="columns"
+    [columnMode]="'flex'"
+    [headerHeight]="50"
+    [footerHeight]="50"
+    [rowHeight]="40"
+    [limit]="10"
+    [scrollbarH]="true">
+    <ngx-datatable-column name="tx_hash" [flexGrow]="2">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+      {{value}}
+      </ng-template>
+    </ngx-datatable-column>
+    <ngx-datatable-column name="block_hash" [flexGrow]="2">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+      {{value}}
+      </ng-template>
+    </ngx-datatable-column>
+    <ngx-datatable-column name="block_height" [flexGrow]="1">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+      {{value}}
+      </ng-template>
+    </ngx-datatable-column>
+    <ngx-datatable-column name="amount" [flexGrow]="1">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+      {{value}}
+      </ng-template>
+    </ngx-datatable-column>
+  </ngx-datatable>
+</div>
