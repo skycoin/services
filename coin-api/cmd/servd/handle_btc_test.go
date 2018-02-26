@@ -29,22 +29,32 @@ func TestGenerateKeyPair(t *testing.T) {
 
 	if rec.Code != http.StatusCreated {
 		t.Errorf("Wrong http status expected %d actual %d", rec.Code, http.StatusCreated)
+		return
 	}
 
-	var resp keyPairResponse
+	type response struct {
+		Status string          `json:"status"`
+		Code   int             `json:"code"`
+		Result keyPairResponse `json:"result"`
+	}
+
+	var resp response
 
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
-	if len(resp.Public) == 0 {
+	if len(resp.Result.Public) == 0 {
 		t.Errorf("Public key cannot be empty")
+		return
 	}
 
-	if len(resp.Private) == 0 {
+	if len(resp.Result.Private) == 0 {
 		t.Errorf("Private key cannot be empty")
+		return
 	}
 }
 
@@ -61,18 +71,27 @@ func TestGenerateAddress(t *testing.T) {
 
 	if rec.Code != http.StatusCreated {
 		t.Errorf("Wrong http status expected %d actual %d", http.StatusCreated, rec.Code)
+		return
 	}
 
-	var resp addressResponse
+	type response struct {
+		Status string          `json:"status"`
+		Code   int             `json:"code"`
+		Result addressResponse `json:"result"`
+	}
+
+	var resp response
 
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
-	if len(resp.Address) == 0 {
+	if len(resp.Result.Address) == 0 {
 		t.Errorf("Address key cannot be empty")
+		return
 	}
 }
 
@@ -95,22 +114,30 @@ func TestCheckBalance(t *testing.T) {
 
 	handler.checkBalance(ctx)
 
-	var resp balanceResponse
+	type response struct {
+		Status string          `json:"status"`
+		Code   int             `json:"code"`
+		Result balanceResponse `json:"result"`
+	}
+
+	var resp response
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("Wrong status code expected %d actual %d", http.StatusOK, rec.Code)
+		return
 	}
 
 	err := json.Unmarshal(rec.Body.Bytes(), &resp)
 
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
-	actual, _ := resp.Balance.Float64()
+	actual, _ := resp.Result.Balance.Float64()
 	expectedFloat, _ := expected.Float64()
 
-	if !resp.Balance.Equal(expected) {
+	if !resp.Result.Balance.Equal(expected) {
 		t.Errorf("Wrong account balance expected %f actual %f", expectedFloat, actual)
 	}
 }

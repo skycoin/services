@@ -3,11 +3,11 @@ package servd
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"sync"
 	"net/http"
+	"sync"
 )
 
-type Status struct{
+type Status struct {
 	sync.Mutex
 	Stats map[string]interface{}
 }
