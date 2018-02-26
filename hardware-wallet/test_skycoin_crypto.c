@@ -4,9 +4,8 @@
 #include <string.h>
 
 #include "check.h"
+#include "sha2.h" //SHA256_DIGEST_LENGTH
 
-#include "ecdsa.h"
-#include "curves.h"
 #include "ripemd160.h"
 #include "base58.h"
 
