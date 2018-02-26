@@ -10,12 +10,6 @@ import (
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
-type generalResponse struct {
-	Status string      `json:"status"`
-	Code   int         `json:"code"`
-	Result interface{} `json:"result"`
-}
-
 type keyPairResponse struct {
 	Public  string `json:"public"`
 	Private string `json:"private"`
