@@ -2,9 +2,12 @@
 
 #include <string.h>
 
+#include "sha2.h"
+#include "bip32.h"
 #include "curves.h"
 
 extern void bn_print(const bignum256 *a);
+void create_node(const char* seed_str, HDNode* node);
 
 void create_node(const char* seed_str, HDNode* node)
 {
