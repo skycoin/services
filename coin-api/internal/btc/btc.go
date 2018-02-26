@@ -18,7 +18,7 @@ const (
 	defaultAddr = "23.92.24.9"
 	defaultUser = "YnWD3EmQAOw11IOrUJwWxAThAyobwLC"
 	defaultPass = `f*Z"[1215o{qKW{Buj/wheO8@h.}j*u`
-	defaultCert = `-----BEGIN CERTIFICATE---—
+	defaultCert = `-----BEGIN CERTIFICATE-----
 MIICbTCCAc+gAwIBAgIRAKnAvGj6JobKblRUcmxOqxowCgYIKoZIzj0EAwQwNjEg
 MB4GA1UEChMXYnRjZCBhdXRvZ2VuZXJhdGVkIGNlcnQxEjAQBgNVBAMTCWxvY2Fs
 aG9zdDAeFw0xNzExMDYwNTMzNDRaFw0yNzExMDUwNTMzNDRaMDYxIDAeBgNVBAoT
@@ -33,7 +33,7 @@ BAMEA4GLADCBhwJCATk6kLPOcQh5V5r6SVcmcPUhOKRu54Ip/wrtagAFN5WDqm/T
 rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
 FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
 ig==
-—---END CERTIFICATE---—`
+-----END CERTIFICATE-----`
 )
 
 // ServiceBtc encapsulates operations with bitcoin
