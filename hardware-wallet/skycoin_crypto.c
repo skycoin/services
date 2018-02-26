@@ -5,6 +5,8 @@
 #include "sha2.h"
 #include "bip32.h"
 #include "curves.h"
+#include "ripemd160.h"
+#include "base58.h"
 
 extern void bn_print(const bignum256 *a);
 void create_node(const char* seed_str, HDNode* node);
@@ -94,4 +96,21 @@ void compute_sha256sum(const char *seed, uint8_t* digest /*size SHA256_DIGEST_LE
     sha256_Init(&ctx);
     sha256_Update(&ctx, (const uint8_t*) seed, seed_lenght);
     sha256_Final(&ctx, digest);
+}
+
+// address_size is the size of the allocated address buffer, it will be overwritten by the computed address size
+void generate_base58_address_from_pubkey(const uint8_t* pubkey, char* address, size_t *size_address)
+{
+    uint8_t pubkey_hash[25] = {0};
+    uint8_t r1[SHA256_DIGEST_LENGTH] = {0};
+    uint8_t r2[SHA256_DIGEST_LENGTH] = {0};
+    compute_sha256sum((char *)pubkey, r1, 33);
+	compute_sha256sum((char *)r1, r2, sizeof(r1));
+	ripemd160(r2, SHA256_DIGEST_LENGTH, pubkey_hash);
+	// compute base58 address
+    uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
+	pubkey_hash[20] = 0;
+	compute_sha256sum((char *)pubkey_hash, digest, 21);
+	memcpy(&pubkey_hash[21], digest, 4);
+	b58enc(address, size_address, pubkey_hash, sizeof(pubkey_hash));
 }

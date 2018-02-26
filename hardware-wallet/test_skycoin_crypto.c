@@ -6,9 +6,6 @@
 #include "check.h"
 #include "sha2.h" //SHA256_DIGEST_LENGTH
 
-#include "ripemd160.h"
-#include "base58.h"
-
 #define FROMHEX_MAXLEN 512
 
 void tohex(char * str, const uint8_t* buffer, int bufferLength)
@@ -106,29 +103,22 @@ START_TEST(test_generate_deterministic_key_pair_iterator)
 }
 END_TEST
 
-START_TEST(test_to_address_hash)
+START_TEST(test_base58_address_from_pubkey)
 {
     uint8_t pubkey[33] = {0};
-    uint8_t pubkey_hash[20] = {0};
-    uint8_t r1[SHA256_DIGEST_LENGTH] = {0};
-    uint8_t r2[SHA256_DIGEST_LENGTH] = {0};
-	memcpy(pubkey, fromhex("02e5be89fa161bf6b0bc64ec9ec7fe27311fbb78949c3ef9739d4c73a84920d6e1"), 33);
-    compute_sha256sum((char *)pubkey, r1, sizeof(pubkey));
-	compute_sha256sum((char *)r1, r2, sizeof(r1));
-	ck_assert_mem_eq(r2, fromhex("5229c51b89c130b72e1c58fb3bd9a5ac07084fed08920b4587668849c7806e25"), SHA256_DIGEST_LENGTH);
-	ripemd160(r2, SHA256_DIGEST_LENGTH, pubkey_hash);
-	ck_assert_mem_eq(pubkey_hash, fromhex("b1aa8dd3e68d1d9b130c67ea1339ac9250b7d845"), sizeof(pubkey_hash));
-	// compute base58 address
 	char address[256] = {0};
 	size_t size_address = sizeof(address);
-	uint8_t byte_address[25];
-    uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-	memcpy(byte_address, pubkey_hash, sizeof(pubkey_hash));
-	byte_address[20] = 0;
-	compute_sha256sum((char *)byte_address, digest, 21);
-	memcpy(&byte_address[21], digest, 4);
-	b58enc(address, &size_address, byte_address, sizeof(byte_address));
+	memcpy(pubkey, fromhex("02e5be89fa161bf6b0bc64ec9ec7fe27311fbb78949c3ef9739d4c73a84920d6e1"), 33);
+	generate_base58_address_from_pubkey(pubkey, address, &size_address);
 	ck_assert_str_eq(address, "2EVNa4CK9SKosT4j1GEn8SuuUUEAXaHAMbM");
+
+	memcpy(pubkey, fromhex("030e40dda21c27126d829b6ae57816e1440dcb2cc73e37e860af26eff1ec55ed73"), 33);
+	generate_base58_address_from_pubkey(pubkey, address, &size_address);
+	ck_assert_str_eq(address, "2EKq1QXRmfe7jsWzNdYsmyoz8q3VkwkLsDJ");
+
+	memcpy(pubkey, fromhex("035843e72258696b391cf1d898fc65f31e66876ea0c9e101f8ddc3ebb4b87dc5b0"), 33);
+	generate_base58_address_from_pubkey(pubkey, address, &size_address);
+	ck_assert_str_eq(address, "5UgkXRHrf5XRk41BFq1DVyeFZHTQXirhUu");
 }
 END_TEST
 
@@ -210,7 +200,7 @@ Suite *test_suite(void)
 	tcase_add_test(tc, test_generate_key_pair_from_seed);
     tcase_add_test(tc, test_secp256k1Hash);
 	tcase_add_test(tc, test_generate_deterministic_key_pair_iterator);
-	tcase_add_test(tc, test_to_address_hash);
+	tcase_add_test(tc, test_base58_address_from_pubkey);
 	tcase_add_test(tc, test_compute_sha256sum);
 	tcase_add_test(tc, test_compute_ecdh);
 	suite_add_tcase(s, tc);
