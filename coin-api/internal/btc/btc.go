@@ -7,7 +7,9 @@ import (
 	"log"
 
 	"encoding/json"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcutil"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
 	"net/http"
@@ -160,8 +162,17 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 }
 
 func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error) {
+	// First get an address in proper form
+	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	account, err := s.client.GetAccount(a)
+
 	log.Printf("Send request for getting balance of address %s", address)
-	amount, err := s.client.GetBalance(address)
+	amount, err := s.client.GetBalance(account)
 
 	if err != nil {
 		return decimal.Decimal{}, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
