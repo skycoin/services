@@ -1,5 +1,12 @@
 package model
 
+const (
+	// ResultOk is an ok result in multiwallet API
+	ResultOk = "ok"
+	// ResultError is an error result in multiwallet API
+	ResultError = "error"
+)
+
 // Coins represents coins
 type Coins struct {
 	Coins []Coin
