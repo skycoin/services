@@ -8,6 +8,7 @@
 #include "ecdsa.h"
 #include "curves.h"
 #include "ripemd160.h"
+#include "base58.h"
 
 #define FROMHEX_MAXLEN 512
 
@@ -109,7 +110,7 @@ END_TEST
 START_TEST(test_to_address_hash)
 {
     uint8_t pubkey[33] = {0};
-    uint8_t pubkey_hash[33] = {0};
+    uint8_t pubkey_hash[20] = {0};
     uint8_t r1[SHA256_DIGEST_LENGTH] = {0};
     uint8_t r2[SHA256_DIGEST_LENGTH] = {0};
 	memcpy(pubkey, fromhex("02e5be89fa161bf6b0bc64ec9ec7fe27311fbb78949c3ef9739d4c73a84920d6e1"), 33);
@@ -117,7 +118,18 @@ START_TEST(test_to_address_hash)
 	compute_sha256sum((char *)r1, r2, sizeof(r1));
 	ck_assert_mem_eq(r2, fromhex("5229c51b89c130b72e1c58fb3bd9a5ac07084fed08920b4587668849c7806e25"), SHA256_DIGEST_LENGTH);
 	ripemd160(r2, SHA256_DIGEST_LENGTH, pubkey_hash);
-	ck_assert_mem_eq(pubkey_hash, fromhex("b1aa8dd3e68d1d9b130c67ea1339ac9250b7d845"), 20);
+	ck_assert_mem_eq(pubkey_hash, fromhex("b1aa8dd3e68d1d9b130c67ea1339ac9250b7d845"), sizeof(pubkey_hash));
+	// compute base58 address
+	char address[256] = {0};
+	size_t size_address = sizeof(address);
+	uint8_t byte_address[25];
+    uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
+	memcpy(byte_address, pubkey_hash, sizeof(pubkey_hash));
+	byte_address[20] = 0;
+	compute_sha256sum((char *)byte_address, digest, 21);
+	memcpy(&byte_address[21], digest, 4);
+	b58enc(address, &size_address, byte_address, sizeof(byte_address));
+	ck_assert_str_eq(address, "2EVNa4CK9SKosT4j1GEn8SuuUUEAXaHAMbM");
 }
 END_TEST
 
