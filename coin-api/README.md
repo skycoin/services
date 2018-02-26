@@ -67,6 +67,7 @@ ResponseBody: {
 ResponseHeader: 202
 ResponseBody {
     "status":"ok",
+    "code": 0,
     "result": {
         "public":"9182b02c0004217ba9a55593f8cf0abec",
         "private":"99182b02c0004217ba9a55593f8cf0abec182b02c0004217ba9a55593f8cf0abec"

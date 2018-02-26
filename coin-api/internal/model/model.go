@@ -16,6 +16,13 @@ type Coin struct {
 	Version  string `json:"version"`
 }
 
+// Response is a typical response with status, code and result block
+type Response struct {
+	Status string      `json:"status"`
+	Code   int         `json:"code"`
+	Result interface{} `json:"result"`
+}
+
 // Status returns status
 type Status string
 

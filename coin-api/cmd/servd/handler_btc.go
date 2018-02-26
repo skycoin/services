@@ -2,11 +2,12 @@ package servd
 
 import (
 	"crypto/rand"
+	"net/http"
+
 	"github.com/labstack/echo"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/services/coin-api/internal/btc"
 	"github.com/skycoin/skycoin/src/cipher"
-	"net/http"
 )
 
 type keyPairResponse struct {
@@ -121,11 +122,11 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 }
 
 // Hook for collecting stats
-func (h handlerBTC) CollectStatuses(stats *Status) {
-	stats.Lock()
-	defer stats.Unlock()
-	stats.Stats["btc"] = &BtcStats{
-		NodeHost:   h.btcService.GetHost(),
-		NodeStatus: h.btcService.IsOpen(),
-	}
-}
+// func (h handlerBTC) CollectStatuses(stats *Status) {
+// 	stats.Lock()
+// 	defer stats.Unlock()
+// 	stats.Stats["btc"] = &BtcStats{
+// 		NodeHost:   h.btcService.GetHost(),
+// 		NodeStatus: h.btcService.IsOpen(),
+// 	}
+// }
