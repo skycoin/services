@@ -1,10 +1,10 @@
-# teller
+# otc
 
-Teller is a daemon with the sole purpose of exposing an HTTP API that allows users to exchange a variety of currencies (BTC, ETH, etc.) for Skycoin (and others in the future).
+OTC is a daemon with the sole purpose of exposing an HTTP API that allows users to exchange a variety of currencies (BTC, ETH, etc.) for Skycoin (and others in the future).
 
 # frontend
 
-Teller's frontend is exposed as an HTTP API. 
+OTC's frontend is exposed as an HTTP API. 
 
 ## /api/bind
 
@@ -77,7 +77,7 @@ This gets the [metadata](#request) of a request and returns it to the user.
 
 **NOTE**
 
-Each component (**scanner**, **sender**, **monitor**) is just a Go package. They aren't separate processes or daemons, *everything is included inside the teller daemon (single binary)*. The diagrams and information is just to aid in communication and development.
+Each component (**scanner**, **sender**, **monitor**) is just a Go package. They aren't separate processes or daemons, *everything is included inside the OTC daemon (single binary)*. The diagrams and information is just to aid in communication and development.
 
 ---
 
