@@ -45,10 +45,10 @@ func (h *handlerMulti) checkTransaction(e echo.Context) error {
 	return nil
 }
 
-func (h handlerMulti) CollectStatus(status *Status) {
-	status.Lock()
-	defer status.Unlock()
-	status.Stats["multi"] = &MultiStats{
-		Message: "Implement me",
-	}
-}
+ func (h *handlerMulti) CollectStatus(status *Status) {
+ 	status.Lock()
+ 	defer status.Unlock()
+ 	status.Stats["multi"] = &MultiStats{
+ 		Message: "Implement me",
+ 	}
+ }
