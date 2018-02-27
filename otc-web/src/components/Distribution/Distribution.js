@@ -49,6 +49,7 @@ class Distribution extends React.Component {
       statusIsOpen: false,
       addressLoading: false,
       statusLoading: false,
+      enabled: true,
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -64,19 +65,19 @@ class Distribution extends React.Component {
 
   checkExchangeStatus() {
     return checkExchangeStatus()
-    .then(status => {
-      if (status.error != "") {
-        this.setState({
-          disabledReason: "coinsSoldOut",
-          balance: status.balance,
-          enabled: false
-        });
-      } else {
-        this.setState({
-          balance: status.balance
-        });
-      }
-    });
+      .then((status) => {
+        if (status.error !== '') {
+          this.setState({
+            disabledReason: 'coinsSoldOut',
+            balance: status.balance,
+            enabled: false,
+          });
+        } else {
+          this.setState({
+            balance: status.balance,
+          });
+        }
+      });
   }
 
   getConfig() {
@@ -199,9 +200,9 @@ class Distribution extends React.Component {
           <Container>
             {!this.state.enabled ? <Flex column>
               <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
-                {(this.state.disabledReason === "coinsSoldOut") ?
-                 <FormattedMessage id="distribution.errors.coinsSoldOut" /> :
-                 <FormattedMessage id="distribution.headingEnded" />}
+                {(this.state.disabledReason === 'coinsSoldOut') ?
+                  <FormattedMessage id="distribution.errors.coinsSoldOut" /> :
+                  <FormattedMessage id="distribution.headingEnded" />}
               </Heading>
               <Text heavy color="black" fontSize={[2, 3]} as="div">
                 <FormattedHTMLMessage id="distribution.ended" />
@@ -240,8 +241,8 @@ class Distribution extends React.Component {
 
                 {this.state.btcAddress && <Address heavy color="black" fontSize={[2, 3]} as="p">
                   <strong><FormattedHTMLMessage id="distribution.btcAddress" />: </strong>
-                  {this.state.btcAddress}
-                </Address>}
+                    {this.state.btcAddress}
+                  </Address>}
 
                 <div>
                   <Button
@@ -253,8 +254,8 @@ class Distribution extends React.Component {
                     fontSize={[1, 3]}
                   >
                     {this.state.addressLoading
-                      ? <FormattedMessage id="distribution.loading" />
-                      : <FormattedMessage id="distribution.getAddress" />}
+                        ? <FormattedMessage id="distribution.loading" />
+                        : <FormattedMessage id="distribution.getAddress" />}
                   </Button>
 
                   <Button
@@ -265,8 +266,8 @@ class Distribution extends React.Component {
                     fontSize={[1, 3]}
                   >
                     {this.state.statusLoading
-                      ? <FormattedMessage id="distribution.loading" />
-                      : <FormattedMessage id="distribution.checkStatus" />}
+                        ? <FormattedMessage id="distribution.loading" />
+                        : <FormattedMessage id="distribution.checkStatus" />}
                   </Button>
                 </div>
               </Box>
