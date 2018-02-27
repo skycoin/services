@@ -8,12 +8,12 @@ import (
 	"strconv"
 
 	"github.com/skycoin/services/coin-api/internal/model"
+	ehandler "github.com/skycoin/services/errhandler"
 	"github.com/skycoin/skycoin/src/api/cli"
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/wallet"
-	// gcli "github.com/urfave/cli"
 )
 
 // SkyСoinService provides generic access to various coins API
@@ -111,6 +111,7 @@ func (s *SkyСoinService) CheckBalance(wltFile string, addr int) (*model.Respons
 			},
 		},
 	}
+
 	return &rsp, nil
 }
 
@@ -125,7 +126,7 @@ func (s *SkyСoinService) SignTransaction(transid string) (*model.Response, erro
 	defer func() {
 		if r := recover(); r != nil {
 			rsp.Status = model.StatusError
-			rsp.Code = -124
+			rsp.Code = ehandler.RPCTransactionError
 			rsp.Result = &model.TransactionSign{}
 		}
 	}()
@@ -143,6 +144,7 @@ func (s *SkyСoinService) SignTransaction(transid string) (*model.Response, erro
 	rsp.Result = &model.TransactionSign{
 		Signid: signid.Hex(),
 	}
+
 	return rsp, nil
 }
 
@@ -176,5 +178,6 @@ func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Response, erro
 			Status:  tStatus,
 		},
 	}
+
 	return &rsp, nil
 }
