@@ -16,17 +16,20 @@ import (
 	// gcli "github.com/urfave/cli"
 )
 
-// GenericСoinService provides generic access to various coins API
-type GenericСoinService struct {
+// SkyСoinService provides generic access to various coins API
+type SkyСoinService struct {
 	// client interface{} // coin client API
+	client *webrpc.Client
 }
 
-// NewMultiCoinService returns new multicoin generic service
-func NewMultiCoinService() *GenericСoinService {
-	//TODO: implement skycoin here
-	// connect to skycoin somehow
-	// wallet.CreateAddresses()
-	return &GenericСoinService{}
+// NewSkyService returns new multicoin generic service
+func NewSkyService() *SkyСoinService {
+	s := &SkyСoinService{}
+	s.client = &webrpc.Client{
+		Addr: "someaddr",
+		//TODO: fill this rpc client by data including "someaddr"
+	}
+	return s
 }
 
 func getRand() []byte {
@@ -37,7 +40,7 @@ func getSeed() string {
 }
 
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
-func (s *GenericСoinService) GenerateAddr(count int, hideSecret bool) (*model.Response, error) {
+func (s *SkyСoinService) GenerateAddr(count int, hideSecret bool) (*model.Response, error) {
 	seed := getSeed()
 	w, err := wallet.CreateAddresses(wallet.CoinTypeSkycoin, seed, count, hideSecret)
 	if err != nil {
@@ -60,7 +63,7 @@ func (s *GenericСoinService) GenerateAddr(count int, hideSecret bool) (*model.R
 }
 
 // GenerateKeyPair generates key pairs
-func (s *GenericСoinService) GenerateKeyPair() *model.Response {
+func (s *SkyСoinService) GenerateKeyPair() *model.Response {
 	seed := getRand()
 	rand.Read(seed)
 	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
@@ -78,7 +81,7 @@ func (s *GenericСoinService) GenerateKeyPair() *model.Response {
 }
 
 // CheckBalance check the balance (and get unspent outputs) for an address
-func (s *GenericСoinService) CheckBalance(wltFile string, addr int) (*model.Response, error) {
+func (s *SkyСoinService) CheckBalance(wltFile string, addr int) (*model.Response, error) {
 	// wallet.LoadWallets(wltsDir)
 	//TODO: probably i have to just get unspent outputs?
 	wlt, err := wallet.Load(wltFile)
@@ -118,7 +121,7 @@ func (s *GenericСoinService) CheckBalance(wltFile string, addr int) (*model.Res
 }
 
 // SignTransaction sign a transaction
-func (s *GenericСoinService) SignTransaction(transid string) (*model.Response, error) {
+func (s *SkyСoinService) SignTransaction(transid string) (*model.Response, error) {
 	//TODO: VERIFY this sign transaction logic
 	var buf bytes.Buffer
 	buf.WriteString(transid)
@@ -151,20 +154,17 @@ func (s *GenericСoinService) SignTransaction(transid string) (*model.Response, 
 }
 
 // CheckTransactionStatus check the status of a transaction (tracks transactions by transaction hash)
-func (s *GenericСoinService) CheckTransactionStatus() {
+func (s *SkyСoinService) CheckTransactionStatus() {
 
 }
 
 // InjectTransaction inject transaction into network
-func (s *GenericСoinService) InjectTransaction(rawtx string) (*model.Response, error) {
-	cli := &webrpc.Client{
-	//TODO: insert credentials here
-	}
-	injectedT, err := cli.InjectTransactionString(rawtx)
+func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Response, error) {
+	injectedT, err := s.client.InjectTransactionString(rawtx)
 	if err != nil {
 		return nil, err
 	}
-	statusT, err := cli.GetTransactionByID(injectedT)
+	statusT, err := s.client.GetTransactionByID(injectedT)
 	if err != nil {
 		return nil, err
 	}
