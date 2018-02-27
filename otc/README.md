@@ -16,8 +16,16 @@ $ make run
 ```
 $ ./btcwallet -u otc -P OTC 
 ```
+**NOTES:**
+If you don't have BTC wallet you should create a new one using following command
+```
+$ ./btcwallet -u username -P passphrase --create
+```
 
 3. start otc
+**NOTES:**
+1. seed - seed of the new SkyCoin wallet
+2. account - passphrase of BTC wallet certificate
 
 ```
 $ cd github.com/skycoin-karl/services/otc
