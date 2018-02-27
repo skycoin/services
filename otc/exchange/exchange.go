@@ -3,6 +3,7 @@ package exchange
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"time"
 )
@@ -15,7 +16,7 @@ type Market struct {
 	} `json:"Data"`
 }
 
-func GetBTCValue() (float64, error) {
+func GetBTCValue() (*big.Float, error) {
 	// request will timeout after 1 second
 	client := &http.Client{
 		Timeout: time.Second * 1,
@@ -26,27 +27,27 @@ func GetBTCValue() (float64, error) {
 		"GET", "https://www.cryptopia.co.nz/api/GetMarket/SKY_BTC", nil,
 	)
 	if err != nil {
-		return 0.0, err
+		return nil, err
 	}
 
 	// execute request
 	res, err := client.Do(req)
 	if err != nil {
-		return 0.0, err
+		return nil, err
 	}
 	defer res.Body.Close()
 
 	// get lastPrice from json body
 	var market *Market
 	if err = json.NewDecoder(res.Body).Decode(&market); err != nil {
-		return 0.0, err
+		return nil, err
 	}
 
 	// check "Success" field from cryptopia and return error if needed
 	if !market.Success {
-		return 0.0, fmt.Errorf("cryptopia: %s", market.Message)
+		return nil, fmt.Errorf("cryptopia: %s", market.Message)
 	}
 
 	// return last price
-	return market.Data.LastPrice, nil
+	return big.NewFloat(market.Data.LastPrice), nil
 }

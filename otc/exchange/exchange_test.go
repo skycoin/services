@@ -12,4 +12,5 @@ func TestGetBTCPrice(t *testing.T) {
 	}
 
 	fmt.Println(p)
+	fmt.Println(p.Acc())
 }
