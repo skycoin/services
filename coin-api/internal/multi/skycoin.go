@@ -14,19 +14,27 @@ import (
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/wallet"
 	// gcli "github.com/urfave/cli"
+	"github.com/skycoin/skycoin/src/visor"
 )
 
 // GenericСoinService provides generic access to various coins API
 type GenericСoinService struct {
 	// client interface{} // coin client API
+	client *webrpc.Client
 }
 
 // NewMultiCoinService returns new multicoin generic service
-func NewMultiCoinService() *GenericСoinService {
+func NewMultiCoinService(nodeAddr string) *GenericСoinService {
 	//TODO: implement skycoin here
 	// connect to skycoin somehow
 	// wallet.CreateAddresses()
-	return &GenericСoinService{}
+	client := &webrpc.Client{
+		Addr: nodeAddr,
+	}
+
+	return &GenericСoinService{
+		client: client,
+	}
 }
 
 func getRand() []byte {
@@ -153,8 +161,14 @@ func (s *GenericСoinService) SignTransaction(transid string) (*model.Response, 
 }
 
 // CheckTransactionStatus check the status of a transaction (tracks transactions by transaction hash)
-func (s *GenericСoinService) CheckTransactionStatus() {
+func (s *GenericСoinService) CheckTransactionStatus(txId string) (visor.TransactionStatus, error) {
+	status, err := s.client.GetTransactionByID(txId)
 
+	if err != nil {
+		return visor.TransactionStatus{}, err
+	}
+
+	return status.Transaction.Status, nil
 }
 
 // InjectTransaction inject transaction into network
