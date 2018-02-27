@@ -1,15 +1,12 @@
 package exchange
 
 import (
-	"fmt"
 	"testing"
 )
 
 func TestGetBTCPrice(t *testing.T) {
-	p, err := GetBTCPrice()
+	_, err := GetBTCValue()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-
-	fmt.Println(p)
 }
