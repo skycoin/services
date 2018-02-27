@@ -119,21 +119,11 @@ func (s *GenericСoinService) CheckBalance(wltFile string, addr int) (*model.Res
 
 // SignTransaction sign a transaction
 func (s *GenericСoinService) SignTransaction(transid string) (*model.Response, error) {
+	//TODO: VERIFY this sign transaction logic
 	var buf bytes.Buffer
 	buf.WriteString(transid)
 	strbytes := buf.Bytes()
-	if lnbts := len(strbytes); lnbts != 32 {
-		return nil, fmt.Errorf("key length should be 32 %d given", lnbts)
-	}
 	var secKey cipher.SecKey
-
-	secKey = cipher.NewSecKey(strbytes)
-	trans := coin.Transaction{
-	//TODO: some creds here?
-	}
-
-	keysSec := make([]cipher.SecKey, 0, 1)
-	keysSec = append(keysSec, secKey)
 	rsp := &model.Response{}
 	defer func() {
 		if r := recover(); r != nil {
@@ -142,7 +132,15 @@ func (s *GenericСoinService) SignTransaction(transid string) (*model.Response, 
 			rsp.Result = &model.TransactionSign{}
 		}
 	}()
+	secKey = cipher.NewSecKey(strbytes)
+	// coin.NewBlock()
+	trans := coin.Transaction{
+	//TODO: some creds here?
+	}
+	keysSec := make([]cipher.SecKey, 0, 1)
+	keysSec = append(keysSec, secKey)
 	trans.SignInputs(keysSec)
+	//TODO: maybe we have to show all signatures?
 	signid := trans.Sigs[0]
 	rsp.Status = model.StatusOk
 	rsp.Code = 0
@@ -158,6 +156,32 @@ func (s *GenericСoinService) CheckTransactionStatus() {
 }
 
 // InjectTransaction inject transaction into network
-func (s *GenericСoinService) InjectTransaction() {
+func (s *GenericСoinService) InjectTransaction(rawtx string) (*model.Response, error) {
+	cli := &webrpc.Client{
+	//TODO: insert credentials here
+	}
+	injectedT, err := cli.InjectTransactionString(rawtx)
+	if err != nil {
+		return nil, err
+	}
+	statusT, err := cli.GetTransactionByID(injectedT)
+	if err != nil {
+		return nil, err
+	}
 
+	var tStatus string
+	if statusT.Transaction.Status.Confirmed {
+		tStatus = "confirmed"
+	} else {
+		tStatus = "unconfirmed"
+	}
+	rsp := model.Response{
+		Status: model.StatusOk,
+		Code:   0,
+		Result: &model.Transaction{
+			Transid: injectedT,
+			Status:  tStatus,
+		},
+	}
+	return &rsp, nil
 }
