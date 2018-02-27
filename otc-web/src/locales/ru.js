@@ -64,6 +64,7 @@ export default {
     btcAddress: 'BTC адрес',
     errors: {
       noSkyAddress: 'Пожалуйста введите ваш SKY адрес.',
+      noDropAddress: 'Сначала необходимо получить BTC адрес',
       coinsSoldOut: 'Skycoin OTC is currently sold out, check back later.',
     },
     statuses: {

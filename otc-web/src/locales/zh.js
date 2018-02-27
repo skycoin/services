@@ -5,7 +5,7 @@ export default {
       downloads: '下载区',
       explorer: '区块浏览器',
       blog: '开发日志',
-      roadmap: 'Roadmap'
+      roadmap: 'Roadmap',
     },
   },
   footer: {
@@ -63,6 +63,7 @@ export default {
     btcAddress: '比特币地址',
     errors: {
       noSkyAddress: '请输入您的天空币地址',
+      noDropAddress: 'Please obtain BTC address first',
       coinsSoldOut: 'Skycoin OTC is currently sold out, check back later.',
     },
     statuses: {

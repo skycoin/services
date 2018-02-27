@@ -45,7 +45,7 @@ class Distribution extends React.Component {
     this.state = {
       status: [],
       skyAddress: null,
-      btcAddress: '',
+      drop_address: '',
       statusIsOpen: false,
       addressLoading: false,
       statusLoading: false,
@@ -60,7 +60,6 @@ class Distribution extends React.Component {
   }
 
   componentDidMount() {
-    this.getConfig().then(() => this.checkExchangeStatus());
   }
 
   checkExchangeStatus() {
@@ -100,7 +99,7 @@ class Distribution extends React.Component {
     return getAddress(this.state.skyAddress)
       .then((res) => {
         this.setState({
-          btcAddress: res,
+          drop_address: res,
         });
       })
       .catch((err) => {
@@ -134,25 +133,28 @@ class Distribution extends React.Component {
       );
     }
 
+    if (!this.state.drop_address) {
+      return alert(
+        this.props.intl.formatMessage({
+          id: 'distribution.errors.noDropAddress',
+        }),
+      );
+    }
+
     this.setState({
       statusLoading: true,
     });
 
-    return checkStatus(this.state.skyAddress)
+    return checkStatus({ address: this.state.skyAddress, drop_address: this.state.drop_address, drop_currency: 'BTC' })
       .then((res) => {
         this.setState({
           statusIsOpen: true,
           status: res,
+          statusLoading: false,
         });
       })
       .catch((err) => {
         alert(err.message);
-      })
-      .then(() => {
-        this.setState({
-          statusLoading: false,
-        });
-        return this.checkExchangeState();
       });
   }
 
@@ -183,12 +185,11 @@ class Distribution extends React.Component {
             </Heading>
 
             <Text as="div" color="black" fontSize={[2, 3]} my={[3, 5]}>
-              {this.state.status.map(status => (
-                <p key={status.seq}>
+              {this.state.status.map((status, i) => (
+                <p key={i}>
                   <FormattedMessage
                     id={`distribution.statuses.${status.status}`}
                     values={{
-                      id: String(status.seq),
                       updated: moment.unix(status.updated_at).locale(intl.locale).format('LL LTS'),
                     }}
                   />
@@ -239,9 +240,9 @@ class Distribution extends React.Component {
                   onChange={this.handleChange}
                 />
 
-                {this.state.btcAddress && <Address heavy color="black" fontSize={[2, 3]} as="p">
+                {this.state.drop_address && <Address heavy color="black" fontSize={[2, 3]} as="p">
                   <strong><FormattedHTMLMessage id="distribution.btcAddress" />: </strong>
-                    {this.state.btcAddress}
+                    {this.state.drop_address}
                   </Address>}
 
                 <div>

@@ -63,13 +63,14 @@ export default {
     btcAddress: 'BTC address',
     errors: {
       noSkyAddress: 'Please enter your SKY address.',
+      noDropAddress: 'Please obtain BTC address first',
       coinsSoldOut: 'Skycoin OTC is currently sold out, check back later.',
     },
     statuses: {
-      waiting_deposit: '[tx-{id} {updated}] Waiting for BTC deposit.',
-      waiting_send: '[tx-{id} {updated}] BTC deposit confirmed. Skycoin transaction is queued.',
-      waiting_confirm: '[tx-{id} {updated}] Skycoin transaction sent.  Waiting to confirm.',
-      done: '[tx-{id} {updated}] Completed. Check your Skycoin wallet.',
+      waiting_deposit: '[{updated}] Waiting for BTC deposit.',
+      waiting_send: '[{updated}] BTC deposit confirmed. Skycoin transaction is queued.',
+      waiting_confirm: '[{updated}] Skycoin transaction sent.  Waiting to confirm.',
+      done: '[{updated}] Completed. Check your Skycoin wallet.',
     },
   },
 };
