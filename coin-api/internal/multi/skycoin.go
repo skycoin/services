@@ -89,19 +89,13 @@ func (s *SkyСoinService) CheckBalance(wltFile string, addr int) (*model.Respons
 		return nil, err
 	}
 	addresses := wlt.GetAddresses()
-
 	addressesToGetBalance := make([]string, 0, 1)
 	for addWlt := range addresses {
 		if addWlt == addr {
 			addressesToGetBalance = append(addressesToGetBalance, strconv.Itoa(addr))
 		}
 	}
-
-	webrpcClient := &webrpc.Client{
-		Addr: "someaddr",
-		//TODO: fill this rpc client by data including "someaddr"
-	}
-	balanceResult, err := cli.GetBalanceOfAddresses(webrpcClient, addressesToGetBalance)
+	balanceResult, err := cli.GetBalanceOfAddresses(s.client, addressesToGetBalance)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +130,6 @@ func (s *SkyСoinService) SignTransaction(transid string) (*model.Response, erro
 		}
 	}()
 	secKey = cipher.NewSecKey(strbytes)
-	// coin.NewBlock()
 	trans := coin.Transaction{
 	//TODO: some creds here?
 	}
