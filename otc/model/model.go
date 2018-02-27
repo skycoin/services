@@ -22,9 +22,36 @@ var (
 	ErrDropMissing     = errors.New("drop doesn't exist")
 )
 
+type Lookup struct {
+	sync.RWMutex
+
+	dropToSky map[types.Currency]map[types.Drop]types.Address
+}
+
+func (l *Lookup) GetAddress(d types.Drop, c types.Currency) (types.Address, error) {
+	l.RLock()
+	defer l.RUnlock()
+
+	if l.dropToSky[c] == nil || l.dropToSky[c][d] == "" {
+		return "", ErrDropMissing
+	}
+	return l.dropToSky[c][d], nil
+}
+
+func (l *Lookup) SetDrop(d types.Drop, c types.Currency, a types.Address) {
+	l.Lock()
+	defer l.Unlock()
+
+	if l.dropToSky[c] == nil {
+		l.dropToSky[c] = make(map[types.Drop]types.Address, 0)
+	}
+	l.dropToSky[c][d] = a
+}
+
 type Model struct {
 	sync.Mutex
 
+	lookup  *Lookup
 	path    string
 	stop    chan struct{}
 	results *list.List
@@ -39,6 +66,9 @@ type Model struct {
 
 func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) (*Model, error) {
 	m := &Model{
+		lookup: &Lookup{
+			dropToSky: make(map[types.Currency]map[types.Drop]types.Address),
+		},
 		results: list.New().Init(),
 		path:    c.Model.Path,
 		stop:    make(chan struct{}),
@@ -63,7 +93,7 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 
 	// open events log file
 	if m.events, err = os.OpenFile(
-		m.path+"events/log.json",
+		m.path+"events.json",
 		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
 		0644,
 	); err != nil {
@@ -204,10 +234,16 @@ func (m *Model) Handle(r *types.Request) chan *types.Result {
 	}
 }
 
-func (m *Model) GetMetadata(a types.Address, d types.Drop, c types.Currency) (*types.Metadata, error) {
-	// get file from disk
+func (m *Model) GetMetadata(d types.Drop, c types.Currency) (*types.Metadata, error) {
+	// lookup sky address for filename
+	address, err := m.lookup.GetAddress(d, c)
+	if err != nil {
+		return nil, err
+	}
+
+	// open file
 	file, err := os.OpenFile(
-		m.path+"requests/"+string(a)+".json",
+		m.path+"requests/"+string(address)+".json",
 		os.O_RDONLY,
 		0644,
 	)
@@ -323,6 +359,9 @@ func (m *Model) save(r *types.Request) error {
 	if err = file.Sync(); err != nil {
 		return err
 	}
+
+	// TODO: admin panel
+	// save to internal transactions list
 
 	// close so this function can be called again
 	return file.Close()

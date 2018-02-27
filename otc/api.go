@@ -79,7 +79,6 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 }
 
 type apiStatusRequest struct {
-	Address      string `json:"address"`
 	DropAddress  string `json:"drop_address"`
 	DropCurrency string `json:"drop_currency"`
 }
@@ -99,16 +98,8 @@ func apiStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// decode skycoin address
-	address, err := cipher.DecodeBase58Address(req.Address)
-	if err != nil {
-		http.Error(w, "invalid skycoin_address", http.StatusBadRequest)
-		return
-	}
-
 	// get metadata from disk
 	meta, err := MODEL.GetMetadata(
-		types.Address(address.String()),
 		types.Drop(req.DropAddress),
 		types.Currency(req.DropCurrency),
 	)
