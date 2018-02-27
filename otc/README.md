@@ -2,6 +2,29 @@
 
 OTC is a daemon with the sole purpose of exposing an HTTP API that allows users to exchange a variety of currencies (BTC, ETH, etc.) for Skycoin (and others in the future).
 
+# running (for testing)
+
+1. start [skycoin](github.com/skycoin/skycoin) node
+
+```
+$ cd github.com/skycoin/skycoin
+$ make run
+```
+
+2. start [btcwallet](https://github.com/btcsuite/btcwallet) node (requires btcd but for testing you don't need that)
+
+```
+$ ./btcwallet -u otc -P OTC 
+```
+
+3. start otc
+
+```
+$ cd github.com/skycoin-karl/services/otc
+$ go build
+$ ./otc
+```
+
 # frontend
 
 OTC's frontend is exposed as an HTTP API. 
