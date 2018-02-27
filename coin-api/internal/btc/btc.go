@@ -7,7 +7,9 @@ import (
 	"log"
 
 	"encoding/json"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcutil"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
 	"net/http"
@@ -18,7 +20,7 @@ const (
 	defaultAddr = "23.92.24.9"
 	defaultUser = "YnWD3EmQAOw11IOrUJwWxAThAyobwLC"
 	defaultPass = `f*Z"[1215o{qKW{Buj/wheO8@h.}j*u`
-	defaultCert = `-----BEGIN CERTIFICATE---—
+	defaultCert = `-----BEGIN CERTIFICATE-----
 MIICbTCCAc+gAwIBAgIRAKnAvGj6JobKblRUcmxOqxowCgYIKoZIzj0EAwQwNjEg
 MB4GA1UEChMXYnRjZCBhdXRvZ2VuZXJhdGVkIGNlcnQxEjAQBgNVBAMTCWxvY2Fs
 aG9zdDAeFw0xNzExMDYwNTMzNDRaFw0yNzExMDUwNTMzNDRaMDYxIDAeBgNVBAoT
@@ -33,7 +35,7 @@ BAMEA4GLADCBhwJCATk6kLPOcQh5V5r6SVcmcPUhOKRu54Ip/wrtagAFN5WDqm/T
 rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
 FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
 ig==
-—---END CERTIFICATE---—`
+-----END CERTIFICATE-----`
 )
 
 // ServiceBtc encapsulates operations with bitcoin
@@ -160,8 +162,17 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 }
 
 func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error) {
+	// First get an address in proper form
+	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	account, err := s.client.GetAccount(a)
+
 	log.Printf("Send request for getting balance of address %s", address)
-	amount, err := s.client.GetBalance(address)
+	amount, err := s.client.GetBalance(account)
 
 	if err != nil {
 		return decimal.Decimal{}, errors.New(fmt.Sprintf("error creating new btc client: %v", err))

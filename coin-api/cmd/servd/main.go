@@ -3,18 +3,48 @@ package servd
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"sync"
 )
 
+type Status struct {
+	sync.Mutex
+	Stats map[string]interface{}
+}
+
 // Start starts the server
-func Start() (*echo.Echo, error) {
+func Start(config *Config) (*echo.Echo, error) {
 	e := echo.New()
 	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
 	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
 
 	// e.Pre(middleware.MethodOverride())
 	hMulti := newHandlerMulti()
-	// TODO(stgleb): Add arguments for creating btc handler
-	hBTC, err := newHandlerBTC("", "", "", false, []byte(""))
+
+	var cert []byte
+
+	if config.Bitcoin.TLS {
+		f, err := os.Open(config.Bitcoin.CertFile)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		cert, err = ioutil.ReadAll(f)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	hBTC, err := newHandlerBTC(config.Bitcoin.NodeAddress,
+		config.Bitcoin.User,
+		config.Bitcoin.Password,
+		!config.Bitcoin.TLS,
+		cert)
 
 	apiGroupV1 := e.Group("/api/v1")
 	skyGroup := apiGroupV1.Group("/sky")
@@ -43,7 +73,28 @@ func Start() (*echo.Echo, error) {
 	// BTC check the status of a transaction (tracks transactions by transaction hash)
 	btcGroup.GET("/transaction/:transid", hBTC.checkTransaction)
 
-	err = e.StartAutoTLS(":443")
+	statusFunc := func(ctx echo.Context) error {
+		status := Status{
+			Stats: make(map[string]interface{}),
+		}
+
+		// Collect statuses from handlers
+		hMulti.CollectStatus(&status)
+		hBTC.CollectStatuses(&status)
+
+		ctx.JSON(http.StatusOK, status)
+
+		return nil
+	}
+
+	// Just for basic service health checking
+	e.GET("/health", func(ctx echo.Context) error {
+		ctx.NoContent(http.StatusOK)
+		return nil
+	})
+
+	e.GET("/status", statusFunc)
+	err = e.Start(config.Server.ListenStr)
 	e.Logger.Fatal(err)
 	return e, err
 }

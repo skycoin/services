@@ -1,0 +1,15 @@
+[bitcoin]
+Host="23.92.24.9"
+User="YnWD3EmQAOw11IOrUJwWxAThAyobwLC"
+Password='f*Z"[1215o{qKW{Buj/wheO8@h.}j*u'
+CertFile="cert.pem"
+TLS=true
+
+[skycoin]
+Host="0.0.0.0"
+
+[server]
+ListenStr="0.0.0.0:8080"
+ReadTimeout = 5
+WriteTimeout = 10
+IdleTimeout = 120

@@ -63,8 +63,9 @@ ResponseBody: {
 #### Generate key pair
 ##### POST /api/v1/btc/keys
 ##### Successful response:
+
 ```
-ResponseHeader: 202
+ResponseHeader: 201
 ResponseBody {
     "status":"ok",
     "code": 0,
@@ -74,7 +75,8 @@ ResponseBody {
     },
 }
 ```
-##### Unsuccesful response:
+
+##### Unsuccessful response:
 ```
 ResponseHeader: 505
 ResponseBody {
@@ -89,6 +91,21 @@ ResponseBody {
 #### BTC generate address based on public key
 
 ##### POST /api/v1/btc/address/:key
+Request
+
+#### BTC generate address based on public key
+```
+POST /api/v1/btc/address
+```
+
+Request
+
+```
+{
+    "key":"02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+}
+```
+
 ##### Successful response:
 ```
 ResponseHeader: 201
