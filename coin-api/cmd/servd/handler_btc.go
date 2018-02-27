@@ -8,6 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/services/coin-api/internal/btc"
 	"github.com/skycoin/skycoin/src/cipher"
+	"log"
 )
 
 type keyPairResponse struct {
@@ -39,6 +40,7 @@ type BtcStats struct {
 }
 
 func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*handlerBTC, error) {
+	log.Printf("Start new BTC handler with host %s user %s", btcAddr, btcUser)
 	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert)
 
 	if err != nil {

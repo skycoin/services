@@ -3,7 +3,10 @@ package servd
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"sync"
 )
 
@@ -13,15 +16,35 @@ type Status struct {
 }
 
 // Start starts the server
-func Start() (*echo.Echo, error) {
+func Start(config *Config) (*echo.Echo, error) {
 	e := echo.New()
 	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
 	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
 
 	// e.Pre(middleware.MethodOverride())
 	hMulti := newHandlerMulti()
-	// TODO(stgleb): Add arguments for creating btc handler
-	hBTC, err := newHandlerBTC("", "", "", false, []byte(""))
+
+	var cert []byte
+
+	if config.Bitcoin.TLS {
+		f, err := os.Open(config.Bitcoin.CertFile)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		cert, err = ioutil.ReadAll(f)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	hBTC, err := newHandlerBTC(config.Bitcoin.NodeAddress,
+		config.Bitcoin.User,
+		config.Bitcoin.Password,
+		!config.Bitcoin.TLS,
+		cert)
 
 	apiGroupV1 := e.Group("/api/v1")
 	skyGroup := apiGroupV1.Group("/sky")
@@ -71,7 +94,7 @@ func Start() (*echo.Echo, error) {
 	})
 
 	e.GET("/status", statusFunc)
-	err = e.Start(":8080")
+	err = e.Start(config.Server.ListenStr)
 	e.Logger.Fatal(err)
 	return e, err
 }
