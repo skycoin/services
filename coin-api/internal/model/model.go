@@ -1,10 +1,12 @@
 package model
 
 const (
-	// ResultOk is an ok result in multiwallet API
-	ResultOk = "ok"
-	// ResultError is an error result in multiwallet API
-	ResultError = "error"
+	// StatusOk is an ok result in multiwallet API
+	StatusOk = "ok"
+	// StatusError is an error result in multiwallet API
+	StatusError = "error"
+	// CodeNoError means that no error occured
+	CodeNoError = 0
 )
 
 // Coins represents coins
@@ -52,8 +54,8 @@ type AddressResponse struct {
 
 // BalanceResponse Returns balance by given coin
 type BalanceResponse struct {
-	Address string  `json:"address"`
-	Balance float64 `json:"balance"`
+	Address string `json:"address"`
+	Balance string `json:"balance"`
 	Coin    Coin
 }
 
