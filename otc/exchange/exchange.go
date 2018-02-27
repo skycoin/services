@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type Market struct {
@@ -15,7 +16,21 @@ type Market struct {
 }
 
 func GetBTCValue() (float64, error) {
-	res, err := http.Get("https://www.cryptopia.co.nz/api/GetMarket/SKY_BTC")
+	// request will timeout after 1 second
+	client := &http.Client{
+		Timeout: time.Second * 1,
+	}
+
+	// prepare request
+	req, err := http.NewRequest(
+		"GET", "https://www.cryptopia.co.nz/api/GetMarket/SKY_BTC", nil,
+	)
+	if err != nil {
+		return 0.0, err
+	}
+
+	// execute request
+	res, err := client.Do(req)
 	if err != nil {
 		return 0.0, err
 	}
