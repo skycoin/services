@@ -109,12 +109,13 @@ func (s *Storage) SaveRequest(request *types.Request) error {
 
 	// read json data from disk
 	data, err := mapFromJSON(path)
-	if err != nil {
+	requestIsNotExist := os.IsNotExist(err)
+	if err != nil && !requestIsNotExist {
 		return err
 	}
 
 	// update map
-	if data == nil {
+	if data == nil || requestIsNotExist {
 		data = map[types.Currency]map[types.Drop]*types.Metadata{
 			request.Currency: {request.Drop: request.Metadata},
 		}

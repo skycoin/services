@@ -125,14 +125,6 @@ class Distribution extends React.Component {
   }
 
   checkStatus() {
-    if (!this.state.skyAddress) {
-      return alert(
-        this.props.intl.formatMessage({
-          id: 'distribution.errors.noSkyAddress',
-        }),
-      );
-    }
-
     if (!this.state.drop_address) {
       return alert(
         this.props.intl.formatMessage({
@@ -145,7 +137,7 @@ class Distribution extends React.Component {
       statusLoading: true,
     });
 
-    return checkStatus({ address: this.state.skyAddress, drop_address: this.state.drop_address, drop_currency: 'BTC' })
+    return checkStatus({ drop_address: this.state.drop_address, drop_currency: 'BTC' })
       .then((res) => {
         this.setState({
           statusIsOpen: true,
@@ -217,16 +209,16 @@ class Distribution extends React.Component {
                   <FormattedMessage
                     id="distribution.rate"
                     values={{
-                      rate: +this.state.sky_btc_exchange_rate,
-                    }}
+                        rate: +this.state.sky_btc_exchange_rate,
+                      }}
                   />
                 </Text>
                 <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
                   <FormattedMessage
                     id="distribution.inventory"
                     values={{
-                      coins: this.state.balance && this.state.balance.coins,
-                    }}
+                        coins: this.state.balance && this.state.balance.coins,
+                      }}
                   />
                 </Text>
 

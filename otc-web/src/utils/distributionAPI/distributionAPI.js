@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-export const checkStatus = ({ address, drop_address, drop_currency }) =>
-  axios.post('/api/status', { address, drop_address, drop_currency })
+export const checkStatus = ({ drop_address, drop_currency }) =>
+  axios.post('/api/status', { drop_address, drop_currency })
     .then(response => [response.data])
     .catch((error) => { throw new Error(error.response.data); });
 

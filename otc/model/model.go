@@ -181,6 +181,8 @@ func (m *Model) Add(request *types.Request) error {
 		return err
 	}
 
+	m.lookup.SetDrop(request.Drop, request.Currency, request.Address)
+
 	// route to next component
 	if result := m.Handle(request); result != nil {
 		// add to end of queue
