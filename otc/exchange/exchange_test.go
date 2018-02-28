@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-func TestGetBTCPrice(t *testing.T) {
-	p, err := GetBTCPrice()
+func TestGetBTCValue(t *testing.T) {
+	p, err := GetBTCValue()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	fmt.Println(p)

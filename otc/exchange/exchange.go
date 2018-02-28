@@ -1,48 +1,54 @@
 package exchange
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"time"
 )
 
-type market struct {
-	success bool `json:"Success"`
-	data    struct {
-		lastPrice float64 `json:"LastPrice"`
+type Market struct {
+	Success bool   `json:"Success"`
+	Message string `json:"Message"`
+	Data    struct {
+		LastPrice float64 `json:"LastPrice"`
 	} `json:"Data"`
 }
 
-func GetBTCPrice() (float64, error) {
-	var (
-		client = &http.Client{}
-		m      *market
+// GetBTCValue gets the current value (in satoshis) of 1 SKY from an exchange.
+// Currently, the exchange is Cryptopia. Might add more/fallback later.
+func GetBTCValue() (uint64, error) {
+	// request will timeout after 1 second
+	client := &http.Client{
+		Timeout: time.Second * 1,
+	}
+
+	// prepare request
+	req, err := http.NewRequest(
+		"GET", "https://www.cryptopia.co.nz/api/GetMarket/SKY_BTC", nil,
 	)
-
-	request, err := http.NewRequest("GET", "https://www.cryptopia.co.nz/api/GetMarket/SKY_BTC", nil)
 	if err != nil {
-		return 0.0, err
+		return 0, err
 	}
-	request.Header.Add("Accept-Encoding", "gzip")
 
-	response, err := client.Do(request)
+	// execute request
+	res, err := client.Do(req)
 	if err != nil {
-		return 0.0, err
+		return 0, err
 	}
-	defer response.Body.Close()
+	defer res.Body.Close()
 
-	out, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return 0.0, err
-	}
-
-	if err = json.Unmarshal(out, &m); err != nil {
-		return 0.0, err
+	// get lastPrice from json body
+	var market *Market
+	if err = json.NewDecoder(res.Body).Decode(&market); err != nil {
+		return 0, err
 	}
 
-	fmt.Println(m)
+	// check "Success" field from cryptopia and return error if needed
+	if !market.Success {
+		return 0, fmt.Errorf("cryptopia: %s", market.Message)
+	}
 
-	return 0.0, nil
+	// return last price
+	return uint64(market.Data.LastPrice * 10e7), nil
 }

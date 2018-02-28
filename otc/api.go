@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/skycoin/services/otc/exchange"
 	"github.com/skycoin/services/otc/types"
 	"github.com/skycoin/skycoin/src/cipher"
 )
@@ -17,6 +18,7 @@ type apiBindRequest struct {
 type apiBindResponse struct {
 	DropAddress  string `json:"drop_address"`
 	DropCurrency string `json:"drop_type"`
+	DropValue    uint64 `json:"drop_value"`
 }
 
 func apiBind(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +38,11 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 	address, err := cipher.DecodeBase58Address(req.Address)
 	if err != nil {
 		http.Error(w, "invalid skycoin address", http.StatusBadRequest)
+		return
+	}
+
+	if DROPPER.Connections[currency] == nil {
+		// return doesn't exist
 		return
 	}
 
@@ -60,11 +67,10 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// send json response
-	if err = json.NewEncoder(w).Encode(&apiBindResponse{
-		DropAddress:  string(request.Drop),
-		DropCurrency: string(request.Currency),
-	}); err != nil {
+	// TODO: get value based on drop type
+	// get sky btc value
+	value, err := exchange.GetBTCValue()
+	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		ERRS.Printf("api: %v\n", err)
 		return
@@ -76,10 +82,20 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 		ERRS.Printf("api: %v\n", err)
 		return
 	}
+
+	// send json response
+	if err = json.NewEncoder(w).Encode(&apiBindResponse{
+		DropAddress:  string(request.Drop),
+		DropCurrency: string(request.Currency),
+		DropValue:    value,
+	}); err != nil {
+		http.Error(w, "server error", http.StatusInternalServerError)
+		ERRS.Printf("api: %v\n", err)
+		return
+	}
 }
 
 type apiStatusRequest struct {
-	Address      string `json:"address"`
 	DropAddress  string `json:"drop_address"`
 	DropCurrency string `json:"drop_currency"`
 }
@@ -99,16 +115,8 @@ func apiStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// decode skycoin address
-	address, err := cipher.DecodeBase58Address(req.Address)
-	if err != nil {
-		http.Error(w, "invalid skycoin_address", http.StatusBadRequest)
-		return
-	}
-
 	// get metadata from disk
 	meta, err := MODEL.GetMetadata(
-		types.Address(address.String()),
 		types.Drop(req.DropAddress),
 		types.Currency(req.DropCurrency),
 	)
