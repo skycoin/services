@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"strconv"
 
+	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
 	ehandler "github.com/skycoin/services/errhandler"
 	"github.com/skycoin/skycoin/src/api/cli"
@@ -24,11 +25,10 @@ type SkyСoinService struct {
 }
 
 // NewSkyService returns new multicoin generic service
-func NewSkyService() *SkyСoinService {
+func NewSkyService(n *locator.Node) *SkyСoinService {
 	s := &SkyСoinService{}
 	s.client = &webrpc.Client{
-		Addr: "someaddr",
-		//TODO: fill this rpc client by data including "someaddr"
+		Addr: fmt.Sprintf("%s:%d", n.GetNode(), n.GetNodePort()),
 	}
 	return s
 }

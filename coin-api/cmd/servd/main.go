@@ -1,13 +1,14 @@
 package servd
 
 import (
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 type Status struct {
@@ -54,8 +55,10 @@ func Start(config *Config) (*echo.Echo, error) {
 	apiGroupV1.GET("/ping", hMulti.generateSeed)
 	// show currencies and api's list
 	apiGroupV1.GET("/list", hMulti.generateSeed)
-	// generate address, private keys, pubkeys from deterministic seed
-	skyGroup.POST("/address", hMulti.generateSeed)
+	// generate keys
+	skyGroup.POST("/keys", hMulti.generateKeys)
+	// generate address
+	skyGroup.POST("/address/:key", hMulti.generateSeed)
 	// check the balance (and get unspent outputs) for an address
 	skyGroup.GET("/address/:address", hMulti.checkBalance)
 	// sign a transaction
@@ -77,11 +80,9 @@ func Start(config *Config) (*echo.Echo, error) {
 		status := Status{
 			Stats: make(map[string]interface{}),
 		}
-
 		// Collect statuses from handlers
 		hMulti.CollectStatus(&status)
 		hBTC.CollectStatuses(&status)
-
 		ctx.JSON(http.StatusOK, status)
 
 		return nil

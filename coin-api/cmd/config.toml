@@ -7,6 +7,7 @@ TLS=true
 
 [skycoin]
 Host="0.0.0.0"
+Port="9341"
 
 [server]
 ListenStr="0.0.0.0:8080"
