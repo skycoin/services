@@ -13,12 +13,8 @@ import (
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
-	"github.com/skycoin/skycoin/src/wallet"
-<<<<<<< HEAD
-=======
-	// gcli "github.com/urfave/cli"
 	"github.com/skycoin/skycoin/src/visor"
->>>>>>> 2c8f131e53d803cf21fee15f9e591f28a5f5141b
+	"github.com/skycoin/skycoin/src/wallet"
 )
 
 // SkyСoinService provides generic access to various coins API
@@ -154,8 +150,8 @@ func (s *SkyСoinService) SignTransaction(transid string) (*model.Response, erro
 }
 
 // CheckTransactionStatus check the status of a transaction (tracks transactions by transaction hash)
-func (s *SkyСoinService) CheckTransactionStatus(txId string) (visor.TransactionStatus, error) {
-	status, err := s.client.GetTransactionByID(txId)
+func (s *SkyСoinService) CheckTransactionStatus(txID string) (visor.TransactionStatus, error) {
+	status, err := s.client.GetTransactionByID(txID)
 
 	if err != nil {
 		return visor.TransactionStatus{}, err
