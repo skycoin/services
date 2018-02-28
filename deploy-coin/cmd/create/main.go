@@ -52,11 +52,8 @@ func main() {
 }
 
 func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Config {
-	gwSeed, err := bip39.NewDefaultMnemomic()
-	if err != nil {
-		log.Fatalf("failed to generate genesis wallet seed")
-	}
-	pk, sk := cipher.GenerateDeterministicKeyPair([]byte(gwSeed))
+	sk := cipher.NewSecKey(cipher.RandByte(32))
+	pk := cipher.PubKeyFromSecKey(sk)
 
 	// Geneate genesis block
 	var (
@@ -67,6 +64,12 @@ func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Confi
 	gb, err := coin.NewGenesisBlock(gbAddr, gbCoins, gbTs)
 	if err != nil {
 		log.Fatalf("failed to create genesis block - %s", err)
+	}
+
+	// Genesis block wallet
+	gwSeed, err := bip39.NewDefaultMnemomic()
+	if err != nil {
+		log.Fatalf("failed to generate genesis wallet seed")
 	}
 
 	// Trusted peers of coin networks (default connections)

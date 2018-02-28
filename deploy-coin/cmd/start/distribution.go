@@ -27,13 +27,13 @@ func makeDistributionTx(nc NodeConfig, wc common.GenesisWalletConfig,
 	// Create addresses to distribute by inital coin volume
 	// First address is address of genesis block, so it is skipped
 	// Private key, used to sign genesis block, is used to sign each output
-	addrSk := cipher.GenerateDeterministicKeyPairs([]byte(wc.Seed), int(wc.Addresses+1))
-	for i := uint64(1); i < wc.Addresses+1; i++ {
-		addr := cipher.AddressFromSecKey(addrSk[i])
+	addrSk := cipher.GenerateDeterministicKeyPairs([]byte(wc.Seed), int(wc.Addresses))
+	for _, sk := range addrSk {
+		addr := cipher.AddressFromSecKey(sk)
 		tx.PushOutput(addr, wc.CoinsPerAddress*1e6, 1)
 	}
 
-	tx.SignInputs([]cipher.SecKey{addrSk[0]})
+	tx.SignInputs([]cipher.SecKey{nc.BlockchainSeckey})
 
 	tx.UpdateHeader()
 
