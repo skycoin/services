@@ -178,22 +178,31 @@ func main() {
 
 	// Distribute initial coin volume
 	if nodeCfg.RunMaster {
-		runWg.Add(1)
-		go func() {
-			defer runWg.Done()
+		// Master will create distribuion transaction only in case of "emtpy" blockchain
+		distTx := true
+		if daemon.Visor.HeadBkSeq() > 0 {
+			distTx = false
+			logger.Warning("blockchain height is greater then zero - will not run coin distribution")
+		}
 
-			time.Sleep(time.Second * 2)
+		if distTx {
+			runWg.Add(1)
+			go func() {
+				defer runWg.Done()
 
-			tx, err := makeDistributionTx(nodeCfg, cfg.Public.Distribution, daemon)
-			if err == nil {
-				_, _, err = daemon.Visor.InjectTransaction(tx)
-			}
+				time.Sleep(time.Second * 2)
 
-			if err != nil {
-				logger.Errorf("failed to run transaction to distribute coin volume - %s", err)
-				errCh <- err
-			}
-		}()
+				tx, err := makeDistributionTx(nodeCfg, cfg.Public.GenesisWallet, daemon)
+				if err == nil {
+					_, _, err = daemon.Visor.InjectTransaction(tx)
+				}
+
+				if err != nil {
+					logger.Errorf("failed to run transaction to distribute coin volume - %s", err)
+					errCh <- err
+				}
+			}()
+		}
 	}
 
 	// Wait for SIGINT or startup error

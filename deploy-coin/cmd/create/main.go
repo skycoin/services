@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/skycoin/services/deploy-coin/common"
 	"github.com/skycoin/skycoin/src/cipher"
+	"github.com/skycoin/skycoin/src/cipher/go-bip39"
 	"github.com/skycoin/skycoin/src/coin"
 )
 
@@ -52,8 +52,11 @@ func main() {
 }
 
 func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Config {
-	sk := cipher.NewSecKey(cipher.RandByte(32))
-	pk := cipher.PubKeyFromSecKey(sk)
+	gwSeed, err := bip39.NewDefaultMnemomic()
+	if err != nil {
+		log.Fatalf("failed to generate genesis wallet seed")
+	}
+	pk, sk := cipher.GenerateDeterministicKeyPair([]byte(gwSeed))
 
 	// Geneate genesis block
 	var (
@@ -65,9 +68,6 @@ func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Confi
 	if err != nil {
 		log.Fatalf("failed to create genesis block - %s", err)
 	}
-
-	// Distribution addresses
-	addrSeed, addrs := genDistAdrresses(addrCount)
 
 	// Trusted peers of coin networks (default connections)
 	peers := make([]string, peerCount)
@@ -93,13 +93,13 @@ func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Confi
 				HeaderHash: gb.HashHeader().Hex(),
 			},
 
-			CoinCode: coinCode,
-
-			Distribution: common.DistributionConfig{
+			GenesisWallet: common.GenesisWalletConfig{
+				Seed:            gwSeed,
 				CoinsPerAddress: uint64(coinVol),
-				AddressSeed:     addrSeed,
-				Addresses:       addrs,
+				Addresses:       uint64(addrCount),
 			},
+
+			CoinCode: coinCode,
 
 			Port:    daemonPort,
 			RPCPort: rpcPort,
@@ -110,16 +110,4 @@ func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Confi
 	}
 
 	return cfg
-}
-
-func genDistAdrresses(n int) (string, []string) {
-	seed := cipher.RandByte(64)
-
-	addrs := make([]string, n)
-	keys := cipher.GenerateDeterministicKeyPairs(seed, n)
-	for i, k := range keys {
-		addrs[i] = cipher.AddressFromSecKey(k).String()
-	}
-
-	return hex.EncodeToString(seed), addrs
 }
