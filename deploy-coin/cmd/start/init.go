@@ -73,7 +73,7 @@ func initLogger(cfg NodeConfig) (func(), error) {
 	return closeLogFD, nil
 }
 
-func initDaemon(cfg NodeConfig) (*daemon.Daemon, error) {
+func initDaemon(cfg NodeConfig, peers []string) (*daemon.Daemon, error) {
 	dc := makeDaemonConfg(cfg)
 
 	db, err := visor.OpenDB(dc.Visor.Config.DBPath)
@@ -81,7 +81,7 @@ func initDaemon(cfg NodeConfig) (*daemon.Daemon, error) {
 		logger.Error("Database failed to open: %v. Is another skycoin instance running?", err)
 	}
 
-	d, err := daemon.NewDaemon(dc, db, []string{})
+	d, err := daemon.NewDaemon(dc, db, peers)
 	if err != nil {
 		return nil, err
 	}

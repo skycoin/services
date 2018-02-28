@@ -29,10 +29,16 @@ Usage of start-coin:
         path to JSON configuration file for coin
   -gui
         lanuch web GUI for node in browser
+  -guiPort int
+        override guiPort from config
   -master
         run node as master and distribute initial coin volume
+  -port int
+        override port from config
   -rpc
         run web RPC service
+  -rpcPort int
+        override rpcPort from config
 ```
 
 

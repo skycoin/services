@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,7 +11,15 @@ import (
 
 	"github.com/skycoin/services/deploy-coin/common"
 	"github.com/skycoin/skycoin/src/cipher"
+	"github.com/skycoin/skycoin/src/cipher/go-bip39"
 	"github.com/skycoin/skycoin/src/coin"
+)
+
+const (
+	trustedPeerPort = 20000
+	daemonPort      = 20100
+	rpcPort         = 20200
+	guiPort         = 20300
 )
 
 func main() {
@@ -20,12 +27,13 @@ func main() {
 		file      = flag.String("file", "", "file to save configuration of new coin")
 		coin      = flag.String("code", "SKY", "code of new coin")
 		addrCount = flag.Int("addr", 100, "number of distribution addresses")
-		coinVol   = flag.Int("vol", int(1e6), "coin volume to send to each of disribution addresses")
+		coinVol   = flag.Int("vol", 1, "coin volume to send to each of disribution addresses")
+		peerCount = flag.Int("peers", 3, "number of trusted peers running on localhost")
 	)
 
 	flag.Parse()
 
-	cfg := createCoin(*coin, *addrCount, *coinVol)
+	cfg := createCoin(*coin, *addrCount, *coinVol, *peerCount)
 
 	// Print config
 	out, err := json.MarshalIndent(&cfg, "", "    ")
@@ -43,7 +51,7 @@ func main() {
 	}
 }
 
-func createCoin(coinCode string, addrCount, coinVol int) common.Config {
+func createCoin(coinCode string, addrCount, coinVol, peerCount int) common.Config {
 	sk := cipher.NewSecKey(cipher.RandByte(32))
 	pk := cipher.PubKeyFromSecKey(sk)
 
@@ -58,7 +66,17 @@ func createCoin(coinCode string, addrCount, coinVol int) common.Config {
 		log.Fatalf("failed to create genesis block - %s", err)
 	}
 
-	addrSeed, addrs := genDistAdrresses(addrCount)
+	// Genesis block wallet
+	gwSeed, err := bip39.NewDefaultMnemomic()
+	if err != nil {
+		log.Fatalf("failed to generate genesis wallet seed")
+	}
+
+	// Trusted peers of coin networks (default connections)
+	peers := make([]string, peerCount)
+	for i := 0; i < peerCount; i++ {
+		peers[i] = fmt.Sprintf("127.0.0.1:%d", trustedPeerPort+i)
+	}
 
 	// Coin configuration
 	cfg := common.Config{
@@ -78,31 +96,21 @@ func createCoin(coinCode string, addrCount, coinVol int) common.Config {
 				HeaderHash: gb.HashHeader().Hex(),
 			},
 
-			CoinCode: coinCode,
-
-			Distribution: common.DistributionConfig{
+			GenesisWallet: common.GenesisWalletConfig{
+				Seed:            gwSeed,
 				CoinsPerAddress: uint64(coinVol),
-				AddressSeed:     addrSeed,
-				Addresses:       addrs,
+				Addresses:       uint64(addrCount),
 			},
 
-			Port:             16000,
-			WebInterfacePort: 16420,
-			RPCInterfacePort: 16430,
+			CoinCode: coinCode,
+
+			Port:    daemonPort,
+			RPCPort: rpcPort,
+			GUIPort: guiPort,
+
+			TrustedPeers: peers,
 		},
 	}
 
 	return cfg
-}
-
-func genDistAdrresses(n int) (string, []string) {
-	seed := cipher.RandByte(64)
-
-	addrs := make([]string, n)
-	keys := cipher.GenerateDeterministicKeyPairs(seed, n)
-	for i, k := range keys {
-		addrs[i] = cipher.AddressFromSecKey(k).String()
-	}
-
-	return hex.EncodeToString(seed), addrs
 }

@@ -7,31 +7,33 @@ import (
 	"github.com/skycoin/skycoin/src/daemon"
 )
 
-func makeDistributionTx(nc NodeConfig, dc common.DistributionConfig,
+func makeDistributionTx(nc NodeConfig, wc common.GenesisWalletConfig,
 	d *daemon.Daemon) (coin.Transaction, error) {
 
+	var tx coin.Transaction
+
+	// Get upnspnets from genesis block
 	gb, err := d.Visor.GetSignedBlock(0)
 	if err != nil {
-		return coin.Transaction{}, err
+		return tx, err
 	}
-
 	txIn, err := coin.CreateUnspent(gb.Head, gb.Body.Transactions[0], 0)
 	if err != nil {
-		return coin.Transaction{}, err
+		return tx, err
 	}
 
-	var tx coin.Transaction
 	tx.PushInput(txIn.Hash())
 
-	for i := range dc.Addresses {
-		addr := cipher.MustDecodeBase58Address(dc.Addresses[i])
-		tx.PushOutput(addr, dc.CoinsPerAddress, 1)
+	// Create addresses to distribute by inital coin volume
+	// First address is address of genesis block, so it is skipped
+	// Private key, used to sign genesis block, is used to sign each output
+	addrSk := cipher.GenerateDeterministicKeyPairs([]byte(wc.Seed), int(wc.Addresses))
+	for _, sk := range addrSk {
+		addr := cipher.AddressFromSecKey(sk)
+		tx.PushOutput(addr, wc.CoinsPerAddress*1e6, 1)
 	}
 
-	keys := []cipher.SecKey{
-		nc.BlockchainSeckey,
-	}
-	tx.SignInputs(keys)
+	tx.SignInputs([]cipher.SecKey{nc.BlockchainSeckey})
 
 	tx.UpdateHeader()
 
