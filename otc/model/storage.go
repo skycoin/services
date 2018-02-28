@@ -16,14 +16,12 @@ const (
 type Storage struct {
 	sync.RWMutex
 
-	Storing map[types.Address]*sync.RWMutex
-	Path    string
+	Path string
 }
 
 func NewStorage(path string) (*Storage, error) {
 	s := &Storage{
-		Path:    path,
-		Storing: make(map[types.Address]*sync.RWMutex, 0),
+		Path: path,
 	}
 
 	// check that storage path exists
@@ -49,8 +47,8 @@ func (s *Storage) LoadRequests(path string) ([]*types.Request, error) {
 	}
 
 	// read lock for this address
-	s.Storing[types.Address(addr.String())].RLock()
-	defer s.Storing[types.Address(addr.String())].RUnlock()
+	s.RLock()
+	defer s.RUnlock()
 
 	// get raw map from disk
 	data, err := mapFromJSON(s.Path + STORAGE_REQUESTS + path)
@@ -81,8 +79,8 @@ func (s *Storage) LoadRequests(path string) ([]*types.Request, error) {
 var ErrDropMissing = errors.New("drop doesn't exist")
 
 func (s *Storage) LoadMetadata(address types.Address, drop types.Drop, curr types.Currency) (*types.Metadata, error) {
-	s.Storing[address].RLock()
-	defer s.Storing[address].RLock()
+	s.RLock()
+	defer s.RUnlock()
 
 	// full filepath for .json file
 	path := s.Path + STORAGE_REQUESTS + string(address) + ".json"
@@ -103,8 +101,8 @@ func (s *Storage) LoadMetadata(address types.Address, drop types.Drop, curr type
 }
 
 func (s *Storage) SaveRequest(request *types.Request) error {
-	s.Storing[request.Address].Lock()
-	defer s.Storing[request.Address].Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	// full filepath for .json file
 	path := s.Path + STORAGE_REQUESTS + string(request.Address) + ".json"

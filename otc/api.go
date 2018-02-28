@@ -39,6 +39,11 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if DROPPER.Connections[currency] == nil {
+		// return doesn't exist
+		return
+	}
+
 	// generate drop address
 	drop, err := DROPPER.Connections[currency].Generate()
 	if err != nil {
@@ -60,18 +65,18 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// send json response
-	if err = json.NewEncoder(w).Encode(&apiBindResponse{
-		DropAddress:  string(request.Drop),
-		DropCurrency: string(request.Currency),
-	}); err != nil {
+	// add for processing
+	if err = MODEL.Add(request); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		ERRS.Printf("api: %v\n", err)
 		return
 	}
 
-	// add for processing
-	if err = MODEL.Add(request); err != nil {
+	// send json response
+	if err = json.NewEncoder(w).Encode(&apiBindResponse{
+		DropAddress:  string(request.Drop),
+		DropCurrency: string(request.Currency),
+	}); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		ERRS.Printf("api: %v\n", err)
 		return
