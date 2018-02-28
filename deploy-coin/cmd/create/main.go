@@ -27,7 +27,7 @@ func main() {
 		file      = flag.String("file", "", "file to save configuration of new coin")
 		coin      = flag.String("code", "SKY", "code of new coin")
 		addrCount = flag.Int("addr", 100, "number of distribution addresses")
-		coinVol   = flag.Int("vol", int(1e6), "coin volume to send to each of disribution addresses")
+		coinVol   = flag.Int("vol", 1, "coin volume to send to each of disribution addresses")
 		peerCount = flag.Int("peers", 3, "number of trusted peers running on localhost")
 	)
 

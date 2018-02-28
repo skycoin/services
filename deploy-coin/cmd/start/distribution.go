@@ -30,7 +30,7 @@ func makeDistributionTx(nc NodeConfig, wc common.GenesisWalletConfig,
 	addrSk := cipher.GenerateDeterministicKeyPairs([]byte(wc.Seed), int(wc.Addresses+1))
 	for i := uint64(1); i < wc.Addresses+1; i++ {
 		addr := cipher.AddressFromSecKey(addrSk[i])
-		tx.PushOutput(addr, wc.CoinsPerAddress, 1)
+		tx.PushOutput(addr, wc.CoinsPerAddress*1e6, 1)
 	}
 
 	tx.SignInputs([]cipher.SecKey{addrSk[0]})
