@@ -18,9 +18,9 @@ type Market struct {
 // GetBTCValue gets the current value (in satoshis) of 1 SKY from an exchange.
 // Currently, the exchange is Cryptopia. Might add more/fallback later.
 func GetBTCValue() (uint64, error) {
-	// request will timeout after 1 second
+	// request will timeout after 30 second
 	client := &http.Client{
-		Timeout: time.Second * 1,
+		Timeout: time.Second * 30,
 	}
 
 	// prepare request
