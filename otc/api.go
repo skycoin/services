@@ -77,7 +77,7 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add for processing
-	if err = MODEL.Add(request); err != nil {
+	if err = MODEL.AddNew(request); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		ERRS.Printf("api: %v\n", err)
 		return

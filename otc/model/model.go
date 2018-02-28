@@ -65,15 +65,6 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 		return nil, err
 	}
 
-	// open events log file
-	if m.events, err = os.OpenFile(
-		m.path+"events.json",
-		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
-		0644,
-	); err != nil {
-		return nil, err
-	}
-
 	// get list of files in db dir
 	files, err := ioutil.ReadDir(m.path + "requests/")
 	if err != nil {
@@ -108,6 +99,7 @@ func (m *Model) Stop() {
 	m.Monitor.Stop()
 
 	m.stop <- struct{}{}
+	m.storage.Events.Close()
 	m.logger.Println("stopped")
 }
 
@@ -157,10 +149,9 @@ func (m *Model) process() {
 			}
 
 			// append to events log
-			if err := NewEvent(
-				result.Request,
-				result.Err,
-			).Append(m.events); err != nil {
+			if err := m.storage.Events.Save(
+				NewEvent(result.Request, result.Err),
+			); err != nil {
 				m.errs.Printf("model: %v\n", err)
 			}
 
@@ -172,6 +163,15 @@ func (m *Model) process() {
 	}
 }
 
+func (m *Model) AddNew(request *types.Request) error {
+	// append to events log
+	if err := m.storage.Events.Save(NewEvent(request, nil)); err != nil {
+		return err
+	}
+
+	return m.Add(request)
+}
+
 func (m *Model) Add(request *types.Request) error {
 	m.Lock()
 	defer m.Unlock()
@@ -181,6 +181,7 @@ func (m *Model) Add(request *types.Request) error {
 		return err
 	}
 
+	// associate drop with skycoin address in lookup
 	m.lookup.SetDrop(request.Drop, request.Currency, request.Address)
 
 	// route to next component
