@@ -21,12 +21,12 @@ void create_node(const char* seed_str, HDNode* node)
 void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
 {
     char seed_str[256] = "dummy seed";
-	HDNode dummy_node;
+    HDNode dummy_node;
     create_node(seed_str, &dummy_node);
-	ecdsa_get_public_key33(dummy_node.curve->params, seckey, pubkey);
+    ecdsa_get_public_key33(dummy_node.curve->params, seckey, pubkey);
 }
 
-void genereate_deterministic_key_pair(const uint8_t* seed, const size_t seed_length, uint8_t* seckey, uint8_t* pubkey)
+void generate_deterministic_key_pair(const uint8_t* seed, const size_t seed_length, uint8_t* seckey, uint8_t* pubkey)
 {
     compute_sha256sum((const char * )seed, seckey, seed_length);
     generate_pubkey_from_seckey(seckey, pubkey);
@@ -36,18 +36,18 @@ void ecdh(const uint8_t* secret_key, const uint8_t* remote_public_key, uint8_t* 
 {
     uint8_t mult[65] = {0};
     char seed_str[256] = "dummy seed";
-	HDNode dummy_node;
+    HDNode dummy_node;
     create_node(seed_str, &dummy_node);
-	ecdh_multiply(dummy_node.curve->params, secret_key, remote_public_key, mult); //65
-	memcpy(&ecdh_key[1], &mult[1], 32);
-	if (mult[64] % 2 == 0)
-	{
-		ecdh_key[0] = 0x02;
-	}
-	else
-	{
-		ecdh_key[0] = 0x03;
-	}
+    ecdh_multiply(dummy_node.curve->params, secret_key, remote_public_key, mult); //65
+    memcpy(&ecdh_key[1], &mult[1], 32);
+    if (mult[64] % 2 == 0)
+    {
+        ecdh_key[0] = 0x02;
+    }
+    else
+    {
+        ecdh_key[0] = 0x03;
+    }
 }
 
 void ecdh_shared_secret(const uint8_t* secret_key, const uint8_t* remote_public_key, uint8_t* shared_secret /*should be size SHA256_DIGEST_LENGTH*/)
@@ -69,7 +69,7 @@ void secp256k1Hash(const char* seed, uint8_t* secp256k1Hash_digest)
     compute_sha256sum(seed, hash, strlen(seed));
     compute_sha256sum((const char*)hash, seckey, sizeof(hash));
     compute_sha256sum((const char*)hash, hash2, sizeof(hash));
-    genereate_deterministic_key_pair(hash2, SHA256_DIGEST_LENGTH, dummy_seckey, pubkey);
+    generate_deterministic_key_pair(hash2, SHA256_DIGEST_LENGTH, dummy_seckey, pubkey);
     ecdh(seckey, pubkey, ecdh_key);
     memcpy(secp256k1Hash, hash, sizeof(hash));
     memcpy(&secp256k1Hash[SHA256_DIGEST_LENGTH], ecdh_key, sizeof(ecdh_key));
@@ -78,16 +78,16 @@ void secp256k1Hash(const char* seed, uint8_t* secp256k1Hash_digest)
 
 void generate_deterministic_key_pair_iterator(const char* seed, uint8_t* seckey, uint8_t* pubkey)
 {
-	size_t seed_length = 0;
+    size_t seed_length = 0;
     uint8_t seed1[SHA256_DIGEST_LENGTH] = {0};
     uint8_t seed2[SHA256_DIGEST_LENGTH] = {0};
     char keypair_seed[256] = {0};
-	secp256k1Hash(seed, seed1);
-	seed_length = strlen(seed);
+    secp256k1Hash(seed, seed1);
+    seed_length = strlen(seed);
     memcpy(keypair_seed, seed, seed_length);
     memcpy(&keypair_seed[seed_length], seed1, sizeof(seed1));
     compute_sha256sum(keypair_seed, seed2, seed_length + sizeof(seed1));
-	genereate_deterministic_key_pair(seed2, SHA256_DIGEST_LENGTH, seckey, pubkey);
+    generate_deterministic_key_pair(seed2, SHA256_DIGEST_LENGTH, seckey, pubkey);
 }
 
 void compute_sha256sum(const char *seed, uint8_t* digest /*size SHA256_DIGEST_LENGTH*/, size_t seed_lenght)
@@ -105,12 +105,12 @@ void generate_base58_address_from_pubkey(const uint8_t* pubkey, char* address, s
     uint8_t r1[SHA256_DIGEST_LENGTH] = {0};
     uint8_t r2[SHA256_DIGEST_LENGTH] = {0};
     compute_sha256sum((char *)pubkey, r1, 33);
-	compute_sha256sum((char *)r1, r2, sizeof(r1));
-	ripemd160(r2, SHA256_DIGEST_LENGTH, pubkey_hash);
-	// compute base58 address
+    compute_sha256sum((char *)r1, r2, sizeof(r1));
+    ripemd160(r2, SHA256_DIGEST_LENGTH, pubkey_hash);
+    // compute base58 address
     uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-	pubkey_hash[20] = 0;
-	compute_sha256sum((char *)pubkey_hash, digest, 21);
-	memcpy(&pubkey_hash[21], digest, 4);
-	b58enc(address, size_address, pubkey_hash, sizeof(pubkey_hash));
+    pubkey_hash[20] = 0;
+    compute_sha256sum((char *)pubkey_hash, digest, 21);
+    memcpy(&pubkey_hash[21], digest, 4);
+    b58enc(address, size_address, pubkey_hash, sizeof(pubkey_hash));
 }
