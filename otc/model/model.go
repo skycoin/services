@@ -2,7 +2,6 @@ package model
 
 import (
 	"container/list"
-	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -12,48 +11,20 @@ import (
 	"time"
 
 	"github.com/skycoin/services/otc/types"
-	"github.com/skycoin/skycoin/src/cipher"
 )
 
 var (
-	ErrUnknownStatus   = errors.New("unknown status type")
-	ErrInvalidFilename = errors.New("invalid filename in db dir")
-	ErrNilService      = errors.New("nil service passed to model")
-	ErrDropMissing     = errors.New("drop doesn't exist")
+	ErrUnknownStatus = errors.New("unknown status type")
+	ErrNilService    = errors.New("nil service passed to model")
 )
-
-type Lookup struct {
-	sync.RWMutex
-
-	dropToSky map[types.Currency]map[types.Drop]types.Address
-}
-
-func (l *Lookup) GetAddress(d types.Drop, c types.Currency) (types.Address, error) {
-	l.RLock()
-	defer l.RUnlock()
-
-	if l.dropToSky[c] == nil || l.dropToSky[c][d] == "" {
-		return "", ErrDropMissing
-	}
-	return l.dropToSky[c][d], nil
-}
-
-func (l *Lookup) SetDrop(d types.Drop, c types.Currency, a types.Address) {
-	l.Lock()
-	defer l.Unlock()
-
-	if l.dropToSky[c] == nil {
-		l.dropToSky[c] = make(map[types.Drop]types.Address, 0)
-	}
-	l.dropToSky[c][d] = a
-}
 
 type Model struct {
 	sync.Mutex
 
-	lookup  *Lookup
 	path    string
 	stop    chan struct{}
+	storage *Storage
+	lookup  *Lookup
 	results *list.List
 	config  *types.Config
 	logger  *log.Logger
@@ -66,9 +37,7 @@ type Model struct {
 
 func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) (*Model, error) {
 	m := &Model{
-		lookup: &Lookup{
-			dropToSky: make(map[types.Currency]map[types.Drop]types.Address),
-		},
+		lookup:  NewLookup(),
 		results: list.New().Init(),
 		path:    c.Model.Path,
 		stop:    make(chan struct{}),
@@ -91,6 +60,11 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 		return nil, err
 	}
 
+	// open request storage struct
+	if m.storage, err = NewStorage(c.Model.Path); err != nil {
+		return nil, err
+	}
+
 	// open events log file
 	if m.events, err = os.OpenFile(
 		m.path+"events.json",
@@ -106,10 +80,10 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 		return nil, err
 	}
 
-	// for each .json file in the db dir
+	// for each .json file in db dir
 	for _, file := range files {
 		// create a slice of requests contained in file
-		requests, err := m.load(file.Name())
+		requests, err := m.storage.LoadRequests(file.Name())
 		if err != nil {
 			if err == io.EOF {
 				continue
@@ -119,8 +93,7 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 
 		// inject each request into the proper service
 		for _, request := range requests {
-			err := m.Add(request)
-			if err != nil {
+			if err := m.Add(request); err != nil {
 				return nil, err
 			}
 		}
@@ -172,7 +145,7 @@ func (m *Model) process() {
 				result.Request.Metadata.Update()
 
 				// save new state to disk
-				if err := m.save(result.Request); err != nil {
+				if err := m.storage.SaveRequest(result.Request); err != nil {
 					m.errs.Printf("model: %v\n", result.Err)
 				}
 
@@ -199,19 +172,19 @@ func (m *Model) process() {
 	}
 }
 
-func (m *Model) Add(r *types.Request) error {
+func (m *Model) Add(request *types.Request) error {
 	m.Lock()
 	defer m.Unlock()
 
 	// save to disk
-	if err := m.save(r); err != nil {
+	if err := m.storage.SaveRequest(request); err != nil {
 		return err
 	}
 
 	// route to next component
-	if res := m.Handle(r); res != nil {
+	if result := m.Handle(request); result != nil {
 		// add to end of queue
-		m.results.PushBack(res)
+		m.results.PushBack(result)
 	}
 
 	return nil
@@ -234,135 +207,18 @@ func (m *Model) Handle(r *types.Request) chan *types.Result {
 	}
 }
 
-func (m *Model) GetMetadata(d types.Drop, c types.Currency) (*types.Metadata, error) {
+func (m *Model) GetMetadata(drop types.Drop, curr types.Currency) (*types.Metadata, error) {
 	// lookup sky address for filename
-	address, err := m.lookup.GetAddress(d, c)
+	address, err := m.lookup.GetAddress(drop, curr)
 	if err != nil {
 		return nil, err
 	}
 
-	// open file
-	file, err := os.OpenFile(
-		m.path+"requests/"+string(address)+".json",
-		os.O_RDONLY,
-		0644,
-	)
+	// get metadata from disk
+	metadata, err := m.storage.LoadMetadata(address, drop, curr)
 	if err != nil {
 		return nil, err
 	}
 
-	// read file contents into map
-	var data map[types.Currency]map[types.Drop]*types.Metadata
-	if err = json.NewDecoder(file).Decode(&data); err != nil {
-		return nil, err
-	}
-
-	// check that the currency type and drop address exist
-	if data[c] == nil || data[c][d] == nil {
-		return nil, ErrDropMissing
-	}
-
-	// return metadata from file
-	return data[c][d], nil
-}
-
-func (m *Model) load(n string) ([]*types.Request, error) {
-	// check that filename is longer than just ".json"
-	if len(n) <= 5 {
-		return nil, ErrInvalidFilename
-	}
-
-	// check that filename is a valid sky address
-	addr, err := cipher.DecodeBase58Address(n[:len(n)-5])
-	if err != nil {
-		return nil, err
-	}
-
-	// open file for reading
-	file, err := os.OpenFile(m.path+"requests/"+n, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, err
-	}
-
-	var data map[types.Currency]map[types.Drop]*types.Metadata
-
-	// decode json from file
-	err = json.NewDecoder(file).Decode(&data)
-	if err != nil {
-		return nil, err
-	}
-
-	requests := make([]*types.Request, 0)
-
-	for currency, drops := range data {
-		for drop, metadata := range drops {
-			if metadata.Status == types.DONE {
-				continue
-			}
-			requests = append(requests, &types.Request{
-				Address:  types.Address(addr.String()),
-				Currency: types.Currency(currency),
-				Drop:     types.Drop(drop),
-				Metadata: metadata,
-			})
-		}
-	}
-
-	return requests, file.Close()
-}
-
-func (m *Model) save(r *types.Request) error {
-	var data map[types.Currency]map[types.Drop]*types.Metadata
-
-	// open/create file for reading and writing
-	file, err := os.OpenFile(
-		m.path+"requests/"+string(r.Address)+".json",
-		os.O_CREATE|os.O_RDWR,
-		0644,
-	)
-	if err != nil {
-		return err
-	}
-
-	// decode file
-	if err = json.NewDecoder(file).Decode(&data); err != nil {
-		if err != io.EOF {
-			return err
-		}
-	}
-
-	// reset
-	file.Truncate(0)
-	file.Seek(0, 0)
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", "  ")
-
-	// update map
-	if data == nil {
-		data = map[types.Currency]map[types.Drop]*types.Metadata{
-			r.Currency: {r.Drop: r.Metadata},
-		}
-	} else if data[r.Currency] == nil {
-		data[r.Currency] = map[types.Drop]*types.Metadata{
-			r.Drop: r.Metadata,
-		}
-	} else {
-		data[r.Currency][r.Drop] = r.Metadata
-	}
-
-	// write map to disk
-	if err = enc.Encode(data); err != nil {
-		return err
-	}
-
-	// make sure file is synced to disk
-	if err = file.Sync(); err != nil {
-		return err
-	}
-
-	// TODO: admin panel
-	// save to internal transactions list
-
-	// close so this function can be called again
-	return file.Close()
+	return metadata, nil
 }
