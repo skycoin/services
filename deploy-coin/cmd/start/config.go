@@ -207,7 +207,7 @@ func makeNodeConfig(toolCfg common.Config) (NodeConfig, error) {
 	if cfg.GenesisAddress, err = cipher.DecodeBase58Address(gbCfg.Address); err != nil {
 		return cfg, errors.New("invalid genesis address")
 	}
-	cfg.GenesisCoinVolume = gbCfg.CoinVolume
+	cfg.GenesisCoinVolume = gbCfg.CoinVolume * 1e6
 	cfg.GenesisTimestamp = gbCfg.Timestamp
 
 	// Network
