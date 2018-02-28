@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/skycoin/services/otc/exchange"
 	"github.com/skycoin/services/otc/types"
 	"github.com/skycoin/skycoin/src/cipher"
 )
@@ -17,6 +18,7 @@ type apiBindRequest struct {
 type apiBindResponse struct {
 	DropAddress  string `json:"drop_address"`
 	DropCurrency string `json:"drop_type"`
+	DropValue    uint64 `json:"drop_value"`
 }
 
 func apiBind(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +67,15 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	// TODO: get value based on drop type
+	// get sky btc value
+	value, err := exchange.GetBTCValue()
+	if err != nil {
+		http.Error(w, "server error", http.StatusInternalServerError)
+		ERRS.Printf("api: %v\n", err)
+		return
+	}
+
 	// add for processing
 	if err = MODEL.Add(request); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
@@ -76,6 +87,7 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 	if err = json.NewEncoder(w).Encode(&apiBindResponse{
 		DropAddress:  string(request.Drop),
 		DropCurrency: string(request.Currency),
+		DropValue:    value,
 	}); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		ERRS.Printf("api: %v\n", err)

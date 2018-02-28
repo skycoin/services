@@ -50,12 +50,15 @@ This creates a new [request](#request) in the backend and returns JSON output on
 ```json
 {
 	"drop_address": "...",
-	"drop_currency": "BTC"
+	"drop_currency": "BTC",
+	"drop_value": 159900
 }
 ```
 
 * `drop_address` is the address of type `drop_currency` for the user to send their currency to
 * `drop_currency` is the same as sent in the request
+* `drop_value` is the current price of 1 SKY in terms of `drop_currency`
+	* represented as satoshis, example: 159900 = 0.00159900 BTC
 
 ## /api/status
 
@@ -65,13 +68,11 @@ This gets the [metadata](#request) of a request and returns it to the user.
 
 ```
 {
-	"address": "...skycoin address...",
 	"drop_address": "...",
 	"drop_currency": "..."
 }
 ```
 
-* `address` is the user's skycoin address where skycoin will be sent
 * `drop_address` denotes the address they want the status of
 * `drop_currency` denotes the currency of the address they want the status of
 
