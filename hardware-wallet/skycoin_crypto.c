@@ -128,3 +128,18 @@ void generate_bitcoin_address_from_pubkey(const uint8_t* pubkey, char* address, 
     memcpy(&b2[21], b4, 4);
     b58enc(address, size_address, b2, sizeof(b2));
 }
+
+
+void generate_bitcoin_private_address_from_pubkey(const uint8_t* seckey, char* address, size_t *size_address)
+{
+    uint8_t b2[38] = {0};
+    uint8_t h1[SHA256_DIGEST_LENGTH] = {0};
+    uint8_t b3[SHA256_DIGEST_LENGTH] = {0};
+    memcpy(&b2[1], seckey, 32);
+    b2[0] = 0x80;
+    b2[33] = 0x01;
+    compute_sha256sum((char *)b2, h1, 34);
+    compute_sha256sum((char *)h1, b3, SHA256_DIGEST_LENGTH);
+    memcpy(&b2[34], b3, 4);
+    b58enc(address, size_address, b2, sizeof(b2));
+}
