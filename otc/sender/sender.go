@@ -69,14 +69,16 @@ func (s *Sender) process() {
 		// convert list element to work
 		w := e.Value.(*types.Work)
 
-		// generate SendAmount slice using dropper value
-		to := []cli.SendAmount{{
-			Addr: string(w.Request.Address),
-			Coins: s.dropper.GetValue(
-				w.Request.Currency,
-				w.Request.Metadata.Amount,
-			),
-		}}
+		// get value of amount
+		value, err := s.dropper.GetValue(
+			w.Request.Currency,
+			w.Request.Metadata.Amount,
+		)
+		if err != nil {
+			w.Return(err)
+			s.work.Remove(e)
+			continue
+		}
 
 		// create sky transaction
 		tx, err := cli.CreateRawTx(
@@ -84,7 +86,7 @@ func (s *Sender) process() {
 			s.skycoin.Wallet,
 			s.fromAddrs(),
 			s.fromChangeAddr(),
-			to,
+			[]cli.SendAmount{{Addr: string(w.Request.Address), Coins: value}},
 		)
 		if err != nil {
 			w.Return(err)

@@ -53,6 +53,7 @@ type (
 	Connection interface {
 		Generate() (Drop, error)
 		Balance(Drop) (uint64, error)
+		Value() (uint64, error)
 		Connected() (bool, error)
 		Stop() error
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
+	"github.com/skycoin/services/otc/exchange"
 	"github.com/skycoin/services/otc/types"
 )
 
@@ -108,6 +109,11 @@ func (c *BTCConnection) Send(drop types.Drop, amount uint64) (string, error) {
 	}
 
 	return hash.String(), nil
+}
+
+func (c *BTCConnection) Value() (uint64, error) {
+	value, err := exchange.GetBTCValue()
+	return value, err
 }
 
 func (c *BTCConnection) Balance(drop types.Drop) (uint64, error) {
