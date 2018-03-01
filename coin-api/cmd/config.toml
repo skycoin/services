@@ -1,8 +1,8 @@
 [bitcoin]
-Host="23.92.24.9"
-User="YnWD3EmQAOw11IOrUJwWxAThAyobwLC"
-Password='f*Z"[1215o{qKW{Buj/wheO8@h.}j*u'
-CertFile="cert.pem"
+Host="45.33.44.212:8333"
+User="TG4zCvPNJWSjkCqHGN3hZLo9Ahk="
+Password="cf7trPlnjZOhJtRp+aOIlk8ewF4="
+CertFile="btcd.cert"
 TLS=true
 
 [skycoin]

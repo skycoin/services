@@ -49,6 +49,7 @@ func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 
 	return &handlerBTC{
 		btcService: service,
+		checker:    service,
 	}, nil
 }
 
@@ -160,7 +161,8 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
-	address := ctx.Param("address")
+	// TODO(stgleb): Check why address param is not passed
+	address := ctx.ParamValues()[0]
 	balance, err := h.checker.CheckBalance(address)
 
 	if err != nil {

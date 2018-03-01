@@ -138,6 +138,10 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 
 	balance, err := s.getBalanceFromNode(address)
 
+	if err != nil {
+		return balance, err
+	}
+
 	for i < s.retryCount && err != nil {
 		balance, err = s.getBalanceFromNode(address)
 
@@ -166,7 +170,7 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error)
 	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
 
 	if err != nil {
-		log.Fatal(err)
+		return decimal.NewFromFloat(0.0), err
 	}
 
 	account, err := s.client.GetAccount(a)
