@@ -21,6 +21,7 @@ type (
 
 	Metadata struct {
 		Status    Status `json:"status"`
+		Amount    uint64 `json:"amount"`
 		CreatedAt int64  `json:"created_at"`
 		UpdatedAt int64  `json:"updated_at"`
 		TxId      string `json:"tx_id"`

@@ -62,30 +62,29 @@ func (s *Scanner) process() {
 	for e := s.work.Front(); e != nil; e = e.Next() {
 		w := e.Value.(*types.Work)
 
-		// check if expired
-		if w.Request.Metadata.Expired(s.config.Scanner.Expiration) {
-			w.Request.Metadata.Status = types.EXPIRED
-			w.Return(nil)
-			s.work.Remove(e)
-			continue
-		}
-
 		// get balance of drop
-		balance, err := s.dropper.GetBalance(
-			w.Request.Currency,
-			w.Request.Drop,
-		)
+		bal, err := s.dropper.GetBalance(w.Request.Currency, w.Request.Drop)
 		if err != nil {
 			w.Return(err)
 			s.work.Remove(e)
 			continue
 		}
 
-		// user made a deposit
-		if balance != 0.0 {
+		// if user made a deposit
+		if bal != 0 {
 			w.Request.Metadata.Status = types.SEND
+			w.Request.Metadata.Amount = bal
 			w.Return(nil)
 			s.work.Remove(e)
+			continue
+		}
+
+		// balance is 0, so check if expired
+		if w.Request.Metadata.Expired(s.config.Scanner.Expiration) {
+			w.Request.Metadata.Status = types.EXPIRED
+			w.Return(nil)
+			s.work.Remove(e)
+			continue
 		}
 	}
 }

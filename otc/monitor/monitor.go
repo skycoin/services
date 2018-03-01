@@ -19,7 +19,6 @@ type Monitor struct {
 	logger  *log.Logger
 	work    *list.List
 	stop    chan struct{}
-	stopped bool
 }
 
 func NewMonitor(c *types.Config, sky *skycoin.Connection) (*Monitor, error) {
@@ -32,13 +31,11 @@ func NewMonitor(c *types.Config, sky *skycoin.Connection) (*Monitor, error) {
 	}, nil
 }
 
-func (m *Monitor) Stop() {
-	m.stop <- struct{}{}
-	m.logger.Println("stopped")
-}
+func (m *Monitor) Stop() { m.stop <- struct{}{} }
 
 func (m *Monitor) Start() {
 	m.logger.Println("started")
+
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(m.config.Monitor.Tick))
@@ -47,7 +44,7 @@ func (m *Monitor) Start() {
 
 			select {
 			case <-m.stop:
-				m.stopped = true
+				m.logger.Println("stopped")
 				return
 			default:
 				m.process()

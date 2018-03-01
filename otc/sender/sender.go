@@ -69,20 +69,13 @@ func (s *Sender) process() {
 		// convert list element to work
 		w := e.Value.(*types.Work)
 
-		// get balance of drop
-		balance, err := s.dropper.GetBalance(
-			w.Request.Currency,
-			w.Request.Drop,
-		)
-		if err != nil {
-			w.Return(err)
-			s.work.Remove(e)
-			continue
-		}
-
+		// generate SendAmount slice using dropper value
 		to := []cli.SendAmount{{
-			Addr:  string(w.Request.Address),
-			Coins: s.dropper.GetValue(w.Request.Currency, balance),
+			Addr: string(w.Request.Address),
+			Coins: s.dropper.GetValue(
+				w.Request.Currency,
+				w.Request.Metadata.Amount,
+			),
 		}}
 
 		// create sky transaction
