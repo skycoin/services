@@ -13,7 +13,7 @@ import (
 
 type keyPairResponse struct {
 	Public  string `json:"public"`
-	Private string `json:"private"`
+	Private []byte `json:"private"`
 }
 
 type balanceResponse struct {
@@ -62,6 +62,22 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 	}
 
 	public, private := btc.ServiceBtc{}.GenerateKeyPair()
+
+	if err := public.Verify(); err != nil {
+		resp := struct {
+			Status string `json:"status"`
+			Code   int    `json:"code"`
+			Result string `json:"result"`
+		}{
+			"Ok",
+			http.StatusOK,
+			err.Error(),
+		}
+
+		ctx.JSON(http.StatusOK, resp)
+		return nil
+	}
+
 	resp := struct {
 		Status string          `json:"status"`
 		Code   int             `json:"code"`
@@ -70,8 +86,8 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 		"Ok",
 		http.StatusOK,
 		keyPairResponse{
-			Public:  string(public[:]),
-			Private: string(private[:]),
+			Public:  public.Hex(),
+			Private: private[:],
 		},
 	}
 

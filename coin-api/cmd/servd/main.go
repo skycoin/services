@@ -68,9 +68,9 @@ func Start(config *Config) (*echo.Echo, error) {
 	// check the status of a transaction (tracks transactions by transaction hash)
 	skyGroup.GET("/transaction/:transid", hMulti.checkTransaction)
 	// Generate key pair
-	btcGroup.POST("/keys/", hBTC.generateKeyPair)
+	btcGroup.POST("/keys", hBTC.generateKeyPair)
 	// // BTC generate address based on public key
-	btcGroup.POST("/address/:key", hBTC.generateAddress)
+	btcGroup.POST("/address", hBTC.generateAddress)
 	// BTC check the balance (and get unspent outputs) for an address
 	btcGroup.GET("/address/:address", hBTC.checkBalance)
 	// BTC check the status of a transaction (tracks transactions by transaction hash)
