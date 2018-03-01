@@ -20,7 +20,7 @@ func NewDropper(config *types.Config) (*Dropper, error) {
 
 var ErrConnectionMissing = errors.New("connection doesn't exist")
 
-func (d *Dropper) GetBalance(c types.Currency, a types.Drop) (float64, error) {
+func (d *Dropper) GetBalance(c types.Currency, a types.Drop) (uint64, error) {
 	connection, exists := d.Connections[c]
 	if !exists {
 		return 0.0, ErrConnectionMissing

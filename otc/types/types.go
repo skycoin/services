@@ -27,12 +27,14 @@ type (
 	Status   string
 
 	Metadata struct {
-		Status    Status `json:"status"`
-		CreatedAt int64  `json:"created_at"`
-		UpdatedAt int64  `json:"updated_at"`
-		TxId      string `json:"tx_id"`
-		BuyDrop   Drop   `json:"buy_drop"`
-		BuyStatus Status `json:"buy_status"`
+		Status      Status `json:"status"`
+		CreatedAt   int64  `json:"created_at"`
+		UpdatedAt   int64  `json:"updated_at"`
+		TxId        string `json:"tx_id"`
+		BuyDrop     Drop   `json:"buy_drop"`
+		BuyStatus   Status `json:"buy_status"`
+		BuyHashTo   string `json:"buy_hash_to"`
+		BuyHashFrom string `json:"buy_hash_from"`
 	}
 
 	Request struct {
@@ -60,7 +62,9 @@ type (
 
 	Connection interface {
 		Generate() (Drop, error)
-		Balance(Drop) (float64, error)
+		Send(Drop, uint64) (string, error)
+		Balance(Drop) (uint64, error)
+		Confirmed(string) (bool, error)
 		Connected() (bool, error)
 		Stop() error
 	}

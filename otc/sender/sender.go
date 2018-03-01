@@ -11,7 +11,7 @@ import (
 	"github.com/skycoin/services/otc/dropper"
 	"github.com/skycoin/services/otc/skycoin"
 	"github.com/skycoin/services/otc/types"
-	"github.com/skycoin/skycoin/src/api/cli"
+	//"github.com/skycoin/skycoin/src/api/cli"
 )
 
 type Sender struct {
@@ -69,58 +69,43 @@ func (s *Sender) process() {
 		// convert list element to work
 		w := e.Value.(*types.Work)
 
-		// send skycoin
+		// send skycoin from otc to user
+		_ = w
 
-		// get balance of drop
-		balance, err := s.dropper.GetBalance(
-			w.Request.Currency,
-			w.Request.Drop,
-		)
-		if err != nil {
-			w.Return(err)
+		/*
+			to := []cli.SendAmount{{
+				Addr:  string(w.Request.Address),
+				Coins: s.dropper.GetValue(w.Request.Currency, balance),
+			}}
+
+			// create sky transaction
+			tx, err := cli.CreateRawTx(
+				s.skycoin.Client,
+				s.skycoin.Wallet,
+				s.fromAddrs(),
+				s.fromChangeAddr(),
+				to,
+			)
+			if err != nil {
+				w.Return(err)
+				s.work.Remove(e)
+				continue
+			}
+
+			// inject and get txId
+			txId, err := s.skycoin.Client.InjectTransaction(tx)
+			if err != nil {
+				w.Return(err)
+				s.work.Remove(e)
+				continue
+			}
+
+			// next step is monitor service
+			w.Request.Metadata.TxId = txId
+			w.Request.Metadata.Status = types.CONFIRM
+			w.Return(nil)
 			s.work.Remove(e)
-			continue
-		}
-
-		// sender shouldn't have requests with zero balance
-		if balance == 0.0 {
-			w.Return(ErrZeroBalance)
-			s.work.Remove(e)
-			continue
-		}
-
-		to := []cli.SendAmount{{
-			Addr:  string(w.Request.Address),
-			Coins: s.dropper.GetValue(w.Request.Currency, balance),
-		}}
-
-		// create sky transaction
-		tx, err := cli.CreateRawTx(
-			s.skycoin.Client,
-			s.skycoin.Wallet,
-			s.fromAddrs(),
-			s.fromChangeAddr(),
-			to,
-		)
-		if err != nil {
-			w.Return(err)
-			s.work.Remove(e)
-			continue
-		}
-
-		// inject and get txId
-		txId, err := s.skycoin.Client.InjectTransaction(tx)
-		if err != nil {
-			w.Return(err)
-			s.work.Remove(e)
-			continue
-		}
-
-		// next step is monitor service
-		w.Request.Metadata.TxId = txId
-		w.Request.Metadata.Status = types.CONFIRM
-		w.Return(nil)
-		s.work.Remove(e)
+		*/
 	}
 }
 

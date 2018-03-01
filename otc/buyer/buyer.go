@@ -7,15 +7,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/skycoin/services/otc/dropper"
 	"github.com/skycoin/services/otc/types"
 )
 
 type Buyer struct {
 	sync.Mutex
 
-	work   *list.List
-	stop   chan struct{}
-	logger *log.Logger
+	dropper *dropper.Dropper
+	work    *list.List
+	stop    chan struct{}
+	logger  *log.Logger
 }
 
 func NewBuyer() (*Buyer, error) {
@@ -59,15 +61,20 @@ func (b *Buyer) process() {
 		switch w.Request.Metadata.BuyStatus {
 		case types.EXCHANGE_DEPOSIT:
 			// get exchange deposit address and send
+			b.ExchangeDeposit(w, e)
 		case types.EXCHANGE_CONFIRM:
 			// check exchange deposit address for balance
+			b.ExchangeConfirm(w, e)
 		case types.EXCHANGE_TRADE:
 			// execute trade for request's amount
+			b.ExchangeTrade(w, e)
 		case types.EXCHANGE_RETURN:
 			// withdraw to otc
+			b.ExchangeReturn(w, e)
 		case types.EXCHANGE_RETURNED:
 			// check if withdraw was confirmed
 			// move request to sender
+			b.ExchangeReturned(w, e)
 		}
 	}
 }
