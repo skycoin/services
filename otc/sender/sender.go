@@ -78,6 +78,7 @@ func (s *Sender) process() {
 		// get value of amount
 		value, err := s.dropper.GetValue(
 			w.Request.Currency,
+			// filled by Scanner
 			w.Request.Metadata.Amount,
 		)
 		if err != nil {

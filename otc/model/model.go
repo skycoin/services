@@ -121,18 +121,25 @@ func (m *Model) process() {
 		// non-blocking read on result promise
 		select {
 		case result := <-r:
+			// fills metadata UpdatedAt field
+			result.Request.Metadata.Update()
+
+			// save new state to disk
+			err := m.storage.SaveRequest(result.Request)
+			if err != nil {
+				m.errs.Printf("model: %v\n", err)
+			}
+
+			// append to events log
+			err = m.storage.Events.Save(NewEvent(result.Request, result.Err))
+			if err != nil {
+				m.errs.Printf("model: %v\n", err)
+			}
+
 			if result.Err != nil {
-				// TODO: re-route request, try again?
+				// TODO: handle error
 				m.errs.Printf("model: %v\n", result.Err)
 			} else {
-				// fills metadata UpdatedAt field
-				result.Request.Metadata.Update()
-
-				// save new state to disk
-				if err := m.storage.SaveRequest(result.Request); err != nil {
-					m.errs.Printf("model: %v\n", result.Err)
-				}
-
 				// send to next service if request isn't finished
 				if next := m.Handle(result.Request); next != nil {
 					// add result promise to queue
@@ -140,16 +147,10 @@ func (m *Model) process() {
 				}
 			}
 
-			// append to events log
-			if err := m.storage.Events.Save(
-				NewEvent(result.Request, result.Err),
-			); err != nil {
-				m.errs.Printf("model: %v\n", err)
-			}
-
 			// this elem has been handled, so remove
 			m.results.Remove(e)
 		default:
+			// service hasn't finished with request, so check next result
 			continue
 		}
 	}
