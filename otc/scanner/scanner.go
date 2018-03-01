@@ -33,13 +33,11 @@ func NewScanner(conf *types.Config, drpr *dropper.Dropper) (*Scanner, error) {
 	}, nil
 }
 
-func (s *Scanner) Stop() {
-	s.stop <- struct{}{}
-	s.logger.Println("stopped")
-}
+func (s *Scanner) Stop() { s.stop <- struct{}{} }
 
 func (s *Scanner) Start() {
 	s.logger.Println("started")
+
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(s.config.Scanner.Tick))
@@ -48,6 +46,7 @@ func (s *Scanner) Start() {
 
 			select {
 			case <-s.stop:
+				s.logger.Println("stopped")
 				return
 			default:
 				s.process()
@@ -84,7 +83,8 @@ func (s *Scanner) process() {
 
 		// user made a deposit
 		if balance != 0.0 {
-			w.Request.Metadata.Status = types.SEND
+			w.Request.Metadata.Status = types.BUY
+			w.Request.Metadata.BuyStatus = types.EXCHANGE_DEPOSIT
 			w.Return(nil)
 			s.work.Remove(e)
 		}

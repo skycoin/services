@@ -39,13 +39,11 @@ func NewSender(c *types.Config, s *skycoin.Connection, d *dropper.Dropper) (*Sen
 	}, nil
 }
 
-func (s *Sender) Stop() {
-	s.stop <- struct{}{}
-	s.logger.Println("stopped")
-}
+func (s *Sender) Stop() { s.stop <- struct{}{} }
 
 func (s *Sender) Start() {
 	s.logger.Println("started")
+
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(s.config.Sender.Tick))
@@ -54,6 +52,7 @@ func (s *Sender) Start() {
 
 			select {
 			case <-s.stop:
+				s.logger.Println("stopped")
 				return
 			default:
 				s.process()
@@ -70,8 +69,6 @@ func (s *Sender) process() {
 		// convert list element to work
 		w := e.Value.(*types.Work)
 
-		// get balance using multicoin-api
-		// get skycoin using exchange api
 		// send skycoin
 
 		// get balance of drop

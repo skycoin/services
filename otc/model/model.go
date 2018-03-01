@@ -31,11 +31,12 @@ type Model struct {
 	errs    *log.Logger
 	events  *os.File
 	Scanner types.Service
+	Buyer   types.Service
 	Sender  types.Service
 	Monitor types.Service
 }
 
-func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) (*Model, error) {
+func NewModel(c *types.Config, scn, buy, sndr, mntr types.Service, errs *log.Logger) (*Model, error) {
 	m := &Model{
 		lookup:  NewLookup(),
 		results: list.New().Init(),
@@ -197,6 +198,8 @@ func (m *Model) Handle(r *types.Request) chan *types.Result {
 	switch r.Metadata.Status {
 	case types.DEPOSIT:
 		return m.Scanner.Handle(r)
+	case types.BUY:
+		return m.Buyer.Handle(r)
 	case types.SEND:
 		return m.Sender.Handle(r)
 	case types.CONFIRM:

@@ -7,10 +7,17 @@ const (
 	ETH Currency = "ETH"
 
 	DEPOSIT Status = "waiting_deposit"
+	BUY     Status = "waiting_buy"
 	SEND    Status = "waiting_send"
 	CONFIRM Status = "waiting_confirm"
 	DONE    Status = "done"
 	EXPIRED Status = "expired"
+
+	EXCHANGE_DEPOSIT  Status = "exchange_deposit"
+	EXCHANGE_CONFIRM  Status = "exchange_confirm"
+	EXCHANGE_TRADE    Status = "exchange_trade"
+	EXCHANGE_RETURN   Status = "exchange_return"
+	EXCHANGE_RETURNED Status = "exchange_returned"
 )
 
 type (
@@ -24,6 +31,8 @@ type (
 		CreatedAt int64  `json:"created_at"`
 		UpdatedAt int64  `json:"updated_at"`
 		TxId      string `json:"tx_id"`
+		BuyDrop   Drop   `json:"buy_drop"`
+		BuyStatus Status `json:"buy_status"`
 	}
 
 	Request struct {
