@@ -49,16 +49,7 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 		Monitor: mntr,
 	}
 
-	// make sure all services are there
-	if scn == nil || sndr == nil || mntr == nil {
-		return nil, ErrNilService
-	}
-
-	// make sure db dir exists
-	_, err := os.Stat(m.path)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 
 	// open request storage struct
 	if m.storage, err = NewStorage(c.Model.Path); err != nil {
@@ -66,7 +57,7 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 	}
 
 	// get list of files in db dir
-	files, err := ioutil.ReadDir(m.path + "requests/")
+	files, err := ioutil.ReadDir(m.path + STORAGE_REQUESTS)
 	if err != nil {
 		return nil, err
 	}
@@ -127,13 +118,14 @@ func (m *Model) process() {
 		// convert to result promise
 		r := e.Value.(chan *types.Result)
 
-		// non-blocking read on each result promise
+		// non-blocking read on result promise
 		select {
 		case result := <-r:
 			if result.Err != nil {
 				// TODO: re-route request, try again?
 				m.errs.Printf("model: %v\n", result.Err)
 			} else {
+				// fills metadata UpdatedAt field
 				result.Request.Metadata.Update()
 
 				// save new state to disk

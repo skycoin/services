@@ -43,6 +43,16 @@ func (d *Dropper) GetBalance(c types.Currency, a types.Drop) (uint64, error) {
 	return connection.Balance(a)
 }
 
+// GetValueSource gets the reference used to determine currency value.
+func (d *Dropper) GetValueSource() Source {
+	d.ValueMutex.RLock()
+	defer d.ValueMutex.RUnlock()
+
+	return d.ValueSource
+}
+
+// SetValueSource sets the reference for determining currency value. Currently
+// only EXCHANGE and INTERNAL are supported.
 func (d *Dropper) SetValueSource(s Source) {
 	d.ValueMutex.Lock()
 	defer d.ValueMutex.Unlock()
