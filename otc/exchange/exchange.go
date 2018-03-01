@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/skycoin/services/otc/types"
 )
 
 type Market struct {
@@ -15,12 +13,6 @@ type Market struct {
 	Data    struct {
 		LastPrice float64 `json:"LastPrice"`
 	} `json:"Data"`
-}
-
-func GetBTCDepositAddress() (types.Drop, error) {
-	// get deposit address from exchange
-
-	return types.Drop(""), nil
 }
 
 // GetBTCValue gets the current value (in satoshis) of 1 SKY from an exchange.

@@ -30,6 +30,7 @@ func (d *Dropper) GetBalance(c types.Currency, a types.Drop) (uint64, error) {
 }
 
 // GetValue returns SKY value of the amount of currency.
-func (d *Dropper) GetValue(c types.Currency, amount float64) uint64 {
+func (d *Dropper) GetValue(c types.Currency, amount uint64) uint64 {
+	// use exchange api or value set by admin panel
 	return 0
 }

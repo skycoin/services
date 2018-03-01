@@ -83,8 +83,7 @@ func (s *Scanner) process() {
 
 		// user made a deposit
 		if balance != 0.0 {
-			w.Request.Metadata.Status = types.BUY
-			w.Request.Metadata.BuyStatus = types.EXCHANGE_DEPOSIT
+			w.Request.Metadata.Status = types.SEND
 			w.Return(nil)
 			s.work.Remove(e)
 		}

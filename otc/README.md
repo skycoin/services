@@ -95,8 +95,7 @@ This gets the [metadata](#request) of a request and returns it to the user.
 
 * `status` is one of the following:
 	* `waiting_deposit` - skycoin address is bound, no deposit seen yet 
-	* `waiting_buy` - deposit detected, waiting to buy from exchange
-	* `waiting_send` - got sky from exchange, waiting to send to user 
+	* `waiting_send` - deposit detected, waiting to send to user 
 	* `waiting_confirm` - skycoin sent, waiting to confirm transaction 
 	* `done` - skycoin transaction confirmed 
 	* `expired` - drop expired
@@ -151,7 +150,6 @@ type Request struct {
 type Metadata struct {
     // Status can be:
     //     * "waiting_deposit"
-    //     * "waiting_buy"
     //     * "waiting_send"
     //     * "waiting_confirm"
     //     * "done"

@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/skycoin/services/otc/buyer"
 	"github.com/skycoin/services/otc/dropper"
 	"github.com/skycoin/services/otc/model"
 	"github.com/skycoin/services/otc/monitor"
@@ -20,7 +19,6 @@ var (
 	DROPPER *dropper.Dropper
 	SKYCOIN *skycoin.Connection
 	SCANNER *scanner.Scanner
-	BUYER   *buyer.Buyer
 	SENDER  *sender.Sender
 	MONITOR *monitor.Monitor
 	MODEL   *model.Model
@@ -56,12 +54,6 @@ func main() {
 	}
 	SCANNER.Start()
 
-	BUYER, err = buyer.NewBuyer()
-	if err != nil {
-		panic(err)
-	}
-	BUYER.Start()
-
 	SENDER, err = sender.NewSender(CONFIG, SKYCOIN, DROPPER)
 	if err != nil {
 		panic(err)
@@ -74,7 +66,7 @@ func main() {
 	}
 	MONITOR.Start()
 
-	MODEL, err = model.NewModel(CONFIG, SCANNER, BUYER, SENDER, MONITOR, ERRS)
+	MODEL, err = model.NewModel(CONFIG, SCANNER, SENDER, MONITOR, ERRS)
 	if err != nil {
 		panic(err)
 	}

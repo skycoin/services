@@ -7,17 +7,10 @@ const (
 	ETH Currency = "ETH"
 
 	DEPOSIT Status = "waiting_deposit"
-	BUY     Status = "waiting_buy"
 	SEND    Status = "waiting_send"
 	CONFIRM Status = "waiting_confirm"
 	DONE    Status = "done"
 	EXPIRED Status = "expired"
-
-	EXCHANGE_DEPOSIT  Status = "exchange_deposit"
-	EXCHANGE_CONFIRM  Status = "exchange_confirm"
-	EXCHANGE_TRADE    Status = "exchange_trade"
-	EXCHANGE_RETURN   Status = "exchange_return"
-	EXCHANGE_RETURNED Status = "exchange_returned"
 )
 
 type (
@@ -27,14 +20,10 @@ type (
 	Status   string
 
 	Metadata struct {
-		Status      Status `json:"status"`
-		CreatedAt   int64  `json:"created_at"`
-		UpdatedAt   int64  `json:"updated_at"`
-		TxId        string `json:"tx_id"`
-		BuyDrop     Drop   `json:"buy_drop"`
-		BuyStatus   Status `json:"buy_status"`
-		BuyHashTo   string `json:"buy_hash_to"`
-		BuyHashFrom string `json:"buy_hash_from"`
+		Status    Status `json:"status"`
+		CreatedAt int64  `json:"created_at"`
+		UpdatedAt int64  `json:"updated_at"`
+		TxId      string `json:"tx_id"`
 	}
 
 	Request struct {
@@ -62,9 +51,7 @@ type (
 
 	Connection interface {
 		Generate() (Drop, error)
-		Send(Drop, uint64) (string, error)
 		Balance(Drop) (uint64, error)
-		Confirmed(string) (bool, error)
 		Connected() (bool, error)
 		Stop() error
 	}
