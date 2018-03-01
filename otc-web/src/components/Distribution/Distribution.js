@@ -21,7 +21,7 @@ import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
 
-import { checkStatus, getAddress, getConfig, checkExchangeStatus } from '../../utils/distributionAPI';
+import { checkStatus, getAddress, getConfig, } from '../../utils/distributionAPI';
 
 const Wrapper = styled.div`
   background-color: ${COLORS.gray[1]};
@@ -73,11 +73,20 @@ const StatusModal = ({ status, statusIsOpen, closeModals, skyAddress, intl }) =>
   </Modal>
 );
 
+const getDisabledReasonMessage = reason => {
+  switch (reason) {
+    case 'coinsSoldOut':
+      return <FormattedMessage id="distribution.errors.coinsSoldOut" />;
+    case 'paused':
+      return <FormattedMessage id="distribution.errors.paused" />;
+    default:
+      return <FormattedMessage id="distribution.headingEnded" />;
+  }
+};
+
 const StatusErrorMessage = ({ disabledReason }) => (<Flex column>
   <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
-    {(disabledReason === 'coinsSoldOut') ?
-      <FormattedMessage id="distribution.errors.coinsSoldOut" /> :
-      <FormattedMessage id="distribution.headingEnded" />}
+    {getDisabledReasonMessage(disabledReason)}
   </Heading>
   <Text heavy color="black" fontSize={[2, 3]} as="div">
     <FormattedHTMLMessage id="distribution.ended" />
@@ -186,28 +195,28 @@ class Distribution extends React.Component {
     enabled: true,
     // TODO: These values should be taken from the OTC API
     sky_btc_exchange_rate: 1,
-    balance: { coins: 2 }
   };
-
-  checkExchangeStatus = () => {
-    return checkExchangeStatus()
-      .then((status) => {
-        if (status.error !== '') {
-          this.setState({
-            disabledReason: 'coinsSoldOut',
-            balance: status.balance,
-            enabled: false,
-          });
-        } else {
-          this.setState({
-            balance: status.balance,
-          });
-        }
-      });
-  }
-
-  getConfig = () => {
-    return getConfig().then(config => this.setState({ ...config }));
+  componentWillMount = async () => {
+    try {
+      const config = await getConfig();
+      const stateMutation = {};
+      switch (config.otcStatus) {
+        case 'SOLD_OUT':
+          stateMutation.disabledReason = 'coinsSoldOut';
+          stateMutation.enabled = false;
+          break;
+        case 'PAUSED':
+          stateMutation.disabledReason = 'paused';
+          stateMutation.enabled = false;
+        case 'WORKING':
+          stateMutation.balance = { coins: config.balance };
+          stateMutation.enabled = true;
+          break;
+      }
+      this.setState({ ...this.state, ...stateMutation });
+    } catch (_) {
+      this.setState({ ...this.state, enabled: false, disabledReason: 'closed' });
+    }
   }
 
   getAddress = () => {

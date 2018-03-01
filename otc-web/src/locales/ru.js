@@ -65,7 +65,9 @@ export default {
     errors: {
       noSkyAddress: 'Пожалуйста введите ваш SKY адрес.',
       noDropAddress: 'Сначала необходимо получить BTC адрес',
-      coinsSoldOut: 'Skycoin OTC is currently sold out, check back later.',
+      coinsSoldOut: 'Skycoin в данный момент отсутствует. Пожалуйста, повторите попытку позже.',
+      paused: 'Skycoin OTC временно не принимает новые платежи. Пожалуйста, повторите попытку позже.',
+      closed: 'Skycoin OTC сейчас закроты. Пожалуйста, повторите попытку позже.',
     },
     statuses: {
       waiting_deposit: '[tx-{id} {updated}] Ожидаем BTC депозит.',

@@ -65,6 +65,8 @@ export default {
       noSkyAddress: '请输入您的天空币地址',
       noDropAddress: 'Please obtain BTC address first',
       coinsSoldOut: 'Skycoin OTC is currently sold out, check back later.',
+      paused: 'Skycoin OTC is temporarily not accepting any new transfers, please try again later',
+      closed: 'Skycoin OTC is currently closed',
     },
     statuses: {
       done: '交易 {id}: 天空币已经发送并确认(更新于{updated}).',
