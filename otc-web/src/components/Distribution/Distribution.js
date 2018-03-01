@@ -208,6 +208,7 @@ class Distribution extends React.Component {
         case 'PAUSED':
           stateMutation.disabledReason = 'paused';
           stateMutation.enabled = false;
+          break;
         case 'WORKING':
           stateMutation.balance = { coins: config.balance };
           stateMutation.enabled = true;
