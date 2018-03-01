@@ -132,3 +132,19 @@ func apiStatus(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: meta.UpdatedAt,
 	})
 }
+
+const OTCWorking = "WORKING"
+const OTCSoldOut = "SOLD_OUT"
+const OTCPaused = "PAUSED"
+
+type getConfigurationResponse struct {
+	OTCStatus string `json:"otcStatus"`
+	Balance   uint32 `json:"balance"`
+}
+
+func apiGetConfigurationi(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(&getConfigurationResponse{
+		OTCStatus: OTCWorking,
+		Balance:   10,
+	})
+}
