@@ -90,8 +90,6 @@ ResponseBody {
 
 #### BTC generate address based on public key
 
-##### POST /api/v1/btc/address/:key
-Request
 
 #### BTC generate address based on public key
 ```
