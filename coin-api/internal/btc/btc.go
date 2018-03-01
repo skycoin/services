@@ -86,7 +86,6 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 		Host:         btcAddr,
 		User:         btcUser,
 		Pass:         btcPass,
-		//TODO: rewrite []byte(defaultCert) with buffer usage
 		Certificates: cert,
 	}, nil)
 
@@ -173,7 +172,12 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error)
 		return decimal.NewFromFloat(0.0), err
 	}
 
+	log.Printf("Get account of address %s", address)
 	account, err := s.client.GetAccount(a)
+
+	if err != nil {
+		return decimal.NewFromFloat(0.0), err
+	}
 
 	log.Printf("Send request for getting balance of address %s", address)
 	amount, err := s.client.GetBalance(account)
