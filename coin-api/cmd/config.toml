@@ -1,5 +1,5 @@
 [bitcoin]
-Host="45.33.44.212:8333"
+NodeAddress="45.33.44.212:8333"
 User="TG4zCvPNJWSjkCqHGN3hZLo9Ahk="
 Password="cf7trPlnjZOhJtRp+aOIlk8ewF4="
 CertFile="btcd.cert"
