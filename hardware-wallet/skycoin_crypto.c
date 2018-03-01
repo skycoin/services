@@ -114,3 +114,17 @@ void generate_base58_address_from_pubkey(const uint8_t* pubkey, char* address, s
     memcpy(&pubkey_hash[21], digest, 4);
     b58enc(address, size_address, pubkey_hash, sizeof(pubkey_hash));
 }
+
+void generate_bitcoin_address_from_pubkey(const uint8_t* pubkey, char* address, size_t *size_address)
+{
+    uint8_t b1[SHA256_DIGEST_LENGTH] = {0};
+    uint8_t b2[25] = {0};
+    uint8_t h1[SHA256_DIGEST_LENGTH] = {0};
+    uint8_t b4[SHA256_DIGEST_LENGTH] = {0};
+    compute_sha256sum((char *)pubkey, b1, 33);
+    ripemd160(b1, SHA256_DIGEST_LENGTH, &b2[1]);
+    compute_sha256sum((char *)b2, h1, 21);
+    compute_sha256sum((char *)h1, b4, SHA256_DIGEST_LENGTH);
+    memcpy(&b2[21], b4, 4);
+    b58enc(address, size_address, b2, sizeof(b2));
+}

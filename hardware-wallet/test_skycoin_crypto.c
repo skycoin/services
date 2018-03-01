@@ -122,6 +122,26 @@ START_TEST(test_base58_address_from_pubkey)
 }
 END_TEST
 
+
+START_TEST(test_bitcoin_address_from_pubkey)
+{
+    uint8_t pubkey[33] = {0};
+    char address[256] = {0};
+    size_t size_address = sizeof(address);
+    memcpy(pubkey, fromhex("02e5be89fa161bf6b0bc64ec9ec7fe27311fbb78949c3ef9739d4c73a84920d6e1"), 33);
+    generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
+    ck_assert_str_eq(address, "1CN7JTzTTpmh1dsHeUSosXmNL2GLTwt78g");
+
+    memcpy(pubkey, fromhex("030e40dda21c27126d829b6ae57816e1440dcb2cc73e37e860af26eff1ec55ed73"), 33);
+    generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
+    ck_assert_str_eq(address, "1DkKGd1YV9nhBKHWT9Aa2JzbEus98y6oU9");
+
+    memcpy(pubkey, fromhex("035843e72258696b391cf1d898fc65f31e66876ea0c9e101f8ddc3ebb4b87dc5b0"), 33);
+    generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
+    ck_assert_str_eq(address, "1Ba2hpHH2o6H1NSrFpJTz5AbxdB2BdK5L2");
+}
+END_TEST
+
 START_TEST(test_compute_sha256sum)
 {
     char seed[256] = "seed";
@@ -201,6 +221,7 @@ Suite *test_suite(void)
     tcase_add_test(tc, test_secp256k1Hash);
     tcase_add_test(tc, test_generate_deterministic_key_pair_iterator);
     tcase_add_test(tc, test_base58_address_from_pubkey);
+    tcase_add_test(tc, test_bitcoin_address_from_pubkey);
     tcase_add_test(tc, test_compute_sha256sum);
     tcase_add_test(tc, test_compute_ecdh);
     suite_add_tcase(s, tc);
