@@ -12,5 +12,6 @@ void compute_sha256sum(const char *seed, uint8_t* digest /*size SHA256_DIGEST_LE
 void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey);
 void generate_deterministic_key_pair(const uint8_t* seed, const size_t seed_length, uint8_t* seckey, uint8_t* pubkey);
 void generate_base58_address_from_pubkey(const uint8_t* pubkey, char* address, size_t *size_address);
+void generate_bitcoin_address_from_pubkey(const uint8_t* pubkey, char* address, size_t *size_address);
 
 #endif
