@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 
+	"github.com/BurntSushi/toml"
 	"github.com/labstack/echo"
 	"github.com/skycoin/services/coin-api/cmd/servd"
 	"github.com/urfave/cli"
+	"log"
 )
 
 // ServerHTTP is a CLI handler of an HTTP server
@@ -20,7 +22,16 @@ func NewServerHTTP() *ServerHTTP {
 
 // Start starts the http server
 func (s ServerHTTP) Start(c *cli.Context) error {
-	srv, err := servd.Start()
+	cfgFile := c.Args().First()
+
+	var config = &servd.Config{}
+	_, err := toml.DecodeFile(cfgFile, config)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	srv, err := servd.Start(config)
 	if err != nil {
 		return err
 	}

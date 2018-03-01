@@ -76,16 +76,15 @@ func main() {
 				Name: "server",
 				Subcommands: cli.Commands{
 					cli.Command{
-						Name:  "start",
-						Usage: "Start HTTP Server",
-						// TODO(stgleb): Add more args for skycoin
-						ArgsUsage: "<btcHost> <btcUser> <btcPass> <btcCertFile>",
+						Name:      "start",
+						Usage:     "Start HTTP Server",
+						ArgsUsage: "<config_file>",
 						Action:    httpServer.Start,
 					},
 					cli.Command{
 						Name:   "stop",
 						Usage:  "Stop HTTP Server",
-						Action: httpServer.Start,
+						Action: httpServer.Stop,
 					},
 				},
 			},
