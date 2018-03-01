@@ -9,6 +9,7 @@ import { Flex, Box } from 'grid-styled';
 import { FormattedMessage, FormattedHTMLMessage, injectIntl } from 'react-intl';
 import { rem } from 'polished';
 import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
+import QRCode from 'qrcode.react';
 
 import Button from 'components/Button';
 import Container from 'components/Container';
@@ -32,6 +33,8 @@ const Wrapper = styled.div`
 `;
 
 const Address = Heading.extend`
+  display: flex;
+  justify-content: space-between;
   word-break: break-all;
   background-color: ${COLORS.gray[0]};
   border-radius: ${BORDER_RADIUS.base};
@@ -209,16 +212,16 @@ class Distribution extends React.Component {
                   <FormattedMessage
                     id="distribution.rate"
                     values={{
-                        rate: +this.state.sky_btc_exchange_rate,
-                      }}
+                      rate: +this.state.sky_btc_exchange_rate,
+                    }}
                   />
                 </Text>
                 <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
                   <FormattedMessage
                     id="distribution.inventory"
                     values={{
-                        coins: this.state.balance && this.state.balance.coins,
-                      }}
+                      coins: this.state.balance && this.state.balance.coins,
+                    }}
                   />
                 </Text>
 
@@ -232,9 +235,14 @@ class Distribution extends React.Component {
                   onChange={this.handleChange}
                 />
 
-                {this.state.drop_address && <Address heavy color="black" fontSize={[2, 3]} as="p">
-                  <strong><FormattedHTMLMessage id="distribution.btcAddress" />: </strong>
+                {this.state.drop_address && <Address heavy color="black" fontSize={[2, 3]} as="div">
+                  <Box>
+                    <strong><FormattedHTMLMessage id="distribution.btcAddress" />: </strong>
                     {this.state.drop_address}
+                  </Box>
+                  <Box px={5}>
+                    <QRCode value={this.state.drop_address} size={64} />
+                  </Box>
                   </Address>}
 
                 <div>

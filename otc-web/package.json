@@ -15,6 +15,7 @@
     "palx": "^1.0.2",
     "polished": "^1.3.0",
     "prop-types": "^15.5.10",
+    "qrcode.react": "^0.8.0",
     "react": "^15.6.1",
     "react-create-component-from-tag-prop": "^1.2.1",
     "react-dom": "^15.6.1",
