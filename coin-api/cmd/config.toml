@@ -2,8 +2,8 @@
 NodeAddress="localhost:8332"
 User="aaa"
 Password="123"
-CertFile=""
-TLS=false
+CertFile="btcd.cert"
+TLS=true
 BlockExplorer="https://api.blockchain.info"
 
 [skycoin]
