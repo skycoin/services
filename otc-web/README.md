@@ -1,7 +1,3 @@
-# event.skycoin.net
-
-https://event.skycoin.net
-
 ## Setup
 
 1. Install npm
