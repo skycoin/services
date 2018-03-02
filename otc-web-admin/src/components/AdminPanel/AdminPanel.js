@@ -9,7 +9,7 @@ import { Flex, Box } from 'grid-styled';
 import { FormattedMessage, FormattedHTMLMessage, injectIntl } from 'react-intl';
 import { rem } from 'polished';
 import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
-import QRCode from 'qrcode.react';
+import Switch from "react-switch";
 
 import Button from 'components/Button';
 import Container from 'components/Container';
@@ -23,6 +23,28 @@ import media from '../../utils/media';
 
 import { getStatus, setPrice, setOctState } from './admin-api';
 
+const Panel = styled(Box) `
+  background-color: #fff;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
+  padding: ${rem(SPACE[6])} ${rem(SPACE[4])};
+`;
+
+const H3Styled = styled.h3`
+  font-family: "Montreal", sans-serif;
+  font-weight: 400;
+  line-height: ${rem(1.75)};
+`;
+
+const sources = {
+  internal: 'internal',
+  exchange: 'exchange',
+};
+
+const TransparenContainer = styled(Container) `
+  background-color: 'transparent' !important;
+  padding-left: 0;
+`;
+
 const Wrapper = styled.div`
   background-color: ${COLORS.gray[1]};
   padding: ${rem(SPACE[5])} 0;
@@ -32,11 +54,20 @@ const Wrapper = styled.div`
   `}
 `;
 
+const TransparenWrapper = styled(Wrapper) `
+  background-color: 'transparent';
+`;
+
 const PriceSource = ({ price, source }) => {
   return (<div>
-    <strong>{source === 'internal' ? 'Internal price' : 'Exchange price'}: </strong>
-    {price / 1e8} BTC
+    <Text as="p">
+      {source === 'internal' ? 'Internal price' : 'Exchange price'} {price / 1e8} BTC
+    </Text>
   </div>)
+};
+
+const invalidInputStyle = {
+  borderColor: 'red'
 };
 
 const PriceSelector = ({
@@ -48,35 +79,77 @@ const PriceSelector = ({
 
   setPrice,
   setSource,
+  save
 }) => {
-  return (<div />);
+  const isPriceValid = !isNaN(selectedPrice) && selectedPrice !== '';
+  return (
+    <TransparenContainer>
+      <Text as="a" mr={5}>Internal</Text>
+      <Switch
+        onChange={checked => setSource(checked ? sources.exchange : sources.internal)}
+        checked={selectedSource === sources.exchange}
+        offColor={COLORS.blue[7]}
+        onColor={COLORS.green[8]}
+        uncheckedIcon={false}
+        checkedIcon={false}
+      />
+      <Text as="a" ml={5}>Exchange</Text>
+      {selectedSource === sources.internal &&
+        <Input
+          value={selectedPrice}
+          style={isPriceValid ? {} : invalidInputStyle}
+          onChange={e => setPrice(e.target.value)}
+          placeholder="Price" />}
+      <TransparenContainer mt={5}>
+        <Button
+          bg={COLORS.green[8]}
+          color="white"
+          onClick={() => {
+            if (isPriceValid || selectedSource === sources.exchange) {
+              save(selectedSource, selectedPrice);
+            }
+          }}
+        >Save</Button>
+        <Button
+          m={3}
+          bg={COLORS.blue[7]}
+          color="white"
+          onClick={() => {
+            setPrice(price);
+            setSource(source);
+          }}>Reset</Button>
+      </TransparenContainer>
+    </TransparenContainer>);
 };
 
 export default class extends React.Component {
   state = {
     price: 0,
-    source: 'internal',
+    source: sources.internal,
     paused: true,
     loaded: false,
 
-    selectedSource: 'internal',
-    selectedPrice: 0,
+    selectedSource: sources.internal,
+    selectedPrice: '0',
   };
-  componentWillMount = async () => {
+  refreshStatus = async () => {
     const status = await getStatus();
     this.setState({
       ...this.state,
-      loaded: true,
       ...status,
 
       selectedSource: status.source,
-      selectedPrice: status.price,
+      selectedPrice: `${status.price / 1e8}`,
     });
   }
+  componentWillMount = async () => {
+    await this.refreshStatus();
+    this.setState({ ...this.state, loaded: true });
+  }
   setOctState = async pause => {
-    this.setState({ ...this.state, loaded: false });
+    this.setState({ ...this.state });
     await setOctState(pause);
-    this.setState({ ...this.state, loaded: true, paused: pause });
+    this.setState({ ...this.state, paused: pause });
   }
   setSource = source => {
     this.setState({ ...this.state, selectedSource: source });
@@ -84,14 +157,23 @@ export default class extends React.Component {
   setPrice = price => {
     this.setState({ ...this.state, selectedPrice: price });
   }
+  save = async (source, price) => {
+    await setPrice(Number.parseFloat(price) * 1e8, source);
+    await this.refreshStatus();
+  }
   render = () => {
     const {
       paused,
       source,
       price,
 
+      loaded,
+
       selectedSource,
       selectedPrice, } = this.state;
+
+    if (!loaded) return null;
+
     return (
       <div>
         <Helmet>
@@ -103,16 +185,23 @@ export default class extends React.Component {
         <Wrapper>
 
           <Container>
-            <Flex flexDirection="row">
-              <Box px={10}>
-                <Text as="h3">OTC Status:</Text>
+            <Flex column width="33.3333%">
+              <Panel>
+                <H3Styled>OTC Status:</H3Styled>
                 <Text>{paused ? 'Paused' : 'Running'}</Text>
                 {paused
-                  ? (<Button onClick={() => this.setOctState(false)}>Start</Button>)
-                  : (<Button onClick={() => this.setOctState(true)}>Pause</Button>)}
-              </Box>
-              <Box px={10}>
-                <h3>Price source:</h3>
+                  ? (<Button
+                        bg={COLORS.green[8]}
+                        color="white"
+                        onClick={() => this.setOctState(false)}
+                        >Start</Button>)
+                  : (<Button 
+                        bg={COLORS.red[7]}
+                        color="white"
+                        onClick={() => this.setOctState(true)}>Pause</Button>)}
+              </Panel>
+              <Panel mt={5}>
+                <H3Styled>Price source:</H3Styled>
                 <PriceSource source={source} price={price} />
                 <PriceSelector
                   price={price}
@@ -122,8 +211,9 @@ export default class extends React.Component {
                   selectedPrice={selectedPrice}
 
                   setSource={this.setSource}
-                  setPrice={this.setPrice} />
-              </Box>
+                  setPrice={this.setPrice}
+                  save={this.save} />
+              </Panel>
             </Flex>
           </Container>
         </Wrapper>

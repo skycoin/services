@@ -23,6 +23,7 @@
     "react-intl": "^2.3.0",
     "react-modal": "^2.2.0",
     "react-router-dom": "^4.1.2",
+    "react-switch": "^2.3.0",
     "styled-components": "^2.1.1",
     "styled-system": "1.0.0-4"
   },
