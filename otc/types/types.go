@@ -21,6 +21,7 @@ type (
 
 	Metadata struct {
 		Status    Status `json:"status"`
+		Amount    uint64 `json:"amount"`
 		CreatedAt int64  `json:"created_at"`
 		UpdatedAt int64  `json:"updated_at"`
 		TxId      string `json:"tx_id"`
@@ -51,7 +52,8 @@ type (
 
 	Connection interface {
 		Generate() (Drop, error)
-		Balance(Drop) (float64, error)
+		Balance(Drop) (uint64, error)
+		Value() (uint64, error)
 		Connected() (bool, error)
 		Stop() error
 	}

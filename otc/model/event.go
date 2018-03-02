@@ -1,8 +1,6 @@
 package model
 
 import (
-	"encoding/json"
-	"os"
 	"time"
 
 	"github.com/skycoin/services/otc/types"
@@ -25,9 +23,4 @@ func NewEvent(r *types.Request, err error) *Event {
 		e.Error = err.Error()
 	}
 	return e
-}
-
-func (e *Event) Append(f *os.File) error {
-	defer f.Write([]byte("\n"))
-	return json.NewEncoder(f).Encode(e)
 }

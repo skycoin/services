@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"sync"
@@ -11,13 +12,36 @@ import (
 
 const (
 	STORAGE_REQUESTS = "requests/"
+	STORAGE_EVENTS   = "events.json"
 )
 
 type Storage struct {
 	sync.RWMutex
 
-	Path string
+	Events *Events
+	Path   string
 }
+
+type Events struct {
+	file *os.File
+}
+
+func NewEvents(path string) (*Events, error) {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	return &Events{file}, err
+}
+
+func (e *Events) Save(event *Event) error {
+	// append event to log file
+	if err := json.NewEncoder(e.file).Encode(event); err != nil {
+		return err
+	}
+
+	// sync to disk
+	return e.file.Sync()
+}
+
+func (e *Events) Close() error { return e.file.Close() }
 
 func NewStorage(path string) (*Storage, error) {
 	s := &Storage{
@@ -25,7 +49,13 @@ func NewStorage(path string) (*Storage, error) {
 	}
 
 	// check that storage path exists
-	if _, err := os.Stat(path); err != nil {
+	_, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// open events handler
+	if s.Events, err = NewEvents(s.Path + STORAGE_EVENTS); err != nil {
 		return nil, err
 	}
 
@@ -109,13 +139,14 @@ func (s *Storage) SaveRequest(request *types.Request) error {
 
 	// read json data from disk
 	data, err := mapFromJSON(path)
-	requestIsNotExist := os.IsNotExist(err)
-	if err != nil && !requestIsNotExist {
-		return err
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
 	}
 
 	// update map
-	if data == nil || requestIsNotExist {
+	if data == nil {
 		data = map[types.Currency]map[types.Drop]*types.Metadata{
 			request.Currency: {request.Drop: request.Metadata},
 		}

@@ -5,8 +5,10 @@ import (
 	"path/filepath"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
+	"github.com/skycoin/services/otc/exchange"
 	"github.com/skycoin/services/otc/types"
 )
 
@@ -88,7 +90,33 @@ func (c *BTCConnection) Generate() (types.Drop, error) {
 	return types.Drop(addr.EncodeAddress()), nil
 }
 
-func (c *BTCConnection) Balance(drop types.Drop) (float64, error) {
+func (c *BTCConnection) Send(drop types.Drop, amount uint64) (string, error) {
+	// convert string to btc address
+	addr, err := btcutil.DecodeAddress(string(drop), &chaincfg.MainNetParams)
+	if err != nil {
+		return "", err
+	}
+
+	// unlock wallet for sending
+	if err = c.client.WalletPassphrase(c.account, 2); err != nil {
+		return "", err
+	}
+
+	// send and get transaction id
+	hash, err := c.client.SendToAddress(addr, btcutil.Amount(amount))
+	if err != nil {
+		return "", err
+	}
+
+	return hash.String(), nil
+}
+
+func (c *BTCConnection) Value() (uint64, error) {
+	value, err := exchange.GetBTCValue()
+	return value, err
+}
+
+func (c *BTCConnection) Balance(drop types.Drop) (uint64, error) {
 	var params *chaincfg.Params
 	if c.testnet {
 		params = &chaincfg.TestNet3Params
@@ -112,14 +140,35 @@ func (c *BTCConnection) Balance(drop types.Drop) (float64, error) {
 		return 0, nil
 	}
 
-	var sum float64
+	var sum uint64
 	for _, res := range unspents {
 		if res.Spendable {
-			sum += res.Amount
+			sum += uint64(res.Amount * 10e7)
 		}
 	}
 
 	return sum, nil
+}
+
+func (c *BTCConnection) Confirmed(hash string) (bool, error) {
+	txHash, err := chainhash.NewHashFromStr(hash)
+	if err != nil {
+		return false, err
+	}
+
+	// get transaction from blockchain
+	result, err := c.client.GetTransaction(txHash)
+	if err != nil {
+		return false, err
+	}
+
+	// 6 confirmations to be confirmed
+	if result.Confirmations < 6 {
+		return false, nil
+	}
+
+	// tx confirmed
+	return true, nil
 }
 
 func (c *BTCConnection) Connected() (bool, error) {

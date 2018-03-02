@@ -17,35 +17,39 @@ import (
 type Sender struct {
 	sync.Mutex
 
-	config  *types.Config
-	skycoin *skycoin.Connection
-	dropper *dropper.Dropper
-	logger  *log.Logger
-
-	work *list.List
-	stop chan struct{}
+	config         *types.Config
+	skycoin        *skycoin.Connection
+	dropper        *dropper.Dropper
+	logger         *log.Logger
+	work           *list.List
+	stop           chan struct{}
+	fromAddrs      []string
+	fromChangeAddr string
 }
 
 var ErrZeroBalance = errors.New("sender got drop with zero balance")
 
 func NewSender(c *types.Config, s *skycoin.Connection, d *dropper.Dropper) (*Sender, error) {
-	return &Sender{
+	sender := &Sender{
 		config:  c,
 		skycoin: s,
 		dropper: d,
 		logger:  log.New(os.Stdout, types.LOG_SENDER, types.LOG_FLAGS),
 		work:    list.New().Init(),
 		stop:    make(chan struct{}),
-	}, nil
+	}
+
+	sender.fromAddrs = sender.getFromAddrs()
+	sender.fromChangeAddr = sender.fromAddrs[0]
+
+	return sender, nil
 }
 
-func (s *Sender) Stop() {
-	s.stop <- struct{}{}
-	s.logger.Println("stopped")
-}
+func (s *Sender) Stop() { s.stop <- struct{}{} }
 
 func (s *Sender) Start() {
 	s.logger.Println("started")
+
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(s.config.Sender.Tick))
@@ -54,6 +58,7 @@ func (s *Sender) Start() {
 
 			select {
 			case <-s.stop:
+				s.logger.Println("stopped")
 				return
 			default:
 				s.process()
@@ -70,40 +75,24 @@ func (s *Sender) process() {
 		// convert list element to work
 		w := e.Value.(*types.Work)
 
-		// get balance using multicoin-api
-		// get skycoin using exchange api
-		// send skycoin
-
-		// get balance of drop
-		balance, err := s.dropper.GetBalance(
-			w.Request.Currency,
-			w.Request.Drop,
-		)
+		// get value of amount
+		value, err := s.dropper.GetValue(w.Request.Currency)
 		if err != nil {
 			w.Return(err)
 			s.work.Remove(e)
 			continue
 		}
 
-		// sender shouldn't have requests with zero balance
-		if balance == 0.0 {
-			w.Return(ErrZeroBalance)
-			s.work.Remove(e)
-			continue
-		}
-
-		to := []cli.SendAmount{{
-			Addr:  string(w.Request.Address),
-			Coins: s.dropper.GetValue(w.Request.Currency, balance),
-		}}
+		// divide deposit amount over skycoin value to get skycoin equivalent
+		coins := w.Request.Metadata.Amount / value
 
 		// create sky transaction
 		tx, err := cli.CreateRawTx(
 			s.skycoin.Client,
 			s.skycoin.Wallet,
-			s.fromAddrs(),
-			s.fromChangeAddr(),
-			to,
+			s.fromAddrs,
+			s.fromChangeAddr,
+			[]cli.SendAmount{{Addr: string(w.Request.Address), Coins: coins}},
 		)
 		if err != nil {
 			w.Return(err)
@@ -127,12 +116,21 @@ func (s *Sender) process() {
 	}
 }
 
-func (s *Sender) fromAddrs() []string {
-	return nil
-}
+func (s *Sender) getFromAddrs() []string {
+	// get all addrs from wallet
+	addrs := s.skycoin.Wallet.GetAddresses()
 
-func (s *Sender) fromChangeAddr() string {
-	return ""
+	if len(addrs) == 0 {
+		addrs = s.skycoin.Wallet.GenerateAddresses(1)
+	}
+
+	// convert to string slice
+	out := make([]string, len(addrs))
+	for i := range addrs {
+		out[i] = addrs[i].String()
+	}
+
+	return out
 }
 
 func (s *Sender) Handle(request *types.Request) chan *types.Result {

@@ -1,3 +1,4 @@
-db/requests/**
+db/*.json
+db/requests/*.json
 debug
 otc

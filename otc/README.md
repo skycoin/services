@@ -95,7 +95,7 @@ This gets the [metadata](#request) of a request and returns it to the user.
 
 * `status` is one of the following:
 	* `waiting_deposit` - skycoin address is bound, no deposit seen yet 
-	* `waiting_send` - deposit detected, waiting to send sky to user 
+	* `waiting_send` - deposit detected, waiting to send to user 
 	* `waiting_confirm` - skycoin sent, waiting to confirm transaction 
 	* `done` - skycoin transaction confirmed 
 	* `expired` - drop expired

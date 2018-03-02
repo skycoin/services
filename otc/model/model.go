@@ -21,18 +21,20 @@ var (
 type Model struct {
 	sync.Mutex
 
-	path    string
-	stop    chan struct{}
-	storage *Storage
-	lookup  *Lookup
-	results *list.List
-	config  *types.Config
-	logger  *log.Logger
-	errs    *log.Logger
-	events  *os.File
-	Scanner types.Service
-	Sender  types.Service
-	Monitor types.Service
+	path        string
+	stop        chan struct{}
+	storage     *Storage
+	lookup      *Lookup
+	results     *list.List
+	config      *types.Config
+	logger      *log.Logger
+	errs        *log.Logger
+	events      *os.File
+	paused      bool
+	pausedMutex sync.RWMutex
+	Scanner     types.Service
+	Sender      types.Service
+	Monitor     types.Service
 }
 
 func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) (*Model, error) {
@@ -44,44 +46,32 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 		config:  c,
 		logger:  log.New(os.Stdout, types.LOG_MODEL, types.LOG_FLAGS),
 		errs:    errs,
+		paused:  c.Model.Paused,
 		Scanner: scn,
 		Sender:  sndr,
 		Monitor: mntr,
 	}
 
-	// make sure all services are there
-	if scn == nil || sndr == nil || mntr == nil {
-		return nil, ErrNilService
-	}
-
-	// make sure db dir exists
-	_, err := os.Stat(m.path)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 
 	// open request storage struct
 	if m.storage, err = NewStorage(c.Model.Path); err != nil {
 		return nil, err
 	}
 
-	// open events log file
-	if m.events, err = os.OpenFile(
-		m.path+"events.json",
-		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
-		0644,
-	); err != nil {
-		return nil, err
-	}
-
 	// get list of files in db dir
-	files, err := ioutil.ReadDir(m.path + "requests/")
+	files, err := ioutil.ReadDir(m.path + STORAGE_REQUESTS)
 	if err != nil {
 		return nil, err
 	}
 
 	// for each .json file in db dir
 	for _, file := range files {
+		// ignore hidden files
+		if file.Name()[0] == '.' {
+			continue
+		}
+
 		// create a slice of requests contained in file
 		requests, err := m.storage.LoadRequests(file.Name())
 		if err != nil {
@@ -108,6 +98,7 @@ func (m *Model) Stop() {
 	m.Monitor.Stop()
 
 	m.stop <- struct{}{}
+	m.storage.Events.Close()
 	m.logger.Println("stopped")
 }
 
@@ -121,7 +112,9 @@ func (m *Model) Start() {
 			case <-m.stop:
 				return
 			default:
-				m.process()
+				if !m.Paused() {
+					m.process()
+				}
 			}
 		}
 	}()
@@ -135,20 +128,28 @@ func (m *Model) process() {
 		// convert to result promise
 		r := e.Value.(chan *types.Result)
 
-		// non-blocking read on each result promise
+		// non-blocking read on result promise
 		select {
 		case result := <-r:
+			// fills metadata UpdatedAt field
+			result.Request.Metadata.Update()
+
+			// save new state to disk
+			err := m.storage.SaveRequest(result.Request)
+			if err != nil {
+				m.errs.Printf("model: %v\n", err)
+			}
+
+			// append to events log
+			err = m.storage.Events.Save(NewEvent(result.Request, result.Err))
+			if err != nil {
+				m.errs.Printf("model: %v\n", err)
+			}
+
 			if result.Err != nil {
-				// TODO: re-route request, try again?
+				// TODO: handle error
 				m.errs.Printf("model: %v\n", result.Err)
 			} else {
-				result.Request.Metadata.Update()
-
-				// save new state to disk
-				if err := m.storage.SaveRequest(result.Request); err != nil {
-					m.errs.Printf("model: %v\n", result.Err)
-				}
-
 				// send to next service if request isn't finished
 				if next := m.Handle(result.Request); next != nil {
 					// add result promise to queue
@@ -156,20 +157,22 @@ func (m *Model) process() {
 				}
 			}
 
-			// append to events log
-			if err := NewEvent(
-				result.Request,
-				result.Err,
-			).Append(m.events); err != nil {
-				m.errs.Printf("model: %v\n", err)
-			}
-
 			// this elem has been handled, so remove
 			m.results.Remove(e)
 		default:
+			// service hasn't finished with request, so check next result
 			continue
 		}
 	}
+}
+
+func (m *Model) AddNew(request *types.Request) error {
+	// append to events log
+	if err := m.storage.Events.Save(NewEvent(request, nil)); err != nil {
+		return err
+	}
+
+	return m.Add(request)
 }
 
 func (m *Model) Add(request *types.Request) error {
@@ -181,6 +184,7 @@ func (m *Model) Add(request *types.Request) error {
 		return err
 	}
 
+	// associate drop with skycoin address in lookup
 	m.lookup.SetDrop(request.Drop, request.Currency, request.Address)
 
 	// route to next component
@@ -223,4 +227,22 @@ func (m *Model) GetMetadata(drop types.Drop, curr types.Currency) (*types.Metada
 	}
 
 	return metadata, nil
+}
+
+func (m *Model) Pause() {
+	m.pausedMutex.Lock()
+	defer m.pausedMutex.Unlock()
+	m.paused = true
+}
+
+func (m *Model) Unpause() {
+	m.pausedMutex.Lock()
+	defer m.pausedMutex.Unlock()
+	m.paused = false
+}
+
+func (m *Model) Paused() bool {
+	m.pausedMutex.RLock()
+	defer m.pausedMutex.RUnlock()
+	return m.paused
 }

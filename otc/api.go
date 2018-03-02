@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/skycoin/services/otc/exchange"
 	"github.com/skycoin/services/otc/types"
 	"github.com/skycoin/skycoin/src/cipher"
 )
@@ -42,7 +41,13 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if DROPPER.Connections[currency] == nil {
-		// return doesn't exist
+		// currency doesn't exist
+		return
+	}
+
+	// check if model is accepting new requests
+	if MODEL.Paused() {
+		http.Error(w, "paused", http.StatusInternalServerError)
 		return
 	}
 
@@ -67,9 +72,8 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// TODO: get value based on drop type
-	// get sky btc value
-	value, err := exchange.GetBTCValue()
+	// get sky value of currency
+	value, err := DROPPER.Connections[currency].Value()
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		ERRS.Printf("api: %v\n", err)
@@ -77,7 +81,7 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add for processing
-	if err = MODEL.Add(request); err != nil {
+	if err = MODEL.AddNew(request); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		ERRS.Printf("api: %v\n", err)
 		return
