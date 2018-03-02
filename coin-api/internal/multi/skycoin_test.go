@@ -15,7 +15,8 @@ import (
 func TestGenerateAddress(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
-		Port: 6420,
+		// Port: 6420,
+		Port: 6000,
 	}
 	skyService := multi.NewSkyService(&loc)
 	rsp, err := skyService.GenerateAddr(1, true)
