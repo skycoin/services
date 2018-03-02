@@ -21,7 +21,7 @@ tick = 5
 [model]
 tick = 5
 path = "db/"
-paused = true
+paused = false
 
 [monitor]
 tick = 5

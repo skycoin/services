@@ -120,8 +120,12 @@ func (s *Sender) getFromAddrs() []string {
 	// get all addrs from wallet
 	addrs := s.skycoin.Wallet.GetAddresses()
 
+	if len(addrs) == 0 {
+		addrs = s.skycoin.Wallet.GenerateAddresses(1)
+	}
+
 	// convert to string slice
-	out := make([]string, len(addrs), len(addrs))
+	out := make([]string, len(addrs))
 	for i := range addrs {
 		out[i] = addrs[i].String()
 	}

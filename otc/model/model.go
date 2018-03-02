@@ -67,6 +67,11 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 
 	// for each .json file in db dir
 	for _, file := range files {
+		// ignore hidden files
+		if file.Name()[0] == '.' {
+			continue
+		}
+
 		// create a slice of requests contained in file
 		requests, err := m.storage.LoadRequests(file.Name())
 		if err != nil {

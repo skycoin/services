@@ -85,6 +85,9 @@ func main() {
 		os.Exit(0)
 	}()
 
+	// public web server
+	// private web server
+
 	http.HandleFunc("/api/bind", apiBind)
 	http.HandleFunc("/api/status", apiStatus)
 
