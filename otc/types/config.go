@@ -22,6 +22,9 @@ type Config struct {
 	Api struct {
 		Listen string
 	}
+	Admin struct {
+		Listen string
+	}
 	Model struct {
 		Tick   int
 		Path   string

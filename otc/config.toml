@@ -28,3 +28,6 @@ tick = 5
 
 [api]
 listen = ":8080"
+
+[admin]
+listen = ":8000"
