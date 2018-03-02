@@ -11,12 +11,12 @@ export const getAddress = skyAddress =>
       'Content-Type': 'application/json',
     },
   })
-    .then(response => response.data.drop_address)
+    .then(response => response.data)
     .catch((error) => {
       throw new Error(error.response.data || 'An unknown error occurred.');
     });
 
-export const checkExchangeStatus = () =>
-  axios.get('/api/exchange-status')
+export const getConfig = () =>
+  axios.get('/api/config')
     .then(response => response.data)
     .catch((error) => { throw new Error(error.response.data); });

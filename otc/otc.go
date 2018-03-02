@@ -90,6 +90,7 @@ func main() {
 
 	http.HandleFunc("/api/bind", apiBind)
 	http.HandleFunc("/api/status", apiStatus)
+	http.HandleFunc("/api/config", apiGetConfigurationi)
 
 	println("listening on " + CONFIG.Api.Listen)
 	if err := http.ListenAndServe(CONFIG.Api.Listen, nil); err != nil {

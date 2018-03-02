@@ -9,6 +9,7 @@ import { Flex, Box } from 'grid-styled';
 import { FormattedMessage, FormattedHTMLMessage, injectIntl } from 'react-intl';
 import { rem } from 'polished';
 import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
+import QRCode from 'qrcode.react';
 
 import Button from 'components/Button';
 import Container from 'components/Container';
@@ -20,7 +21,7 @@ import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
 
-import { checkStatus, getAddress, getConfig, checkExchangeStatus } from '../../utils/distributionAPI';
+import { checkStatus, getAddress, getConfig, } from '../../utils/distributionAPI';
 
 const Wrapper = styled.div`
   background-color: ${COLORS.gray[1]};
@@ -32,6 +33,8 @@ const Wrapper = styled.div`
 `;
 
 const Address = Heading.extend`
+  display: flex;
+  justify-content: space-between;
   word-break: break-all;
   background-color: ${COLORS.gray[0]};
   border-radius: ${BORDER_RADIUS.base};
@@ -39,51 +42,185 @@ const Address = Heading.extend`
   padding: 1rem;
 `;
 
+const StatusModal = ({ status, statusIsOpen, closeModals, skyAddress, intl }) => (
+  <Modal
+    contentLabel="Status"
+    style={styles}
+    isOpen={statusIsOpen}
+    onRequestClose={closeModals}
+  >
+    <Heading heavy color="black" fontSize={[2, 3]} my={[3, 5]}>
+      <FormattedMessage
+        id="distribution.statusFor"
+        values={{
+          skyAddress,
+        }}
+      />
+    </Heading>
+
+    <Text as="div" color="black" fontSize={[2, 3]} my={[3, 5]}>
+      {status.map((status, i) => (
+        <p key={i}>
+          <FormattedMessage
+            id={`distribution.statuses.${status.status}`}
+            values={{
+              updated: moment.unix(status.updated_at).locale(intl.locale).format('LL LTS'),
+            }}
+          />
+        </p>
+      ))}
+    </Text>
+  </Modal>
+);
+
+const getDisabledReasonMessage = reason => {
+  switch (reason) {
+    case 'coinsSoldOut':
+      return <FormattedMessage id="distribution.errors.coinsSoldOut" />;
+    case 'paused':
+      return <FormattedMessage id="distribution.errors.paused" />;
+    default:
+      return <FormattedMessage id="distribution.headingEnded" />;
+  }
+};
+
+const StatusErrorMessage = ({ disabledReason }) => (<Flex column>
+  <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
+    {getDisabledReasonMessage(disabledReason)}
+  </Heading>
+  <Text heavy color="black" fontSize={[2, 3]} as="div">
+    <FormattedHTMLMessage id="distribution.ended" />
+  </Text>
+</Flex>);
+
+const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
+  <div>
+    <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
+      <FormattedMessage id="distribution.heading" />
+    </Heading>
+    <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
+      <FormattedMessage
+        id="distribution.rate"
+        values={{
+          rate: +sky_btc_exchange_rate,
+        }}
+      />
+    </Text>
+    <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
+      <FormattedMessage
+        id="distribution.inventory"
+        values={{
+          coins: balance && balance.coins,
+        }}
+      />
+    </Text>
+
+    <Text heavy color="black" fontSize={[2, 3]} as="div">
+      <FormattedHTMLMessage id="distribution.instructions" />
+    </Text>
+  </div>);
+
+const DistributionForm = ({
+  sky_btc_exchange_rate,
+  balance,
+  intl,
+
+  address,
+  handleChange,
+
+  drop_address,
+  getAddress,
+  addressLoading,
+
+  checkStatus,
+  statusLoading,
+}) => (
+    <Flex justify="center">
+      <Box width={[1 / 1, 1 / 1, 2 / 3]} py={[5, 7]}>
+        <DistributionFormInfo sky_btc_exchange_rate={sky_btc_exchange_rate} balance={balance} />
+
+        <Input
+          placeholder={intl.formatMessage({ id: 'distribution.enterAddress' })}
+          value={address}
+          onChange={handleChange}
+        />
+
+        {drop_address && <Address heavy color="black" fontSize={[2, 3]} as="div">
+          <Box>
+            <strong><FormattedHTMLMessage id="distribution.btcAddress" />: </strong>
+            {drop_address}
+          </Box>
+          <Box px={5}>
+            <QRCode value={drop_address} size={64} />
+          </Box>
+        </Address>}
+
+        <div>
+          <Button
+            big
+            onClick={getAddress}
+            color="white"
+            bg="base"
+            mr={[2, 5]}
+            fontSize={[1, 3]}
+          >
+            {addressLoading
+              ? <FormattedMessage id="distribution.loading" />
+              : <FormattedMessage id="distribution.getAddress" />}
+          </Button>
+
+          <Button
+            onClick={checkStatus}
+            color="base"
+            big
+            outlined
+            fontSize={[1, 3]}
+          >
+            {statusLoading
+              ? <FormattedMessage id="distribution.loading" />
+              : <FormattedMessage id="distribution.checkStatus" />}
+          </Button>
+        </div>
+      </Box>
+    </Flex>);
+
 class Distribution extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      status: [],
-      skyAddress: null,
-      drop_address: '',
-      statusIsOpen: false,
-      addressLoading: false,
-      statusLoading: false,
-      enabled: true,
-    };
-
-    this.handleChange = this.handleChange.bind(this);
-    this.getAddress = this.getAddress.bind(this);
-    this.checkStatus = this.checkStatus.bind(this);
-    this.closeModals = this.closeModals.bind(this);
-    this.checkExchangeStatus = this.checkExchangeStatus.bind(this);
+  state = {
+    status: [],
+    skyAddress: null,
+    drop_address: '',
+    statusIsOpen: false,
+    addressLoading: false,
+    statusLoading: false,
+    enabled: true,
+    // TODO: These values should be taken from the OTC API
+    sky_btc_exchange_rate: 1,
+  };
+  componentWillMount = async () => {
+    try {
+      const config = await getConfig();
+      const stateMutation = {};
+      switch (config.otcStatus) {
+        case 'SOLD_OUT':
+          stateMutation.disabledReason = 'coinsSoldOut';
+          stateMutation.enabled = false;
+          break;
+        case 'PAUSED':
+          stateMutation.disabledReason = 'paused';
+          stateMutation.enabled = false;
+          break;
+        case 'WORKING':
+          stateMutation.balance = { coins: config.balance };
+          stateMutation.enabled = true;
+          break;
+      }
+      this.setState({ ...this.state, ...stateMutation });
+    } catch (_) {
+      this.setState({ ...this.state, enabled: false, disabledReason: 'closed' });
+    }
   }
 
-  componentDidMount() {
-  }
-
-  checkExchangeStatus() {
-    return checkExchangeStatus()
-      .then((status) => {
-        if (status.error !== '') {
-          this.setState({
-            disabledReason: 'coinsSoldOut',
-            balance: status.balance,
-            enabled: false,
-          });
-        } else {
-          this.setState({
-            balance: status.balance,
-          });
-        }
-      });
-  }
-
-  getConfig() {
-    return getConfig().then(config => this.setState({ ...config }));
-  }
-
-  getAddress() {
+  getAddress = () => {
     if (!this.state.skyAddress) {
       return alert(
         this.props.intl.formatMessage({
@@ -99,7 +236,7 @@ class Distribution extends React.Component {
     return getAddress(this.state.skyAddress)
       .then((res) => {
         this.setState({
-          drop_address: res,
+          drop_address: res.drop_address,
         });
       })
       .catch((err) => {
@@ -112,19 +249,19 @@ class Distribution extends React.Component {
       });
   }
 
-  handleChange(event) {
+  handleChange = (event) => {
     this.setState({
       skyAddress: event.target.value,
     });
   }
 
-  closeModals() {
+  closeModals = () => {
     this.setState({
       statusIsOpen: false,
     });
   }
 
-  checkStatus() {
+  checkStatus = () => {
     if (!this.state.drop_address) {
       return alert(
         this.props.intl.formatMessage({
@@ -150,8 +287,20 @@ class Distribution extends React.Component {
       });
   }
 
-  render() {
+  render = () => {
     const { intl } = this.props;
+    const {
+      statusIsOpen,
+      skyAddress,
+      status,
+      disabledReason,
+      enabled,
+      sky_btc_exchange_rate,
+      balance,
+      address,
+      drop_address,
+      addressLoading,
+      statusLoading } = this.state;
     return (
       <div>
         <Helmet>
@@ -161,110 +310,32 @@ class Distribution extends React.Component {
         <Header external />
 
         <Wrapper>
-          <Modal
-            contentLabel="Status"
-            style={styles}
-            isOpen={this.state.statusIsOpen}
-            onRequestClose={this.closeModals}
-          >
-            <Heading heavy color="black" fontSize={[2, 3]} my={[3, 5]}>
-              <FormattedMessage
-                id="distribution.statusFor"
-                values={{
-                  skyAddress: this.state.skyAddress,
-                }}
-              />
-            </Heading>
-
-            <Text as="div" color="black" fontSize={[2, 3]} my={[3, 5]}>
-              {this.state.status.map((status, i) => (
-                <p key={i}>
-                  <FormattedMessage
-                    id={`distribution.statuses.${status.status}`}
-                    values={{
-                      updated: moment.unix(status.updated_at).locale(intl.locale).format('LL LTS'),
-                    }}
-                  />
-                </p>
-              ))}
-            </Text>
-          </Modal>
+          <StatusModal
+            statusIsOpen={statusIsOpen}
+            closeModals={this.closeModals}
+            skyAddress={skyAddress}
+            intl={intl}
+            status={status}
+          />
 
           <Container>
-            {!this.state.enabled ? <Flex column>
-              <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
-                {(this.state.disabledReason === 'coinsSoldOut') ?
-                  <FormattedMessage id="distribution.errors.coinsSoldOut" /> :
-                  <FormattedMessage id="distribution.headingEnded" />}
-              </Heading>
-              <Text heavy color="black" fontSize={[2, 3]} as="div">
-                <FormattedHTMLMessage id="distribution.ended" />
-              </Text>
-            </Flex> : <Flex justify="center">
-              <Box width={[1 / 1, 1 / 1, 2 / 3]} py={[5, 7]}>
-                <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
-                  <FormattedMessage id="distribution.heading" />
-                </Heading>
-                <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
-                  <FormattedMessage
-                    id="distribution.rate"
-                    values={{
-                        rate: +this.state.sky_btc_exchange_rate,
-                      }}
-                  />
-                </Text>
-                <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
-                  <FormattedMessage
-                    id="distribution.inventory"
-                    values={{
-                        coins: this.state.balance && this.state.balance.coins,
-                      }}
-                  />
-                </Text>
+            {!enabled
+              ? <StatusErrorMessage disabledReason={disabledReason} />
+              : <DistributionForm
+                sky_btc_exchange_rate={sky_btc_exchange_rate}
+                balance={balance}
+                intl={intl}
 
-                <Text heavy color="black" fontSize={[2, 3]} as="div">
-                  <FormattedHTMLMessage id="distribution.instructions" />
-                </Text>
+                address={address}
+                handleChange={this.handleChange}
 
-                <Input
-                  placeholder={intl.formatMessage({ id: 'distribution.enterAddress' })}
-                  value={this.state.address}
-                  onChange={this.handleChange}
-                />
+                drop_address={drop_address}
+                getAddress={this.getAddress}
+                addressLoading={addressLoading}
 
-                {this.state.drop_address && <Address heavy color="black" fontSize={[2, 3]} as="p">
-                  <strong><FormattedHTMLMessage id="distribution.btcAddress" />: </strong>
-                    {this.state.drop_address}
-                  </Address>}
-
-                <div>
-                  <Button
-                    big
-                    onClick={this.getAddress}
-                    color="white"
-                    bg="base"
-                    mr={[2, 5]}
-                    fontSize={[1, 3]}
-                  >
-                    {this.state.addressLoading
-                        ? <FormattedMessage id="distribution.loading" />
-                        : <FormattedMessage id="distribution.getAddress" />}
-                  </Button>
-
-                  <Button
-                    onClick={this.checkStatus}
-                    color="base"
-                    big
-                    outlined
-                    fontSize={[1, 3]}
-                  >
-                    {this.state.statusLoading
-                        ? <FormattedMessage id="distribution.loading" />
-                        : <FormattedMessage id="distribution.checkStatus" />}
-                  </Button>
-                </div>
-              </Box>
-            </Flex>}
+                checkStatus={this.checkStatus}
+                statusLoading={statusLoading}
+              />}
           </Container>
         </Wrapper>
 
