@@ -101,6 +101,58 @@ This gets the [metadata](#request) of a request and returns it to the user.
 	* `expired` - drop expired
 * `updated_at` is the unix time (seconds) when the request was last updated
 
+# admin api
+
+## /api/status
+
+Get status of OTC.
+
+**http request**
+
+Nothing, just a GET.
+
+**http response**
+
+```json
+{
+	"price": 119833,
+	"source": "internal",
+	"paused": true
+}
+```
+
+## /api/price
+
+Set the price and price source (exchange or internal).
+
+**http request**
+
+```json
+{
+	"price": 119833,
+	"source": "internal"
+}
+```
+
+* `price` is the satoshi value of 1 SKY. `119833` is equal to `0.00119833 BTC`.
+* `source` is what price source to use when executing transactions:
+	* `internal` use otc price (manually set)
+	* `exchange` use dynamic price from exchange
+
+## /api/pause
+
+Pause state transitions.
+
+**http request**
+
+```json
+{
+	"pause": true
+}
+```
+
+* `pause` is a boolean denoting whether to pause or not
+
 # backend
 
 <p align="center">

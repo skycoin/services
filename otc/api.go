@@ -146,9 +146,15 @@ type getConfigurationResponse struct {
 	Balance   uint32 `json:"balance"`
 }
 
-func apiGetConfigurationi(w http.ResponseWriter, r *http.Request) {
+func apiGetConfiguration(w http.ResponseWriter, r *http.Request) {
+	status := OTCWorking
+	if MODEL.Paused() {
+		status = OTCPaused
+	}
+	// TODO other OTC statuses
+
 	json.NewEncoder(w).Encode(&getConfigurationResponse{
-		OTCStatus: OTCWorking,
-		Balance:   10,
+		OTCStatus: status,
+		Balance:   0, // TODO
 	})
 }

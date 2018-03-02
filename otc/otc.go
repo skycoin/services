@@ -79,21 +79,23 @@ func main() {
 	// for graceful shutdown / cleanup
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	go func() {
-		<-stop
-		MODEL.Stop()
-		os.Exit(0)
-	}()
 
-	// public web server
-	// private web server
+	api := http.NewServeMux()
+	api.HandleFunc("/api/bind", apiBind)
+	api.HandleFunc("/api/status", apiStatus)
+	api.HandleFunc("/api/config", apiGetConfiguration)
+	go http.ListenAndServe(CONFIG.Api.Listen, api)
 
-	http.HandleFunc("/api/bind", apiBind)
-	http.HandleFunc("/api/status", apiStatus)
-	http.HandleFunc("/api/config", apiGetConfigurationi)
+	admin := http.NewServeMux()
+	admin.HandleFunc("/api/status", adminStatus)
+	admin.HandleFunc("/api/pause", adminPause)
+	admin.HandleFunc("/api/price", adminPrice)
+	go http.ListenAndServe(CONFIG.Admin.Listen, admin)
 
-	println("listening on " + CONFIG.Api.Listen)
-	if err := http.ListenAndServe(CONFIG.Api.Listen, nil); err != nil {
-		panic(err)
-	}
+	println("api listening on " + CONFIG.Api.Listen)
+	println("admin listening on " + CONFIG.Admin.Listen)
+
+	<-stop
+	println("stopping")
+	MODEL.Stop()
 }
