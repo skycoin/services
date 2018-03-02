@@ -7,11 +7,11 @@ import (
 	"github.com/skycoin/services/otc/types"
 )
 
-type Source int
+type Source string
 
 const (
-	EXCHANGE Source = iota
-	INTERNAL
+	EXCHANGE Source = "exchange"
+	INTERNAL Source = "internal"
 )
 
 type Dropper struct {
