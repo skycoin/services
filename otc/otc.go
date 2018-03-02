@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -20,13 +21,20 @@ var (
 	CONFIG  *types.Config
 	DROPPER *dropper.Dropper
 	ERRS    *log.Logger
+
+	CONFIG_PATH = flag.String(
+		"config",
+		"config.toml",
+		"path to config .toml file",
+	)
 )
 
 func init() {
+	flag.Parse()
 	var err error
 
 	// load config file from disk
-	CONFIG, err = types.NewConfig("config.toml")
+	CONFIG, err = types.NewConfig(*CONFIG_PATH)
 	if err != nil {
 		panic(err)
 	}
@@ -80,12 +88,14 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 
+	// public facing otc api
 	api := http.NewServeMux()
 	api.HandleFunc("/api/bind", apiBind)
 	api.HandleFunc("/api/status", apiStatus)
 	api.HandleFunc("/api/config", apiGetConfiguration)
 	go http.ListenAndServe(CONFIG.Api.Listen, api)
 
+	// private facing admin api
 	admin := http.NewServeMux()
 	admin.HandleFunc("/api/status", adminStatus)
 	admin.HandleFunc("/api/pause", adminPause)
