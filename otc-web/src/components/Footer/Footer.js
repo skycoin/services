@@ -10,7 +10,7 @@ import List from './components/List';
 import Email from './components/Email';
 import content from './content';
 
-export default ({ suffix }) => (
+export default () => (
   <div>
     <Container>
       <Flex wrap my={[4, 8]} mx={-4}>
@@ -22,7 +22,7 @@ export default ({ suffix }) => (
           </Text>
 
           <Text as="div" fontSize={[0, 0, 1]} color="gray.8" heavy>
-            <Languages suffix={suffix} />
+            <Languages />
           </Text>
         </Box>
 

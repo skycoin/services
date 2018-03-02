@@ -14,7 +14,7 @@ const Language = styled.span`
   }
 `;
 
-const StyledLink = styled(Link) `
+const StyledLink = styled(Link)`
   text-decoration: none;
 
   &:hover {
@@ -22,21 +22,20 @@ const StyledLink = styled(Link) `
   }
 `;
 
-export default ({ suffix }) => {
-  const s = suffix || '/';
-  return (<Languages>
-    <Language><StyledLink to={s}>English</StyledLink></Language>
+export default () => (
+  <Languages>
+    <Language><StyledLink to="/">English</StyledLink></Language>
     <Flag
       name="chinese"
       render={() => (
-        <Language><StyledLink to={`/cn${s}`}>中文</StyledLink></Language>
+        <Language><StyledLink to="/cn/">中文</StyledLink></Language>
       )}
     />
     <Flag
       name="russian"
       render={() => (
-        <Language><StyledLink to={`/ru${s}`}>Русский</StyledLink></Language>
+        <Language><StyledLink to="/ru/">Ру́сский</StyledLink></Language>
       )}
     />
-  </Languages>);
-};
+  </Languages>
+);
