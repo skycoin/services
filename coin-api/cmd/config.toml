@@ -1,9 +1,10 @@
 [bitcoin]
-NodeAddress="45.33.44.212:8334"
-User="TG4zCvPNJWSjkCqHGN3hZLo9Ahk="
-Password="cf7trPlnjZOhJtRp+aOIlk8ewF4="
-CertFile="btcd.cert"
-TLS=true
+NodeAddress="localhost:8332"
+User="aaa"
+Password="123"
+CertFile=""
+TLS=false
+BlockExplorer="https://api.blockchain.info/charts/balance?cors=true&format=json&lang=en&address="
 
 [skycoin]
 Host="0.0.0.0"

@@ -39,9 +39,9 @@ type BtcStats struct {
 	NodeHost   string `json:"node-host"`
 }
 
-func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*handlerBTC, error) {
+func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*handlerBTC, error) {
 	log.Printf("Start new BTC handler with host %s user %s", btcAddr, btcUser)
-	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert)
+	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert, blockExplorer)
 
 	if err != nil {
 		return nil, err

@@ -45,7 +45,8 @@ func Start(config *Config) (*echo.Echo, error) {
 		config.Bitcoin.User,
 		config.Bitcoin.Password,
 		!config.Bitcoin.TLS,
-		cert)
+		cert,
+		config.Bitcoin.BlockExplorer)
 
 	apiGroupV1 := e.Group("/api/v1")
 	skyGroup := apiGroupV1.Group("/sky")
