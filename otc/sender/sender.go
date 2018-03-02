@@ -25,6 +25,8 @@ type Sender struct {
 	stop           chan struct{}
 	fromAddrs      []string
 	fromChangeAddr string
+	count          int
+	countMutex     sync.RWMutex
 }
 
 var ErrZeroBalance = errors.New("sender got drop with zero balance")
@@ -45,6 +47,18 @@ func NewSender(c *types.Config, s *skycoin.Connection, d *dropper.Dropper) (*Sen
 	return sender, nil
 }
 
+func (s *Sender) Count() int {
+	s.countMutex.RLock()
+	defer s.countMutex.RUnlock()
+	return s.count
+}
+
+func (s *Sender) updateCount() {
+	s.countMutex.Lock()
+	defer s.countMutex.Unlock()
+	s.count = s.work.Len()
+}
+
 func (s *Sender) Stop() { s.stop <- struct{}{} }
 
 func (s *Sender) Start() {
@@ -53,8 +67,7 @@ func (s *Sender) Start() {
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(s.config.Sender.Tick))
-
-			s.logger.Printf("[%d]\n", s.work.Len())
+			s.updateCount()
 
 			select {
 			case <-s.stop:

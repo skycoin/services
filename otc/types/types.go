@@ -46,6 +46,7 @@ type (
 
 	Service interface {
 		Handle(*Request) chan *Result
+		Count() int
 		Start()
 		Stop()
 	}

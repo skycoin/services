@@ -14,11 +14,13 @@ import (
 type Monitor struct {
 	sync.Mutex
 
-	config  *types.Config
-	skycoin *skycoin.Connection
-	logger  *log.Logger
-	work    *list.List
-	stop    chan struct{}
+	config     *types.Config
+	skycoin    *skycoin.Connection
+	logger     *log.Logger
+	work       *list.List
+	stop       chan struct{}
+	count      int
+	countMutex sync.RWMutex
 }
 
 func NewMonitor(c *types.Config, sky *skycoin.Connection) (*Monitor, error) {
@@ -31,6 +33,18 @@ func NewMonitor(c *types.Config, sky *skycoin.Connection) (*Monitor, error) {
 	}, nil
 }
 
+func (m *Monitor) Count() int {
+	m.countMutex.RLock()
+	defer m.countMutex.RUnlock()
+	return m.count
+}
+
+func (m *Monitor) updateCount() {
+	m.countMutex.Lock()
+	defer m.countMutex.Unlock()
+	m.count = m.work.Len()
+}
+
 func (m *Monitor) Stop() { m.stop <- struct{}{} }
 
 func (m *Monitor) Start() {
@@ -39,8 +53,7 @@ func (m *Monitor) Start() {
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(m.config.Monitor.Tick))
-
-			m.logger.Printf("[%d]\n", m.work.Len())
+			m.updateCount()
 
 			select {
 			case <-m.stop:

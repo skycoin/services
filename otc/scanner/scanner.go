@@ -14,12 +14,14 @@ import (
 type Scanner struct {
 	sync.Mutex
 
-	config  *types.Config
-	dropper *dropper.Dropper
-	logger  *log.Logger
-	errs    *log.Logger
-	work    *list.List
-	stop    chan struct{}
+	config     *types.Config
+	dropper    *dropper.Dropper
+	logger     *log.Logger
+	errs       *log.Logger
+	work       *list.List
+	stop       chan struct{}
+	count      int
+	countMutex sync.RWMutex
 }
 
 func NewScanner(conf *types.Config, drpr *dropper.Dropper) (*Scanner, error) {
@@ -33,6 +35,18 @@ func NewScanner(conf *types.Config, drpr *dropper.Dropper) (*Scanner, error) {
 	}, nil
 }
 
+func (s *Scanner) Count() int {
+	s.countMutex.RLock()
+	defer s.countMutex.RUnlock()
+	return s.count
+}
+
+func (s *Scanner) updateCount() {
+	s.countMutex.Lock()
+	defer s.countMutex.Unlock()
+	s.count = s.work.Len()
+}
+
 func (s *Scanner) Stop() { s.stop <- struct{}{} }
 
 func (s *Scanner) Start() {
@@ -41,8 +55,7 @@ func (s *Scanner) Start() {
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(s.config.Scanner.Tick))
-
-			s.logger.Printf("[%d]\n", s.work.Len())
+			s.updateCount()
 
 			select {
 			case <-s.stop:

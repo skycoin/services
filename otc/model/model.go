@@ -92,6 +92,15 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 	return m, nil
 }
 
+func (m *Model) PrintCounts() {
+	m.logger.Printf(
+		"scanner(%d), sender(%d), monitor(%d)\n",
+		m.Scanner.Count(),
+		m.Sender.Count(),
+		m.Monitor.Count(),
+	)
+}
+
 func (m *Model) Stop() {
 	m.Scanner.Stop()
 	m.Sender.Stop()
@@ -107,6 +116,7 @@ func (m *Model) Start() {
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(m.config.Model.Tick))
+			m.PrintCounts()
 
 			select {
 			case <-m.stop:
