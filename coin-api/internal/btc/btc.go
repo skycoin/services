@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -36,7 +37,10 @@ rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
 FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
 ig==
 -----END CERTIFICATE-----`
-	defaultBlockExplorer = "https://api.blockchain.info/charts/balance?cors=true&format=json&lang=en&address="
+	// TODO(stgleb): Check for more appropriate methods for checking balance
+	defaultBlockExplorer         = "https://blockchain.info"
+	walletBalanceDefaultEndpoint = "/charts/balance?cors=true&format=json&lang=en&address="
+	txStatusDefaultEndpoint      = "/rawtx/"
 )
 
 // ServiceBtc encapsulates operations with bitcoin
@@ -181,6 +185,27 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 	return balance, nil
 }
 
+// TODO(stgleb): Cover with unit tests
+func (s *ServiceBtc) CheckTxStatus(txId string) ([]byte, error) {
+	// TODO(stgleb): Add interaction with btcd node and curctui breaking on the next phase
+	//hash, err := chainhash.NewHash([]byte(txId))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//s.client.GetTransaction(hash)
+
+	url := s.blockExplorer + txStatusDefaultEndpoint + txId
+	resp, err := http.Get(url)
+
+	data, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error) {
 	// First get an address in proper form
 	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
@@ -210,7 +235,7 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error)
 }
 
 func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, error) {
-	url := s.blockExplorer + address
+	url := s.blockExplorer + walletBalanceDefaultEndpoint + address
 	resp, err := http.Get(url)
 
 	if err != nil {
@@ -225,8 +250,9 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 		return decimal.NewFromFloat(0.0), err
 	}
 
+	// In case if no values - balance is empty
 	if len(r.Values) == 0 {
-		return decimal.NewFromFloat(0.0), errors.New("empty values array")
+		return decimal.NewFromFloat(0.0), nil
 	}
 
 	return decimal.NewFromFloat(r.Values[0].Balance), nil
