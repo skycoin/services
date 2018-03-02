@@ -68,26 +68,25 @@ func (d *Dropper) SetValue(c types.Currency, amount uint64) {
 	d.Value[c] = amount
 }
 
-// GetValue returns SKY value of the amount of currency.
-func (d *Dropper) GetValue(c types.Currency, amount uint64) (uint64, error) {
+// GetValue returns the equivalent of 1 SKY in the passed currency.
+func (d *Dropper) GetValue(c types.Currency) (uint64, error) {
 	d.ValueMutex.RLock()
 	defer d.ValueMutex.RUnlock()
 
-	var (
-		value uint64
-		err   error
-	)
-
 	if d.ValueSource == EXCHANGE {
-		if value, err = d.Connections[c].Value(); err != nil {
+		if value, err := d.Connections[c].Value(); err != nil {
 			return 0, err
+		} else {
+			return value, nil
 		}
 	} else if d.ValueSource == INTERNAL {
 		if _, exists := d.Value[c]; !exists {
 			return 0, ErrConnectionMissing
+		} else {
+			return d.Value[c], nil
 		}
-		value = d.Value[c]
 	}
 
-	return amount / value, nil
+	// should never be reached
+	return 0, nil
 }

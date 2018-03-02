@@ -21,18 +21,20 @@ var (
 type Model struct {
 	sync.Mutex
 
-	path    string
-	stop    chan struct{}
-	storage *Storage
-	lookup  *Lookup
-	results *list.List
-	config  *types.Config
-	logger  *log.Logger
-	errs    *log.Logger
-	events  *os.File
-	Scanner types.Service
-	Sender  types.Service
-	Monitor types.Service
+	path        string
+	stop        chan struct{}
+	storage     *Storage
+	lookup      *Lookup
+	results     *list.List
+	config      *types.Config
+	logger      *log.Logger
+	errs        *log.Logger
+	events      *os.File
+	paused      bool
+	pausedMutex sync.RWMutex
+	Scanner     types.Service
+	Sender      types.Service
+	Monitor     types.Service
 }
 
 func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) (*Model, error) {
@@ -44,6 +46,7 @@ func NewModel(c *types.Config, scn, sndr, mntr types.Service, errs *log.Logger) 
 		config:  c,
 		logger:  log.New(os.Stdout, types.LOG_MODEL, types.LOG_FLAGS),
 		errs:    errs,
+		paused:  c.Model.Paused,
 		Scanner: scn,
 		Sender:  sndr,
 		Monitor: mntr,
@@ -104,7 +107,9 @@ func (m *Model) Start() {
 			case <-m.stop:
 				return
 			default:
-				m.process()
+				if !m.Paused() {
+					m.process()
+				}
 			}
 		}
 	}()
@@ -217,4 +222,22 @@ func (m *Model) GetMetadata(drop types.Drop, curr types.Currency) (*types.Metada
 	}
 
 	return metadata, nil
+}
+
+func (m *Model) Pause() {
+	m.pausedMutex.Lock()
+	defer m.pausedMutex.Unlock()
+	m.paused = true
+}
+
+func (m *Model) Unpause() {
+	m.pausedMutex.Lock()
+	defer m.pausedMutex.Unlock()
+	m.paused = false
+}
+
+func (m *Model) Paused() bool {
+	m.pausedMutex.RLock()
+	defer m.pausedMutex.RUnlock()
+	return m.paused
 }

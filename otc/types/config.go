@@ -23,8 +23,9 @@ type Config struct {
 		Listen string
 	}
 	Model struct {
-		Tick int
-		Path string
+		Tick   int
+		Path   string
+		Paused bool
 	}
 	Scanner struct {
 		Tick       int

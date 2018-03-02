@@ -76,16 +76,15 @@ func (s *Sender) process() {
 		w := e.Value.(*types.Work)
 
 		// get value of amount
-		value, err := s.dropper.GetValue(
-			w.Request.Currency,
-			// filled by Scanner
-			w.Request.Metadata.Amount,
-		)
+		value, err := s.dropper.GetValue(w.Request.Currency)
 		if err != nil {
 			w.Return(err)
 			s.work.Remove(e)
 			continue
 		}
+
+		// divide deposit amount over skycoin value to get skycoin equivalent
+		coins := w.Request.Metadata.Amount / value
 
 		// create sky transaction
 		tx, err := cli.CreateRawTx(
@@ -93,7 +92,7 @@ func (s *Sender) process() {
 			s.skycoin.Wallet,
 			s.fromAddrs,
 			s.fromChangeAddr,
-			[]cli.SendAmount{{Addr: string(w.Request.Address), Coins: value}},
+			[]cli.SendAmount{{Addr: string(w.Request.Address), Coins: coins}},
 		)
 		if err != nil {
 			w.Return(err)
