@@ -93,7 +93,7 @@ const StatusErrorMessage = ({ disabledReason }) => (<Flex column>
   </Text>
 </Flex>);
 
-const DistributionFormInfo = ({ sky_btc_exchange_rate }) => (
+const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
   <div>
     <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
       <FormattedMessage id="distribution.heading" />
@@ -106,6 +106,14 @@ const DistributionFormInfo = ({ sky_btc_exchange_rate }) => (
         }}
       />
     </Text>
+    <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
+      <FormattedMessage
+        id="distribution.inventory"
+        values={{
+          coins: balance && balance.coins,
+        }}
+      />
+    </Text>
 
     <Text heavy color="black" fontSize={[2, 3]} as="div">
       <FormattedHTMLMessage id="distribution.instructions" />
@@ -114,6 +122,7 @@ const DistributionFormInfo = ({ sky_btc_exchange_rate }) => (
 
 const DistributionForm = ({
   sky_btc_exchange_rate,
+  balance,
   intl,
 
   address,
@@ -128,7 +137,7 @@ const DistributionForm = ({
 }) => (
     <Flex justify="center">
       <Box width={[1 / 1, 1 / 1, 2 / 3]} py={[5, 7]}>
-        <DistributionFormInfo sky_btc_exchange_rate={sky_btc_exchange_rate} />
+        <DistributionFormInfo sky_btc_exchange_rate={sky_btc_exchange_rate} balance={balance} />
 
         <Input
           placeholder={intl.formatMessage({ id: 'distribution.enterAddress' })}
@@ -201,6 +210,7 @@ class Distribution extends React.Component {
           stateMutation.enabled = false;
           break;
         case 'WORKING':
+          stateMutation.balance = { coins: config.balance };
           stateMutation.enabled = true;
           break;
       }
@@ -286,6 +296,7 @@ class Distribution extends React.Component {
       disabledReason,
       enabled,
       sky_btc_exchange_rate,
+      balance,
       address,
       drop_address,
       addressLoading,
@@ -312,6 +323,7 @@ class Distribution extends React.Component {
               ? <StatusErrorMessage disabledReason={disabledReason} />
               : <DistributionForm
                 sky_btc_exchange_rate={sky_btc_exchange_rate}
+                balance={balance}
                 intl={intl}
 
                 address={address}
