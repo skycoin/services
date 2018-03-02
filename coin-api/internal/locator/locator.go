@@ -2,7 +2,9 @@ package locator
 
 // Node locates nodes and returns their credentials
 type Node struct {
+	Host string
 	node string
+	Port int32
 }
 
 // NewLocatorNode get new locator instance
@@ -16,12 +18,12 @@ func (l *Node) SetNode(node string) *Node {
 	return l
 }
 
-// GetNode returns given node ip or address
-func (l *Node) GetNode() string {
-	return "127.0.0.1"
+// GetNodeHost returns given node ip or address
+func (l *Node) GetNodeHost() string {
+	return l.Host
 }
 
 // GetNodePort return given node port
-func (l *Node) GetNodePort() int {
-	return 8080
+func (l *Node) GetNodePort() int32 {
+	return l.Port
 }

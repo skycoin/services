@@ -28,7 +28,7 @@ type SkyСoinService struct {
 func NewSkyService(n *locator.Node) *SkyСoinService {
 	s := &SkyСoinService{}
 	s.client = &webrpc.Client{
-		Addr: fmt.Sprintf("%s:%d", n.GetNode(), n.GetNodePort()),
+		Addr: fmt.Sprintf("%s:%d", n.GetNodeHost(), n.GetNodePort()),
 	}
 	return s
 }
@@ -43,20 +43,17 @@ func getSeed() string {
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
 func (s *SkyСoinService) GenerateAddr(count int, hideSecret bool) (*model.Response, error) {
 	seed := getSeed()
-	w, err := wallet.CreateAddresses(wallet.CoinTypeSkycoin, seed, count, hideSecret)
+	w, err := wallet.CreateAddresses(wallet.CoinTypeSkycoin, seed, count, false)
 	if err != nil {
 		return nil, err
 	}
-	wl, err := w.ToWallet()
-	adrss := wl.GetAddresses()
-	if len(adrss) == 0 {
-		return nil, fmt.Errorf("Unable to get wallet address, number of wallets is %d", len(adrss))
-	}
+
+	entry := w.Entries[0]
 	rsp := model.Response{
 		Status: model.StatusOk,
 		Code:   0,
 		Result: &model.AddressResponse{
-			Address: adrss[0].String(),
+			Address: entry.Address,
 		},
 	}
 
