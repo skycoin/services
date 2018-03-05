@@ -33,5 +33,8 @@ func NewConnection(config *types.Config) (*Connection, error) {
 		return nil, err
 	}
 
+	// TODO: config to put coins in one address?
+	_ = w.GenerateAddresses(100)
+
 	return &Connection{Wallet: w, Client: c}, nil
 }

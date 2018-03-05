@@ -1,6 +1,6 @@
 [skycoin]
 node = "localhost:6430"
-seed = "lol nice try"
+seed = ""
 name = "teller"
 
 [dropper.BTC]
