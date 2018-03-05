@@ -45,7 +45,25 @@ func TestGenerateAddress(t *testing.T) {
 			t.Fatalf("wrong type, *model.BalanceResponse expected, given %s", reflect.TypeOf(result).String())
 		}
 		if len(bRsp.Address) == 0 {
-			t.Fatalf("bRsp.Address shouldn't be zero ")
+			t.Fatalf("Address shouldn't be zero length")
+		}
+	})
+
+	t.Run("sign transaction", func(t *testing.T) {
+		address := ""
+		rsp, err := skyService.SignTransaction(address)
+		if !assert.NoError(t, err) {
+			t.Fatal()
+		}
+		assertCodeZero(t, rsp)
+		assertStatusOk(t, rsp)
+		result := rsp.Result
+		bRsp, ok := result.(*model.TransactionSign)
+		if !ok {
+			t.Fatalf("wrong type, *model.TransactionSign expected, given %s", reflect.TypeOf(result).String())
+		}
+		if len(bRsp.Signid) == 0 {
+			t.Fatalf("signid shouldn't be zero length")
 		}
 	})
 }

@@ -111,13 +111,12 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 }
 
 // SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transid string) (*model.Response, error) {
+func (s *SkyСoinService) SignTransaction(transid string) (rsp *model.Response, err error) {
 	//TODO: VERIFY this sign transaction logic
 	var buf bytes.Buffer
 	buf.WriteString(transid)
 	strbytes := buf.Bytes()
 	var secKey cipher.SecKey
-	rsp := &model.Response{}
 	defer func() {
 		if r := recover(); r != nil {
 			rsp.Status = model.StatusError
