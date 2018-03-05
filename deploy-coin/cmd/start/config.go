@@ -13,7 +13,7 @@ import (
 	"github.com/skycoin/skycoin/src/util/file"
 )
 
-// Config records the node's configuration
+// NodeConfig records the node's configuration
 type NodeConfig struct {
 	// Disable peer exchange
 	DisablePEX bool

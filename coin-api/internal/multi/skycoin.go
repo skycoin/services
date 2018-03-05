@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"bytes"
-	"strconv"
 
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
@@ -28,7 +27,7 @@ type SkyСoinService struct {
 func NewSkyService(n *locator.Node) *SkyСoinService {
 	s := &SkyСoinService{}
 	s.client = &webrpc.Client{
-		Addr: fmt.Sprintf("%s:%d", n.GetNode(), n.GetNodePort()),
+		Addr: fmt.Sprintf("%s:%d", n.GetNodeHost(), n.GetNodePort()),
 	}
 	return s
 }
@@ -43,20 +42,17 @@ func getSeed() string {
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
 func (s *SkyСoinService) GenerateAddr(count int, hideSecret bool) (*model.Response, error) {
 	seed := getSeed()
-	w, err := wallet.CreateAddresses(wallet.CoinTypeSkycoin, seed, count, hideSecret)
+	w, err := wallet.CreateAddresses(wallet.CoinTypeSkycoin, seed, count, false)
 	if err != nil {
 		return nil, err
 	}
-	wl, err := w.ToWallet()
-	adrss := wl.GetAddresses()
-	if len(adrss) == 0 {
-		return nil, fmt.Errorf("Unable to get wallet address, number of wallets is %d", len(adrss))
-	}
+
+	entry := w.Entries[0]
 	rsp := model.Response{
 		Status: model.StatusOk,
 		Code:   0,
 		Result: &model.AddressResponse{
-			Address: adrss[0].String(),
+			Address: entry.Address,
 		},
 	}
 
@@ -81,35 +77,33 @@ func (s *SkyСoinService) GenerateKeyPair() *model.Response {
 	return &rsp
 }
 
+func getBalanceAddress(br *cli.BalanceResult) string {
+	if len(br.Addresses) > 0 {
+		return br.Addresses[0].Address
+	}
+
+	return ""
+}
+
 // CheckBalance check the balance (and get unspent outputs) for an address
-func (s *SkyСoinService) CheckBalance(wltFile string, addr int) (*model.Response, error) {
-	// wallet.LoadWallets(wltsDir)
-	//TODO: probably i have to just get unspent outputs?
-	wlt, err := wallet.Load(wltFile)
-	if err != nil {
-		return nil, err
-	}
-	addresses := wlt.GetAddresses()
+func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 	addressesToGetBalance := make([]string, 0, 1)
-	for addWlt := range addresses {
-		if addWlt == addr {
-			addressesToGetBalance = append(addressesToGetBalance, strconv.Itoa(addr))
-		}
-	}
+	addressesToGetBalance = append(addressesToGetBalance, addr)
 	balanceResult, err := cli.GetBalanceOfAddresses(s.client, addressesToGetBalance)
 	if err != nil {
 		return nil, err
 	}
-
 	rsp := model.Response{
 		Status: model.StatusOk,
 		Code:   model.CodeNoError,
 		Result: &model.BalanceResponse{
-			Address: strconv.Itoa(addr),
+			Address: getBalanceAddress(balanceResult),
+			Hours:   balanceResult.Spendable.Hours,
 			Balance: balanceResult.Spendable.Coins,
-			Coin:    model.Coin{
-			//TODO: fill data here
-			},
+			// balanceResult.
+			// 	Coin: model.Coin{
+			// //TODO: fill data here
+			// },
 		},
 	}
 
@@ -117,13 +111,12 @@ func (s *SkyСoinService) CheckBalance(wltFile string, addr int) (*model.Respons
 }
 
 // SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transid string) (*model.Response, error) {
+func (s *SkyСoinService) SignTransaction(transid string) (rsp *model.Response, err error) {
 	//TODO: VERIFY this sign transaction logic
 	var buf bytes.Buffer
 	buf.WriteString(transid)
 	strbytes := buf.Bytes()
 	var secKey cipher.SecKey
-	rsp := &model.Response{}
 	defer func() {
 		if r := recover(); r != nil {
 			rsp.Status = model.StatusError
