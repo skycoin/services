@@ -2,6 +2,7 @@ package multi
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 
 	"github.com/skycoin/services/coin-api/internal/locator"
@@ -126,7 +127,6 @@ func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody)
 	//TODO: DO I need it here? -> PushOutput Adds a TransactionOutput, sending coins & hours to an Address
 	//TODO: maybe we have to show all signatures?
 	signid := trans.Sigs[0]
-	// println("model.StatusOk", model.StatusOk, model.StatusError)
 	rsp.Status = model.StatusOk
 	rsp.Code = 0
 	rsp.Result = &model.TransactionSign{
@@ -137,14 +137,19 @@ func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody)
 }
 
 // CheckTransactionStatus check the status of a transaction (tracks transactions by transaction hash)
-func (s *SkyСoinService) CheckTransactionStatus(txID string) (visor.TransactionStatus, error) {
+func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.TransactionStatus, error) {
+	// validate the txid
+	_, err := cipher.SHA256FromHex(txID)
+	if err != nil {
+		return nil, errors.New("invalid txid")
+	}
 	status, err := s.client.GetTransactionByID(txID)
 
 	if err != nil {
-		return visor.TransactionStatus{}, err
+		return &visor.TransactionStatus{}, err
 	}
 
-	return status.Transaction.Status, nil
+	return &status.Transaction.Status, nil
 }
 
 // InjectTransaction inject transaction into network

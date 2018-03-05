@@ -15,6 +15,10 @@ import (
 	"github.com/skycoin/skycoin/src/testutil"
 )
 
+const (
+	rawTxID = "bdc4a85a3e9d17a8fe00aa7430d0347c7f1dd6480a16da7147b6e43905057d43"
+)
+
 func TestGenerateAddress(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
@@ -49,6 +53,46 @@ func TestGenerateAddress(t *testing.T) {
 		}
 		if len(bRsp.Address) == 0 {
 			t.Fatalf("Address shouldn't be zero length")
+		}
+	})
+}
+
+func TestTransaction(t *testing.T) {
+	loc := locator.Node{
+		Host: "127.0.0.1",
+		// Port: 20200,
+		Port: 6420,
+	}
+	skyService := multi.NewSkyService(&loc)
+
+	t.Run("inject transaction", func(t *testing.T) {
+		//TODO: returns 404 for now and has to be fixed
+		rsp, err := skyService.InjectTransaction(rawTxID)
+		if !assert.NoError(t, err) {
+			println("err.Error", err.Error())
+			t.Fatal()
+		}
+		assertCodeZero(t, rsp)
+		assertStatusOk(t, rsp)
+		result := rsp.Result
+		bRsp, ok := result.(*model.Transaction)
+		if !ok {
+			t.Fatalf("wrong type, *model.Transaction expected, given %s", reflect.TypeOf(result).String())
+		}
+		if len(bRsp.Transid) == 0 {
+			t.Fatalf("signid shouldn't be zero length")
+		}
+	})
+
+	t.Run("check transaction status", func(t *testing.T) {
+		txID := rawTxID
+		//TODO: returns 404 for now and has to be fixed
+		transStatus, err := skyService.CheckTransactionStatus(txID)
+		if !assert.NoError(t, err) {
+			t.Fatal()
+		}
+		if transStatus.BlockSeq == 0 {
+			t.Fatalf("blockSeq shouldn't be zero length")
 		}
 	})
 }
