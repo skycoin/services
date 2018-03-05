@@ -15,8 +15,7 @@ import (
 func TestGenerateAddress(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
-		// Port: 6420,
-		Port: 6000,
+		Port: 6430,
 	}
 	skyService := multi.NewSkyService(&loc)
 	rsp, err := skyService.GenerateAddr(1, true)
@@ -31,11 +30,9 @@ func TestGenerateAddress(t *testing.T) {
 	if len(rspAdd.Address) == 0 {
 		t.Fatalf("address cannot be zero lenght")
 	}
+
 	t.Run("check balance", func(t *testing.T) {
-		// walletFile := "somefile.wlt"
-		// addr := 4029003020
 		address := rspAdd.Address
-		address = "LinfYSSC8cK13mA3KYJ2xczEsdFABbB2yP"
 		rsp, err := skyService.CheckBalance(address)
 		if !assert.NoError(t, err) {
 			t.Fatal()

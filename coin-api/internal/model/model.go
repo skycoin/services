@@ -56,6 +56,7 @@ type AddressResponse struct {
 type BalanceResponse struct {
 	Address string `json:"address"`
 	Balance string `json:"balance"`
+	Hours   string `json:"hours"`
 	Coin    Coin
 }
 

@@ -77,36 +77,33 @@ func (s *SkyСoinService) GenerateKeyPair() *model.Response {
 	return &rsp
 }
 
+func getBalanceAddress(br *cli.BalanceResult) string {
+	if len(br.Addresses) > 0 {
+		return br.Addresses[0].Address
+	}
+
+	return ""
+}
+
 // CheckBalance check the balance (and get unspent outputs) for an address
 func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
-	// wallet.LoadWallets(wltsDir)
-	//TODO: probably i have to just get unspent outputs?
-	// wlt, err := wallet.Load(wltFile)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// addresses := wlt.GetAddresses()
-	// address
 	addressesToGetBalance := make([]string, 0, 1)
-	// for addWlt := range addresses {
-	// if addWlt == addr {
 	addressesToGetBalance = append(addressesToGetBalance, addr)
-	// }
-	// }
 	balanceResult, err := cli.GetBalanceOfAddresses(s.client, addressesToGetBalance)
 	if err != nil {
 		return nil, err
 	}
-
 	rsp := model.Response{
 		Status: model.StatusOk,
 		Code:   model.CodeNoError,
 		Result: &model.BalanceResponse{
-			Address: addr,
+			Address: getBalanceAddress(balanceResult),
+			Hours:   balanceResult.Spendable.Hours,
 			Balance: balanceResult.Spendable.Coins,
-			Coin:    model.Coin{
-			//TODO: fill data here
-			},
+			// balanceResult.
+			// 	Coin: model.Coin{
+			// //TODO: fill data here
+			// },
 		},
 	}
 
