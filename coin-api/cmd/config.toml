@@ -7,8 +7,8 @@ TLS=true
 BlockExplorer="https://api.blockchain.info"
 
 [skycoin]
-Host="0.0.0.0"
-Port="9341"
+Host="127.0.0.1"
+Port="6420"
 
 [server]
 ListenStr="0.0.0.0:8080"
