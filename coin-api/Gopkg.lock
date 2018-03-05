@@ -135,6 +135,12 @@
   version = "v1.0.4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/skycoin/services"
+  packages = ["errhandler"]
+  revision = "5d6b0670e842cddd7d924887f080a2b595a92d0a"
+
+[[projects]]
   name = "github.com/skycoin/skycoin"
   packages = [
     "src/api/cli",
@@ -222,6 +228,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "19346bd34b2def9fba3aa0577e032b76582be1a3576f39671cb3e1250249396d"
+  inputs-digest = "4730b206529251dbf595737e7c8ead1e4233cd4f5dfc27e95c6ba69a24aec697"
   solver-name = "gps-cdcl"
   solver-version = 1
