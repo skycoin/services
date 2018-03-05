@@ -1,0 +1,95 @@
+@font-face {
+    font-family: 'Montreal';
+    src: url('./montreal-bold-webfont.woff2') format('woff2'),
+         url('./montreal-bold-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'Montreal';
+    src: url('./montreal-regular-webfont.woff2') format('woff2'),
+         url('./montreal-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'Inconsolata';
+    src: url('./inconsolata-bold-webfont.woff2') format('woff2'),
+         url('./inconsolata-bold-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'Inconsolata';
+    src: url('./inconsolata-regular-webfont.woff2') format('woff2'),
+         url('./inconsolata-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+html {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+* {
+  &,
+  &:before,
+  &:after {
+    box-sizing: inherit;
+  }
+}
+
+body,
+h1, h2, h3, h4, h5, h6,
+blockquote, p, pre,
+dl, dd, ol, ul,
+figure,
+hr,
+fieldset, legend {
+  margin:  0;
+  padding: 0;
+}
+
+li > {
+  ol,
+  ul {
+    margin-bottom: 0;
+  }
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+fieldset {
+  min-width: 0;
+  border: 0;
+}
+
+address,
+h1, h2, h3, h4, h5, h6,
+blockquote, p, pre,
+dl, ol, ul,
+figure,
+hr,
+table,
+fieldset {
+  margin-bottom: 1rem;
+}
+
+dd, ol, ul {
+  margin-left: 1rem;
+}

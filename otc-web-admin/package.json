@@ -1,0 +1,46 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^0.16.2",
+    "flag": "^2.0.3",
+    "flat": "^2.0.1",
+    "grid-styled": "^2.0.0-9",
+    "hidden-styled": "^1.0.0-0",
+    "join-path": "^1.1.1",
+    "lodash": "^4.17.4",
+    "moment": "^2.18.1",
+    "normalize.css": "^7.0.0",
+    "palx": "^1.0.2",
+    "polished": "^1.3.0",
+    "prop-types": "^15.5.10",
+    "qrcode.react": "^0.8.0",
+    "react": "^15.6.1",
+    "react-create-component-from-tag-prop": "^1.2.1",
+    "react-dom": "^15.6.1",
+    "react-helmet": "^5.1.3",
+    "react-intl": "^2.3.0",
+    "react-modal": "^2.2.0",
+    "react-router-dom": "^4.1.2",
+    "react-switch": "^2.3.0",
+    "styled-components": "^2.1.1",
+    "styled-system": "1.0.0-4"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^15.0.1",
+    "eslint-config-airbnb-base": "^11.2.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^5.0.1",
+    "eslint-plugin-react": "^7.0.1",
+    "react-scripts": "1.0.7"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "proxy": "http://localhost:8000"
+}

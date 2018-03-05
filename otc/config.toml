@@ -1,0 +1,33 @@
+[skycoin]
+node = "localhost:6430"
+seed = "lol nice try"
+name = "teller"
+
+[dropper.BTC]
+node = "localhost:18332"
+user = "teller"
+pass = "teller"
+account = "teller"
+testnet = true
+
+[scanner]
+tick = 5
+# number of hours before expiring
+expiration = 24
+
+[sender]
+tick = 5
+
+[model]
+tick = 5
+path = "db/"
+paused = false
+
+[monitor]
+tick = 5
+
+[api]
+listen = ":8080"
+
+[admin]
+listen = ":8000"
