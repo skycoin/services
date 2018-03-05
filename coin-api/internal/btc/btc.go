@@ -37,7 +37,6 @@ rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
 FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
 ig==
 -----END CERTIFICATE-----`
-	// TODO(stgleb): Check for more appropriate methods for checking balance
 	defaultBlockExplorer         = "https://blockchain.info"
 	walletBalanceDefaultEndpoint = "/charts/balance?cors=true&format=json&lang=en&address="
 	txStatusDefaultEndpoint      = "/rawtx/"

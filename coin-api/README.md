@@ -1,4 +1,82 @@
 
+## Install
+
+Download service code with and install dependencies
+
+```
+git clone https://github.com/skycoin/services $GOPATH/src/github.com/skycoin/services
+cd $GOPATH/src/github.com/skycoin/services/coin-api
+dep ensure
+```
+
+## Configure
+
+```
+[bitcoin]
+// BTC node credentials, btc node is used first for controlling account balance
+NodeAddress="localhost:8332"
+User="aaa"
+Password="123"
+// Option for disabling tls
+TLS=true
+CertFile="btcd.cert"
+// Block explorer - any public block explorer can be used
+BlockExplorer="https://api.blockchain.info"
+
+// Sky coin node credentials
+[skycoin]
+Host="0.0.0.0"
+Port="9341"
+
+[server]
+ListenStr="0.0.0.0:8080"
+// Http server config are neccessary for all public servers
+ReadTimeout = 5
+WriteTimeout = 10
+IdleTimeout = 120
+```
+
+## Run
+
+Start from main
+
+```
+cd cmd
+go run main.go -config config.toml
+```
+
+
+Start from command line
+
+```
+cd cmd/cli
+go build
+./cli server start <config_file_path>
+```
+
+
+## Command line API
+
+### Btc command
+
+generate keypair
+
+```
+./cli generatekeys
+```
+
+generate address
+
+```
+./cli generateaddr <publicKey>
+```
+
+check balance
+
+```
+./cli checkbalance <btcAddress>
+```
+
 ## API overview
 
 ### Common server API
