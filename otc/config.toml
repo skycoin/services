@@ -4,10 +4,14 @@ seed = "lol nice try"
 name = "teller"
 
 [dropper.BTC]
+# source determines where address balances are fetched from, "explorer" means
+# otc gets balances from a third party api, and "node" means otc uses a btcd 
+# to get balances
+source = "explorer"
 node = "localhost:18332"
-user = "teller"
-pass = "teller"
-account = "teller"
+user = "otc"
+pass = "otc"
+account = "otc"
 testnet = true
 
 [scanner]
