@@ -1,42 +1,159 @@
-package main
+package servd
 
 import (
+	"net/http"
+
+	"encoding/json"
+	"strconv"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/labstack/echo"
+	"github.com/skycoin/services/coin-api/internal/locator"
+	"github.com/skycoin/services/coin-api/internal/multi"
+	"github.com/skycoin/skycoin/src/visor"
 )
 
 type handlerMulti struct {
+	service *multi.SkyСoinService
+}
+
+// MultiStats some type for checking something
+type MultiStats struct {
+	Message string `json:"message"`
 }
 
 func newHandlerMulti() *handlerMulti {
-	return &handlerMulti{}
+	service := multi.NewSkyService(locator.NewLocatorNode())
+
+	return &handlerMulti{
+		service: service,
+	}
+}
+
+// generateKeys returns a keypair
+func (h *handlerMulti) generateKeys(e echo.Context) error {
+	rsp := h.service.GenerateKeyPair()
+	data, err := json.Marshal(rsp)
+	if err != nil || rsp.Code != 0 {
+		log.Errorf("unable to generate key, rsp code is %d, error %v", rsp.Code, err)
+		return err
+	}
+	return e.JSONBlob(http.StatusCreated, data)
 }
 
 func (h *handlerMulti) generateSeed(e echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
-	return nil
+	// key := e.QueryParam("key")
+	// TODO: in service implementation, seems, we don't need a key, check the service logic
+	rsp, err := h.service.GenerateAddr(1, true)
+	data, err := json.Marshal(rsp)
+	if err != nil {
+		log.Errorf("error encoding response %v, code %d", err, rsp.Code)
+		return err
+	}
+	if rsp.Code != 0 {
+		e.JSONBlob(http.StatusNotFound, data)
+	}
+
+	return e.JSONBlob(http.StatusCreated, data)
 }
 
 func (h *handlerMulti) checkBalance(e echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
-	return nil
+	address := e.QueryParam("address")
+	//TODO: where to get the wallet file?
+	walletFile := "somewallet file"
+	addrInt, err := strconv.Atoi(address)
+	if err != nil {
+		log.Errorf("converting to int failed %v", err)
+		return err
+	}
+	rsp, err := h.service.CheckBalance(walletFile, addrInt)
+	if err != nil {
+		log.Errorf("balance checking error %v", err)
+	}
+	data, err := json.Marshal(rsp)
+	if err != nil {
+		log.Errorf("encoding response error %v", err)
+		return err
+	}
+	if rsp.Code != 0 {
+		return e.JSONBlob(http.StatusNotFound, data)
+	}
+	return e.JSONBlob(http.StatusOK, data)
 }
 
 func (h *handlerMulti) signTransaction(e echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
-	return nil
+	//TODO: signid in request seems excessive here
+	transid := e.QueryParam("transid")
+	rsp, err := h.service.SignTransaction(transid)
+	if err != nil {
+		log.Errorf("sign transaction error %v", err)
+		return err
+	}
+	data, err := json.Marshal(rsp)
+	if err != nil {
+		log.Errorf("error encoding %v", err)
+		return err
+	}
+	if rsp.Code != 0 {
+		e.JSONBlob(http.StatusNotFound, data)
+	}
+	return e.JSONBlob(http.StatusOK, data)
 }
 
 func (h *handlerMulti) injectTransaction(e echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
+	// netid := e.QueryParam("netid")
+	transid := e.Param("transid")
+	rsp, err := h.service.InjectTransaction(transid)
+	if err != nil {
+		log.Errorf("inject transaction error %v", err)
+		return err
+	}
+	data, err := json.Marshal(rsp)
+	if err != nil {
+		log.Errorf("responce encoding error %v", err)
+		return err
+	}
+	if rsp.Code != 0 {
+		log.Warningf("response error %d", rsp.Code)
+		return e.JSONBlob(http.StatusNotFound, data)
+	}
+	return e.JSONBlob(http.StatusCreated, data)
+}
+
+func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
+	txID := ctx.Param("transid")
+	status, err := h.service.CheckTransactionStatus(txID)
+
+	if err != nil {
+		ctx.JSONPretty(http.StatusOK, struct {
+			Status string `json:"status"`
+			Code   int    `json:"code"`
+			Result string `json:"result"`
+		}{
+			"Ok",
+			0,
+			err.Error(),
+		}, "\t")
+	}
+
+	ctx.JSONPretty(http.StatusOK, struct {
+		Status string                  `json:"status"`
+		Code   int                     `json:"code"`
+		Result visor.TransactionStatus `json:"result"`
+	}{
+		"Ok",
+		http.StatusOK,
+		status,
+	}, "\t")
+
 	return nil
 }
 
-func (h *handlerMulti) checkTransaction(e echo.Context) error {
-	//TODO: get request info, call appropriate handler from internal btc, don't pass echo context further
-	// deal with io.Reader interface
-	return nil
+func (h *handlerMulti) CollectStatus(status *Status) {
+	status.Lock()
+	defer status.Unlock()
+	status.Stats["multi"] = &MultiStats{
+		Message: "Implement me",
+	}
 }

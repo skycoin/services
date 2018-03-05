@@ -8,8 +8,8 @@ import (
 
 type Configuration struct {
 	BTCD struct {
-		User     string `json:"user"`
-		Pass 	 string `json:"pass"`
+		User string `json:"user"`
+		Pass string `json:"pass"`
 	} `json:"btcd"`
 	Wallet struct {
 		File string `json:"file"`

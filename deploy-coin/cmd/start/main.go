@@ -28,10 +28,15 @@ var (
 
 func main() {
 	var (
-		cfgPath   = flag.String("config", "", "path to JSON configuration file for coin")
+		cfgPath = flag.String("config", "", "path to JSON configuration file for coin")
+
 		runMaster = flag.Bool("master", false, "run node as master and distribute initial coin volume")
 		runRPC    = flag.Bool("rpc", false, "run web RPC service")
 		runGUI    = flag.Bool("gui", false, "lanuch web GUI for node in browser")
+
+		port    = flag.Int("port", 0, "override port from config")
+		rpcPort = flag.Int("rpcPort", 0, "override rpcPort from config")
+		guiPort = flag.Int("guiPort", 0, "override guiPort from config")
 	)
 	flag.Parse()
 
@@ -60,9 +65,27 @@ func main() {
 	}
 
 	// Coin node config
-	nodeCfg, err := makeNodeConfig(cfg, *runMaster)
+	nodeCfg, err := makeNodeConfig(cfg)
 	if err != nil {
 		logger.Fatalf("invalid coin node configuration - %s", err)
+	}
+
+	// Override node config with command line parameters
+	nodeCfg.RunMaster = *runMaster
+	if nodeCfg.RunMaster {
+		nodeCfg.Arbitrating = true
+	}
+
+	if *port > 0 {
+		nodeCfg.Port = *port
+	}
+
+	if *rpcPort > 0 {
+		nodeCfg.RPCInterfacePort = *rpcPort
+	}
+
+	if *guiPort > 0 {
+		nodeCfg.WebInterfacePort = *guiPort
 	}
 
 	// Init general stuff
@@ -75,7 +98,7 @@ func main() {
 	catchDebug()
 
 	// Init daemon
-	daemon, err := initDaemon(nodeCfg)
+	daemon, err := initDaemon(nodeCfg, cfg.Public.TrustedPeers)
 	if err != nil {
 		logger.Fatalf("failed to init node daemon - %s", err)
 	}
@@ -155,22 +178,31 @@ func main() {
 
 	// Distribute initial coin volume
 	if nodeCfg.RunMaster {
-		runWg.Add(1)
-		go func() {
-			defer runWg.Done()
+		// Master will create distribuion transaction only in case of "emtpy" blockchain
+		distTx := true
+		if daemon.Visor.HeadBkSeq() > 0 {
+			distTx = false
+			logger.Warning("blockchain height is greater then zero - will not run coin distribution")
+		}
 
-			time.Sleep(time.Second * 2)
+		if distTx {
+			runWg.Add(1)
+			go func() {
+				defer runWg.Done()
 
-			tx, err := makeDistributionTx(nodeCfg, cfg.Public.Distribution, daemon)
-			if err == nil {
-				_, _, err = daemon.Visor.InjectTransaction(tx)
-			}
+				time.Sleep(time.Second * 2)
 
-			if err != nil {
-				logger.Errorf("failed to run transaction to distribute coin volume - %s", err)
-				errCh <- err
-			}
-		}()
+				tx, err := makeDistributionTx(nodeCfg, cfg.Public.GenesisWallet, daemon)
+				if err == nil {
+					_, _, err = daemon.Visor.InjectTransaction(tx)
+				}
+
+				if err != nil {
+					logger.Errorf("failed to run transaction to distribute coin volume - %s", err)
+					errCh <- err
+				}
+			}()
+		}
 	}
 
 	// Wait for SIGINT or startup error

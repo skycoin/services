@@ -13,15 +13,16 @@ type SecretConfig struct {
 type PublicConfig struct {
 	MasterPubKey string `json:"masterPublicKey"`
 
-	GenesisBlock GenesisBlockConfig `json:"genesisBlock"`
+	GenesisBlock  GenesisBlockConfig  `json:"genesisBlock"`
+	GenesisWallet GenesisWalletConfig `json:"genesisWallet"`
 
 	CoinCode string `json:"coinCode"`
 
-	Distribution DistributionConfig `json:"distribuion"`
+	Port    int `json:"port"`
+	RPCPort int `json:"rpcPort"`
+	GUIPort int `json:"guiPort"`
 
-	Port             int `json:"port"`
-	WebInterfacePort int `json:"webInterfacePort"`
-	RPCInterfacePort int `json:"rpcInterfacePort"`
+	TrustedPeers []string `json:"trustedPeers"`
 }
 
 type GenesisBlockConfig struct {
@@ -32,8 +33,8 @@ type GenesisBlockConfig struct {
 	HeaderHash string `json:"headerHash"`
 }
 
-type DistributionConfig struct {
-	CoinsPerAddress uint64   `json:"coinsPerAddress"`
-	AddressSeed     string   `json:"addressSeed"`
-	Addresses       []string `json:"addresses"`
+type GenesisWalletConfig struct {
+	Seed            string `json:"seed"`
+	Addresses       uint64 `json:"addresses"`
+	CoinsPerAddress uint64 `json:"coinsPerAddress"`
 }

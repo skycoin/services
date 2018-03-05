@@ -1,16 +1,15 @@
 package main
 
 import (
-	"net/http"
-	"github.com/skycoin/services/bitcoin-scanning-wallet/handler"
-	"github.com/skycoin/services/bitcoin-scanning-wallet/config"
 	"fmt"
-	"os"
 	"github.com/gorilla/handlers"
-	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
 	"github.com/skratchdot/open-golang/open"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/config"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/handler"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
+	"net/http"
+	"os"
 )
-
 
 func main() {
 
@@ -42,16 +41,3 @@ func startServer() {
 	http.ListenAndServe(":7755", handlers.CORS()(mux))
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

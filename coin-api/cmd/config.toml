@@ -1,0 +1,17 @@
+[bitcoin]
+NodeAddress="localhost:8332"
+User="aaa"
+Password="123"
+CertFile="btcd.cert"
+TLS=true
+BlockExplorer="https://api.blockchain.info"
+
+[skycoin]
+Host="0.0.0.0"
+Port="9341"
+
+[server]
+ListenStr="0.0.0.0:8080"
+ReadTimeout = 5
+WriteTimeout = 10
+IdleTimeout = 120

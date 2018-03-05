@@ -8,7 +8,7 @@ import (
 
 //Configuration
 type Configuration struct {
-	Folders     []string `json:"folders"`
+	Folders []string `json:"folders"`
 }
 
 //Config is a global variable
