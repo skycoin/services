@@ -101,7 +101,7 @@ const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
     </Heading>
     {sky_btc_exchange_rate &&
     <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
-      <FormattedMessage
+      <FormattedHTMLMessage
         id="distribution.rate"
         values={{
           rate: +sky_btc_exchange_rate * 0.00000001,
