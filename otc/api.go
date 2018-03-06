@@ -143,7 +143,7 @@ const OTCPaused = "PAUSED"
 
 type getConfigurationResponse struct {
 	OTCStatus string `json:"otcStatus"`
-	Balance   uint32 `json:"balance"`
+	Balance   uint64 `json:"balance"`
 	Price     uint64 `json:"price"`
 }
 
@@ -157,12 +157,20 @@ func apiGetConfiguration(w http.ResponseWriter, r *http.Request) {
 	price, err := DROPPER.GetValue(types.BTC)
 	if err != nil {
 		http.Error(w, "error getting price value", http.StatusInternalServerError)
+		ERRS.Println(err)
+		return
+	}
+
+	balance, err := SKYCOIN.Balance()
+	if err != nil {
+		http.Error(w, "error getting balance", http.StatusInternalServerError)
+		ERRS.Println(err)
 		return
 	}
 
 	json.NewEncoder(w).Encode(&getConfigurationResponse{
 		OTCStatus: status,
 		Price:     price,
-		Balance:   0, // TODO
+		Balance:   balance,
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/skycoin/services/otc/types"
+	"github.com/skycoin/skycoin/src/api/cli"
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/wallet"
 )
@@ -37,4 +38,34 @@ func NewConnection(config *types.Config) (*Connection, error) {
 	_ = w.GenerateAddresses(100)
 
 	return &Connection{Wallet: w, Client: c}, nil
+}
+
+func (c *Connection) Balance() (uint64, error) {
+	out, err := cli.GetWalletOutputs(c.Client, c.Wallet)
+	if err != nil {
+		return 0, err
+	}
+
+	bal, err := out.Outputs.SpendableOutputs().Balance()
+	if err != nil {
+		return 0, err
+	}
+
+	return bal.Coins, nil
+
+	/*
+		what a nightmare
+
+		outs, err := out.Outputs.SpendableOutputs().ToUxArray()
+		if err != nil {
+			return 0, err
+		}
+
+		var bal uint64
+		for _, o := range outs {
+			bal += o.Body.Coins
+		}
+
+		return bal, nil
+	*/
 }
