@@ -15,6 +15,10 @@ import (
 	"github.com/skycoin/skycoin/src/testutil"
 )
 
+const (
+	rawTxID = "bdc4a85a3e9d17a8fe00aa7430d0347c7f1dd6480a16da7147b6e43905057d43"
+)
+
 func TestGenerateAddress(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
@@ -53,6 +57,68 @@ func TestGenerateAddress(t *testing.T) {
 	})
 }
 
+func TestTransaction(t *testing.T) {
+	loc := locator.Node{
+		Host: "127.0.0.1",
+		Port: 6430,
+	}
+	// trustedPeerPort = 20000
+	// daemonPort      = 20100
+	// rpcPort         = 20200
+	// guiPort         = 20300
+	skyService := multi.NewSkyService(&loc)
+
+	t.Run("inject transaction", func(t *testing.T) {
+		//TODO: returns 404 for now and has to be fixed
+		rsp, err := skyService.InjectTransaction(rawTxID)
+		if !assert.NoError(t, err) {
+			println("err.Error()", err.Error())
+			t.Fatal()
+		}
+		assertCodeZero(t, rsp)
+		assertStatusOk(t, rsp)
+		result := rsp.Result
+		bRsp, ok := result.(*model.Transaction)
+		if !ok {
+			t.Fatalf("wrong type, *model.Transaction expected, given %s", reflect.TypeOf(result).String())
+		}
+		if len(bRsp.Transid) == 0 {
+			t.Fatalf("signid shouldn't be zero length")
+		}
+	})
+
+	t.Run("check transaction status", func(t *testing.T) {
+		txID := rawTxID
+		//TODO: returns 404 for now and has to be fixed
+		transStatus, err := skyService.CheckTransactionStatus(txID)
+		if !assert.NoError(t, err) {
+			t.Fatal()
+		}
+		if transStatus.BlockSeq == 0 {
+			t.Fatalf("blockSeq shouldn't be zero length")
+		}
+	})
+
+	t.Run("sign transaction", func(t *testing.T) {
+		//TODO: check this logic
+		_, secKey := makeUxBodyWithSecret(t)
+		rsp, err := skyService.SignTransaction(secKey.Hex(), rawTxID)
+		if !assert.NoError(t, err) {
+			t.Fatal()
+		}
+		assertCodeZero(t, rsp)
+		assertStatusOk(t, rsp)
+		result := rsp.Result
+		bRsp, ok := result.(*model.TransactionSign)
+		if !ok {
+			t.Fatalf("wrong type, *model.TransactionSign expected, given %s", reflect.TypeOf(result).String())
+		}
+		if len(bRsp.Signid) == 0 {
+			t.Fatalf("signid shouldn't be zero length")
+		}
+	})
+}
+
 func TestGenerateKeyPair(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
@@ -70,25 +136,6 @@ func TestGenerateKeyPair(t *testing.T) {
 	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
 		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
 	}
-
-	t.Run("sign transaction", func(t *testing.T) {
-		//TODO: check this logic
-		uxB, secKey := makeUxBodyWithSecret(t)
-		rsp, err := skyService.SignTransaction(secKey, uxB)
-		if !assert.NoError(t, err) {
-			t.Fatal()
-		}
-		assertCodeZero(t, rsp)
-		assertStatusOk(t, rsp)
-		result := rsp.Result
-		bRsp, ok := result.(*model.TransactionSign)
-		if !ok {
-			t.Fatalf("wrong type, *model.TransactionSign expected, given %s", reflect.TypeOf(result).String())
-		}
-		if len(bRsp.Signid) == 0 {
-			t.Fatalf("signid shouldn't be zero length")
-		}
-	})
 }
 
 func makeUxBodyWithSecret(t *testing.T) (coin.UxBody, cipher.SecKey) {

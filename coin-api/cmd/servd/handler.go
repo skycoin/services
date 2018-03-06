@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
@@ -60,14 +59,7 @@ func (h *handlerMulti) generateSeed(e echo.Context) error {
 
 func (h *handlerMulti) checkBalance(e echo.Context) error {
 	address := e.QueryParam("address")
-	//TODO: where to get the wallet file?
-	walletFile := "somewallet file"
-	addrInt, err := strconv.Atoi(address)
-	if err != nil {
-		log.Errorf("converting to int failed %v", err)
-		return err
-	}
-	rsp, err := h.service.CheckBalance(walletFile, addrInt)
+	rsp, err := h.service.CheckBalance(address)
 	if err != nil {
 		log.Errorf("balance checking error %v", err)
 	}
@@ -85,7 +77,8 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 func (h *handlerMulti) signTransaction(e echo.Context) error {
 	//TODO: signid in request seems excessive here
 	transid := e.QueryParam("transid")
-	rsp, err := h.service.SignTransaction(transid)
+	srcTrans := e.QueryParam("sourceTrans")
+	rsp, err := h.service.SignTransaction(transid, srcTrans)
 	if err != nil {
 		log.Errorf("sign transaction error %v", err)
 		return err
@@ -144,7 +137,7 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 	}{
 		"Ok",
 		http.StatusOK,
-		status,
+		*status,
 	}, "\t")
 
 	return nil
