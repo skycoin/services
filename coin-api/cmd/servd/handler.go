@@ -137,7 +137,7 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 	}{
 		"Ok",
 		http.StatusOK,
-		status,
+		*status,
 	}, "\t")
 
 	return nil
