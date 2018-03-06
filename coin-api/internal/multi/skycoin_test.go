@@ -60,15 +60,19 @@ func TestGenerateAddress(t *testing.T) {
 func TestTransaction(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
-		// Port: 20200,
-		Port: 6420,
+		Port: 6430,
 	}
+	// trustedPeerPort = 20000
+	// daemonPort      = 20100
+	// rpcPort         = 20200
+	// guiPort         = 20300
 	skyService := multi.NewSkyService(&loc)
 
 	t.Run("inject transaction", func(t *testing.T) {
 		//TODO: returns 404 for now and has to be fixed
 		rsp, err := skyService.InjectTransaction(rawTxID)
 		if !assert.NoError(t, err) {
+			println("err.Error()", err.Error())
 			t.Fatal()
 		}
 		assertCodeZero(t, rsp)

@@ -170,6 +170,7 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Response, error) {
 	injectedT, err := s.client.InjectTransactionString(rawtx)
 	if err != nil {
+		// println("error msg ", err.Error())
 		return nil, err
 	}
 	statusT, err := s.client.GetTransactionByID(injectedT)
