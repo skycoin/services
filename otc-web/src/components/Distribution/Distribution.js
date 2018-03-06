@@ -94,6 +94,8 @@ const StatusErrorMessage = ({ disabledReason }) => (<Flex column>
   </Text>
 </Flex>);
 
+const btcToSatochi = 0.00000001
+const roundTo = 100000000
 const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
   <div>
     <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
@@ -104,7 +106,7 @@ const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
       <FormattedHTMLMessage
         id="distribution.rate"
         values={{
-          rate: +sky_btc_exchange_rate * 0.00000001,
+          rate: +(Math.round(sky_btc_exchange_rate * btcToSatochi * roundTo) / roundTo),
         }}
       />
     </Text>}
