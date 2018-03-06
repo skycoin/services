@@ -69,7 +69,6 @@ func TestTransaction(t *testing.T) {
 		//TODO: returns 404 for now and has to be fixed
 		rsp, err := skyService.InjectTransaction(rawTxID)
 		if !assert.NoError(t, err) {
-			println("err.Error", err.Error())
 			t.Fatal()
 		}
 		assertCodeZero(t, rsp)
@@ -117,8 +116,8 @@ func TestGenerateKeyPair(t *testing.T) {
 
 	t.Run("sign transaction", func(t *testing.T) {
 		//TODO: check this logic
-		uxB, secKey := makeUxBodyWithSecret(t)
-		rsp, err := skyService.SignTransaction(secKey, uxB)
+		_, secKey := makeUxBodyWithSecret(t)
+		rsp, err := skyService.SignTransaction(secKey.Hex(), rawTxID)
 		if !assert.NoError(t, err) {
 			t.Fatal()
 		}

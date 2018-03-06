@@ -1,6 +1,7 @@
 package multi
 
 import (
+	"bytes"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -110,8 +111,21 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 }
 
 // SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody) (rsp *model.Response, err error) {
+func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.Response, err error) {
 	//TODO: VERIFY this sign transaction logic
+	var buf bytes.Buffer
+	buf.WriteString(transID)
+	secKeyBytes := buf.Bytes()
+	buf.Reset()
+	buf.WriteString(srcTrans)
+	srcTransByte := buf.Bytes()
+	cipherSecKey := cipher.NewSecKey(secKeyBytes)
+	ux := &coin.UxBody{
+		SrcTransaction: cipher.SumSHA256(srcTransByte),
+		Address:        cipher.AddressFromSecKey(cipherSecKey),
+		// Coins TODO: maybe we have to receive coins here ?
+		// Hours TODO: maybe we have to receive hours here ?
+	}
 	rsp = &model.Response{}
 	defer func() {
 		if r := recover(); r != nil {
@@ -120,7 +134,7 @@ func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody)
 			rsp.Result = &model.TransactionSign{}
 		}
 	}()
-	secKeyTrans := []cipher.SecKey{transid}
+	secKeyTrans := []cipher.SecKey{cipherSecKey}
 	trans := &coin.Transaction{}
 	trans.PushInput(ux.Hash())
 	trans.SignInputs(secKeyTrans)

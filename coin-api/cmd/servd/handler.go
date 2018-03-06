@@ -77,7 +77,8 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 func (h *handlerMulti) signTransaction(e echo.Context) error {
 	//TODO: signid in request seems excessive here
 	transid := e.QueryParam("transid")
-	rsp, err := h.service.SignTransaction(transid)
+	srcTrans := e.QueryParam("sourceTrans")
+	rsp, err := h.service.SignTransaction(transid, srcTrans)
 	if err != nil {
 		log.Errorf("sign transaction error %v", err)
 		return err
