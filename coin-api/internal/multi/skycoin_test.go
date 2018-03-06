@@ -94,25 +94,6 @@ func TestTransaction(t *testing.T) {
 			t.Fatalf("blockSeq shouldn't be zero length")
 		}
 	})
-}
-
-func TestGenerateKeyPair(t *testing.T) {
-	loc := locator.Node{
-		Host: "127.0.0.1",
-		Port: 6420,
-	}
-	skyService := multi.NewSkyService(&loc)
-	rsp := skyService.GenerateKeyPair()
-	assertCodeZero(t, rsp)
-	assertStatusOk(t, rsp)
-	result := rsp.Result
-	keysResponse, ok := result.(*model.KeysResponse)
-	if !ok {
-		t.Fatalf("wrong type, result.(*model.KeysResponse) expected, given %s", reflect.TypeOf(result).String())
-	}
-	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
-		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
-	}
 
 	t.Run("sign transaction", func(t *testing.T) {
 		//TODO: check this logic
@@ -132,6 +113,25 @@ func TestGenerateKeyPair(t *testing.T) {
 			t.Fatalf("signid shouldn't be zero length")
 		}
 	})
+}
+
+func TestGenerateKeyPair(t *testing.T) {
+	loc := locator.Node{
+		Host: "127.0.0.1",
+		Port: 6420,
+	}
+	skyService := multi.NewSkyService(&loc)
+	rsp := skyService.GenerateKeyPair()
+	assertCodeZero(t, rsp)
+	assertStatusOk(t, rsp)
+	result := rsp.Result
+	keysResponse, ok := result.(*model.KeysResponse)
+	if !ok {
+		t.Fatalf("wrong type, result.(*model.KeysResponse) expected, given %s", reflect.TypeOf(result).String())
+	}
+	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
+		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
+	}
 }
 
 func makeUxBodyWithSecret(t *testing.T) (coin.UxBody, cipher.SecKey) {
