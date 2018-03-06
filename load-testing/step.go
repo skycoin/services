@@ -7,9 +7,11 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/skycoin/services/load-testing/staggering"
 	"github.com/skycoin/skycoin/src/api/cli"
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
+	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/visor"
 	"github.com/skycoin/skycoin/src/wallet"
 )
@@ -38,6 +40,8 @@ var (
 	ErrSmallBalance   = errors.New("at least one address must have 1 SKY")
 )
 
+// StepResult is returned by each Step.Run call and provides information about
+// the Step for use in calculations.
 type StepResult struct {
 	Id       string
 	Type     StepType
@@ -262,9 +266,28 @@ func (s *Step) Run() (*StepResult, error) {
 
 	println("creating...")
 
-	// create transaction
-	tx, err := cli.CreateRawTx(s.Client, s.Wallet, s.From, s.From[0], to)
+	var tx *coin.Transaction
+	if *STAGGERING {
+		// creates a transaction with zero coinhour outputs
+		tx, err = staggering.CreateRawTx(
+			s.Client,
+			s.Wallet,
+			s.From,
+			s.From[0],
+			to,
+		)
+	} else {
+		// creates a transaction with normal coinhour outputs
+		tx, err = cli.CreateRawTx(
+			s.Client,
+			s.Wallet,
+			s.From,
+			s.From[0],
+			to,
+		)
+	}
 	if err != nil {
+		panic(err)
 		return nil, err
 	}
 
@@ -273,15 +296,55 @@ func (s *Step) Run() (*StepResult, error) {
 	// inject transaction
 	txId, err := s.Client.InjectTransaction(tx)
 	if err != nil {
+		panic(err)
 		return nil, err
 	}
 
 	println("waiting...")
 
+	var (
+		stagStart  time.Time
+		stat       *webrpc.StatusResult
+		startBlock uint64
+	)
+	if *STAGGERING {
+		stagStart = time.Now()
+
+		// get current block
+		if stat, err = s.Client.GetStatus(); err != nil {
+			return nil, err
+		}
+		startBlock = stat.BlockNum
+	}
+
 	// track transaction status
-	status, err := s.Wait(txId)
+	//
+	// if STAGGERING is enabled, this will block until the destination
+	// addresses have coinhours (so they can be used to create the next
+	// transaction)
+	status, err := s.Wait(txId, s.To)
 	if err != nil {
 		return nil, err
+	}
+
+	var (
+		stagEnd  time.Time
+		endBlock uint64
+	)
+	if *STAGGERING {
+		stagEnd = time.Now()
+
+		// if we got this far, then the destination addresses have coinhours,
+		// so let's log the current block
+		if stat, err = s.Client.GetStatus(); err != nil {
+			return nil, err
+		}
+		endBlock = stat.BlockNum
+	}
+
+	if *STAGGERING {
+		fmt.Println("START: ", stagStart, startBlock)
+		fmt.Println("END:   ", stagEnd, endBlock)
 	}
 
 	end := time.Now()
@@ -326,7 +389,7 @@ func (s *Step) Cleanup() (*StepResult, error) {
 	}
 
 	// wait for confirmation
-	status, err := s.Wait(txId)
+	status, err := s.Wait(txId, []string{s.Addrs[0]})
 	if err != nil {
 		return nil, err
 	}
@@ -345,23 +408,70 @@ func (s *Step) Cleanup() (*StepResult, error) {
 	}, nil
 }
 
-func (s *Step) Wait(txId string) (*visor.TransactionStatus, error) {
-	var (
-		tx  *webrpc.TxnResult
-		err error
-	)
-
+// Wait blocks until the transaction with txId has been confirmed. If
+// STAGGERING is enabled, then it also blocks until the destination addresses
+// passed by 'addresses' param have more than 0 CoinHours. This way the
+// next transaction can be immediately created using the destination addresses
+// as inputs.
+func (s *Step) Wait(txId string, addresses []string) (*visor.TransactionStatus, error) {
 	for {
-		if tx, err = s.Client.GetTransactionByID(txId); err != nil {
-			println(err)
-			continue
+		// attempt to get the transaction from blockchain
+		tx, err := s.Client.GetTransactionByID(txId)
+		if err != nil {
+			return nil, err
 		}
 
 		if tx.Transaction.Status.Confirmed {
-			return &tx.Transaction.Status, nil
+			if *STAGGERING {
+				for {
+					// get all outputs of destination addresses
+					or, err := s.Client.GetUnspentOutputs(addresses)
+					if err != nil {
+						return nil, err
+					}
+
+					// get only the confirmed outputs
+					so, err := or.Outputs.SpendableOutputs().ToUxArray()
+					if err != nil {
+						return nil, err
+					}
+
+					// get latest blocks
+					lb, err := s.Client.GetLastBlocks(1)
+					if err != nil {
+						return nil, err
+					}
+					headTime := lb.Blocks[0].Head.Time
+
+					// for all of the unspent outputs
+					for i := range so {
+						// get the balance of current unspent output
+						bal, err := wallet.NewBalanceFromUxOut(
+							headTime,
+							&so[i],
+						)
+						if err != nil {
+							return nil, err
+						}
+
+						// if the CoinHours are > 0, this output can be used
+						// as an input in the next transaction, so we're
+						// finished here and can return
+						if bal.Hours > 0 {
+							return &tx.Transaction.Status, nil
+						}
+					}
+
+					// no coinhours were generated yet, so just wait before
+					// checking again
+					println("no coinhours yet... waiting 10 minutes")
+					<-time.After(time.Minute * 10)
+				}
+			} else {
+				return &tx.Transaction.Status, nil
+			}
 		}
 
-		// once every 100 milliseconds
-		<-time.After(time.Second / 10)
+		<-time.After(time.Second)
 	}
 }

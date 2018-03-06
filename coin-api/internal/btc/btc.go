@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -36,6 +37,9 @@ rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
 FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
 ig==
 -----END CERTIFICATE-----`
+	defaultBlockExplorer         = "https://blockchain.info"
+	walletBalanceDefaultEndpoint = "/charts/balance?cors=true&format=json&lang=en&address="
+	txStatusDefaultEndpoint      = "/rawtx/"
 )
 
 // ServiceBtc encapsulates operations with bitcoin
@@ -43,27 +47,28 @@ type ServiceBtc struct {
 	nodeAddress string
 	client      *rpcclient.Client
 	// Circuit breaker related fields
-	isOpen      uint32
-	openTimeout time.Duration
-	retryCount  uint
+	isOpen        uint32
+	openTimeout   time.Duration
+	retryCount    uint
+	blockExplorer string
 }
 
 type walletState struct {
-	timestamp int64
-	balance   float64
+	Timestamp int64   `json:"x"`
+	Balance   float64 `json:"y"`
 }
 
 type explorerResponse struct {
-	status      string
-	name        string
-	unit        string
-	period      string
-	description string
-	values      []walletState
+	Status      string        `json:"status"`
+	Name        string        `json:"name"`
+	Unit        string        `json:"unit"`
+	Period      string        `json:"period"`
+	Description string        `json:"description"`
+	Values      []walletState `json:"values"`
 }
 
 // NewBTCService returns ServiceBtc instance
-func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*ServiceBtc, error) {
+func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*ServiceBtc, error) {
 	if len(btcAddr) == 0 {
 		btcAddr = defaultAddr
 	}
@@ -80,13 +85,16 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 		cert = []byte(defaultCert)
 	}
 
+	if len(blockExplorer) == 0 {
+		blockExplorer = defaultBlockExplorer
+	}
+
 	client, err := rpcclient.New(&rpcclient.ConnConfig{
 		HTTPPostMode: true,
 		DisableTLS:   disableTLS,
 		Host:         btcAddr,
 		User:         btcUser,
 		Pass:         btcPass,
-		//TODO: rewrite []byte(defaultCert) with buffer usage
 		Certificates: cert,
 	}, nil)
 
@@ -96,11 +104,12 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 	}
 
 	return &ServiceBtc{
-		nodeAddress: btcAddr,
-		client:      client,
-		retryCount:  3,
-		openTimeout: time.Second * 10,
-		isOpen:      0,
+		nodeAddress:   btcAddr,
+		client:        client,
+		retryCount:    3,
+		openTimeout:   time.Second * 10,
+		isOpen:        0,
+		blockExplorer: blockExplorer,
 	}, nil
 }
 
@@ -137,12 +146,19 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 	var i uint = 0
 
 	balance, err := s.getBalanceFromNode(address)
+	if err != nil {
+		log.Printf("Get balance from node returned error %s", err.Error())
+	}
 
 	for i < s.retryCount && err != nil {
+		if err != nil {
+			log.Printf("Get balance from node returned error %s", err.Error())
+		}
+
 		balance, err = s.getBalanceFromNode(address)
 
 		if err != nil {
-			time.Sleep(time.Second * time.Duration(1<<i))
+			time.Sleep(time.Millisecond * time.Duration(1<<i) * 100)
 		}
 		i++
 	}
@@ -155,10 +171,38 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 			// This assignment is atomic since on 64-bit platforms this operation is atomic
 			s.isOpen = 0
 		}()
-		return decimal.NewFromFloat(0.0), err
+
+		balance, err := s.getBalanceFromExplorer(address)
+
+		if err != nil {
+			return decimal.NewFromFloat(0.0), err
+		}
+
+		return balance, nil
 	}
 
 	return balance, nil
+}
+
+// TODO(stgleb): Cover with unit tests
+func (s *ServiceBtc) CheckTxStatus(txId string) ([]byte, error) {
+	// TODO(stgleb): Add interaction with btcd node and curctui breaking on the next phase
+	//hash, err := chainhash.NewHash([]byte(txId))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//s.client.GetTransaction(hash)
+
+	url := s.blockExplorer + txStatusDefaultEndpoint + txId
+	resp, err := http.Get(url)
+
+	data, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error) {
@@ -166,10 +210,15 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error)
 	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
 
 	if err != nil {
-		log.Fatal(err)
+		return decimal.NewFromFloat(0.0), err
 	}
 
+	log.Printf("Get account of address %s", address)
 	account, err := s.client.GetAccount(a)
+
+	if err != nil {
+		return decimal.NewFromFloat(0.0), err
+	}
 
 	log.Printf("Send request for getting balance of address %s", address)
 	amount, err := s.client.GetBalance(account)
@@ -185,7 +234,8 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error)
 }
 
 func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, error) {
-	resp, err := http.Get(fmt.Sprintf("https://api.blockchain.info/charts/balance?cors=true&format=json&lang=en&address=%s", address))
+	url := s.blockExplorer + walletBalanceDefaultEndpoint + address
+	resp, err := http.Get(url)
 
 	if err != nil {
 		return decimal.NewFromFloat(0.0), err
@@ -199,11 +249,12 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 		return decimal.NewFromFloat(0.0), err
 	}
 
-	if len(r.values) == 0 {
-		return decimal.NewFromFloat(0.0), errors.New("empty values array")
+	// In case if no values - balance is empty
+	if len(r.Values) == 0 {
+		return decimal.NewFromFloat(0.0), nil
 	}
 
-	return decimal.NewFromFloat(r.values[0].balance), nil
+	return decimal.NewFromFloat(r.Values[0].Balance), nil
 }
 
 // Api method for monitoring btc service circuit breaker

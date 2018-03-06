@@ -14,11 +14,12 @@ type Server struct {
 }
 
 type Bitcoin struct {
-	NodeAddress string
-	User        string
-	Password    string
-	CertFile    string
-	TLS         bool
+	NodeAddress   string
+	User          string
+	Password      string
+	CertFile      string
+	TLS           bool
+	BlockExplorer string
 }
 
 // TODO(stgleb): Implement this

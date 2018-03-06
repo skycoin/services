@@ -1,9 +1,10 @@
 [bitcoin]
-Host="23.92.24.9"
-User="YnWD3EmQAOw11IOrUJwWxAThAyobwLC"
-Password='f*Z"[1215o{qKW{Buj/wheO8@h.}j*u'
-CertFile="cert.pem"
+NodeAddress="localhost:8332"
+User="aaa"
+Password="123"
+CertFile="btcd.cert"
 TLS=true
+BlockExplorer="https://api.blockchain.info"
 
 [skycoin]
 Host="127.0.0.1"

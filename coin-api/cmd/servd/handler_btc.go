@@ -13,7 +13,7 @@ import (
 
 type keyPairResponse struct {
 	Public  string `json:"public"`
-	Private string `json:"private"`
+	Private []byte `json:"private"`
 }
 
 type balanceResponse struct {
@@ -39,9 +39,9 @@ type BtcStats struct {
 	NodeHost   string `json:"node-host"`
 }
 
-func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte) (*handlerBTC, error) {
+func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*handlerBTC, error) {
 	log.Printf("Start new BTC handler with host %s user %s", btcAddr, btcUser)
-	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert)
+	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert, blockExplorer)
 
 	if err != nil {
 		return nil, err
@@ -49,6 +49,7 @@ func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 
 	return &handlerBTC{
 		btcService: service,
+		checker:    service,
 	}, nil
 }
 
@@ -61,6 +62,22 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 	}
 
 	public, private := btc.ServiceBtc{}.GenerateKeyPair()
+
+	if err := public.Verify(); err != nil {
+		resp := struct {
+			Status string `json:"status"`
+			Code   int    `json:"code"`
+			Result string `json:"result"`
+		}{
+			"Ok",
+			http.StatusOK,
+			err.Error(),
+		}
+
+		ctx.JSON(http.StatusOK, resp)
+		return nil
+	}
+
 	resp := struct {
 		Status string          `json:"status"`
 		Code   int             `json:"code"`
@@ -69,8 +86,8 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 		"Ok",
 		http.StatusOK,
 		keyPairResponse{
-			Public:  string(public[:]),
-			Private: string(private[:]),
+			Public:  public.Hex(),
+			Private: private[:],
 		},
 	}
 
@@ -160,7 +177,8 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
-	address := ctx.Param("address")
+	// TODO(stgleb): Check why address param is not passed
+	address := ctx.ParamValues()[0]
 	balance, err := h.checker.CheckBalance(address)
 
 	if err != nil {

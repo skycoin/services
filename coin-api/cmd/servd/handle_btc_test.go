@@ -107,7 +107,7 @@ func TestCheckBalance(t *testing.T) {
 		checker: checker,
 	}
 
-	req := httptest.NewRequest(echo.GET, "/address/02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc", nil)
+	req := httptest.NewRequest(echo.GET, "/address/1M3GipkG2YyHPDMPewqTpup83jitXvBg9N", nil)
 
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)

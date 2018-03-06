@@ -21,6 +21,8 @@ Usage of ./load-testing:
         show transaction logs (default true)
   -n int
         number of addresses to generate from the seed (default 10)
+  -node string
+        node to connect to (default "localhost:6430")
   -seed string
         seed used to generate skycoin addresses
   -wait int
@@ -46,6 +48,10 @@ If the `log_txs` flag is present, the program will output information about each
 ### `-n int`
 
 The `-n` flag describes how many addresses to generate from the seed.
+
+### `-node string`
+
+The `-node` flag describes where the Skycoin node is listening for RPC connections. Default is `localhost:6430`.
 
 ### `-seed string`
 
