@@ -1,7 +1,9 @@
 package multi
 
 import (
+	"bytes"
 	"crypto/rand"
+	"errors"
 	"fmt"
 
 	"github.com/skycoin/services/coin-api/internal/locator"
@@ -109,8 +111,21 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 }
 
 // SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody) (rsp *model.Response, err error) {
+func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.Response, err error) {
 	//TODO: VERIFY this sign transaction logic
+	var buf bytes.Buffer
+	buf.WriteString(transID)
+	secKeyBytes := buf.Bytes()
+	buf.Reset()
+	buf.WriteString(srcTrans)
+	srcTransByte := buf.Bytes()
+	cipherSecKey := cipher.NewSecKey(secKeyBytes)
+	ux := &coin.UxBody{
+		SrcTransaction: cipher.SumSHA256(srcTransByte),
+		Address:        cipher.AddressFromSecKey(cipherSecKey),
+		// Coins TODO: maybe we have to receive coins here ?
+		// Hours TODO: maybe we have to receive hours here ?
+	}
 	rsp = &model.Response{}
 	defer func() {
 		if r := recover(); r != nil {
@@ -119,14 +134,13 @@ func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody)
 			rsp.Result = &model.TransactionSign{}
 		}
 	}()
-	secKeyTrans := []cipher.SecKey{transid}
+	secKeyTrans := []cipher.SecKey{cipherSecKey}
 	trans := &coin.Transaction{}
 	trans.PushInput(ux.Hash())
 	trans.SignInputs(secKeyTrans)
 	//TODO: DO I need it here? -> PushOutput Adds a TransactionOutput, sending coins & hours to an Address
 	//TODO: maybe we have to show all signatures?
 	signid := trans.Sigs[0]
-	// println("model.StatusOk", model.StatusOk, model.StatusError)
 	rsp.Status = model.StatusOk
 	rsp.Code = 0
 	rsp.Result = &model.TransactionSign{
@@ -137,20 +151,26 @@ func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody)
 }
 
 // CheckTransactionStatus check the status of a transaction (tracks transactions by transaction hash)
-func (s *SkyСoinService) CheckTransactionStatus(txID string) (visor.TransactionStatus, error) {
+func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.TransactionStatus, error) {
+	// validate the txid
+	_, err := cipher.SHA256FromHex(txID)
+	if err != nil {
+		return nil, errors.New("invalid txid")
+	}
 	status, err := s.client.GetTransactionByID(txID)
 
 	if err != nil {
-		return visor.TransactionStatus{}, err
+		return &visor.TransactionStatus{}, err
 	}
 
-	return status.Transaction.Status, nil
+	return &status.Transaction.Status, nil
 }
 
 // InjectTransaction inject transaction into network
 func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Response, error) {
 	injectedT, err := s.client.InjectTransactionString(rawtx)
 	if err != nil {
+		// println("error msg ", err.Error())
 		return nil, err
 	}
 	statusT, err := s.client.GetTransactionByID(injectedT)
