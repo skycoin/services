@@ -10,6 +10,9 @@ import (
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
 	"github.com/skycoin/services/coin-api/internal/multi"
+	"github.com/skycoin/skycoin/src/cipher"
+	"github.com/skycoin/skycoin/src/coin"
+	"github.com/skycoin/skycoin/src/testutil"
 )
 
 func TestGenerateAddress(t *testing.T) {
@@ -48,10 +51,30 @@ func TestGenerateAddress(t *testing.T) {
 			t.Fatalf("Address shouldn't be zero length")
 		}
 	})
+}
+
+func TestGenerateKeyPair(t *testing.T) {
+	loc := locator.Node{
+		Host: "127.0.0.1",
+		Port: 6420,
+	}
+	skyService := multi.NewSkyService(&loc)
+	rsp := skyService.GenerateKeyPair()
+	assertCodeZero(t, rsp)
+	assertStatusOk(t, rsp)
+	result := rsp.Result
+	keysResponse, ok := result.(*model.KeysResponse)
+	if !ok {
+		t.Fatalf("wrong type, result.(*model.KeysResponse) expected, given %s", reflect.TypeOf(result).String())
+	}
+	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
+		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
+	}
 
 	t.Run("sign transaction", func(t *testing.T) {
-		address := ""
-		rsp, err := skyService.SignTransaction(address)
+		//TODO: check this logic
+		uxB, secKey := makeUxBodyWithSecret(t)
+		rsp, err := skyService.SignTransaction(secKey, uxB)
 		if !assert.NoError(t, err) {
 			t.Fatal()
 		}
@@ -68,23 +91,14 @@ func TestGenerateAddress(t *testing.T) {
 	})
 }
 
-func TestGenerateKeyPair(t *testing.T) {
-	loc := locator.Node{
-		Host: "127.0.0.1",
-		Port: 6420,
-	}
-	sky := multi.NewSkyService(&loc)
-	rsp := sky.GenerateKeyPair()
-	assertCodeZero(t, rsp)
-	assertStatusOk(t, rsp)
-	result := rsp.Result
-	keysResponse, ok := result.(*model.KeysResponse)
-	if !ok {
-		t.Fatalf("wrong type, result.(*model.KeysResponse) expected, given %s", reflect.TypeOf(result).String())
-	}
-	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
-		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
-	}
+func makeUxBodyWithSecret(t *testing.T) (coin.UxBody, cipher.SecKey) {
+	p, s := cipher.GenerateKeyPair()
+	return coin.UxBody{
+		SrcTransaction: testutil.RandSHA256(t),
+		Address:        cipher.AddressFromPubKey(p),
+		Coins:          1e6,
+		Hours:          100,
+	}, s
 }
 
 func assertCodeZero(t *testing.T, rsp *model.Response) {
