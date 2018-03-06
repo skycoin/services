@@ -144,6 +144,7 @@ const OTCPaused = "PAUSED"
 type getConfigurationResponse struct {
 	OTCStatus string `json:"otcStatus"`
 	Balance   uint32 `json:"balance"`
+	Price     uint64 `json:"price"`
 }
 
 func apiGetConfiguration(w http.ResponseWriter, r *http.Request) {
@@ -153,8 +154,15 @@ func apiGetConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO other OTC statuses
 
+	price, err := DROPPER.GetValue(types.BTC)
+	if err != nil {
+		http.Error(w, "error getting price value", http.StatusInternalServerError)
+		return
+	}
+
 	json.NewEncoder(w).Encode(&getConfigurationResponse{
 		OTCStatus: status,
+		Price:     price,
 		Balance:   0, // TODO
 	})
 }

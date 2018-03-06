@@ -43,8 +43,7 @@ export default {
       or follow the
       <a href="https://twitter.com/skycoinproject">Skycoin Twitter</a>
       to learn when the next event begins.`,
-    instructions: `<p>You can check the current market value for <a href="https://coinmarketcap.com/currencies/skycoin/">Skycoin at CoinMarketCap</a>.</p>
-
+    instructions: `<p>
 <p>Что необходимо для участия в распространении:</p>
 
 <ul>
@@ -54,10 +53,11 @@ export default {
 </ul>
 
 <p>Вы можете проверить статус заказа, введя адрес SKY и нажав на <strong>Проверить статус</strong>.</p>
-<p>Каждый раз при нажатии на <strong>Получить адрес</strong>, генерируется новый BTC адрес. Один адрес SKY может иметь не более 5 BTC-адресов.</p>
+<p>Каждый раз при нажатии на <strong>Получить адрес</strong>, генерируется новый BTC адрес.</p>
     `,
     statusFor: 'Статус по {skyAddress}',
     enterAddress: 'Введите адрес Skycoin',
+    enterAddressBTC: 'Введите адрес BTC',
     getAddress: 'Получить адрес',
     checkStatus: 'Проверить статус',
     loading: 'Загрузка...',
