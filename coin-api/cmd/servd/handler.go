@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
@@ -60,14 +59,7 @@ func (h *handlerMulti) generateSeed(e echo.Context) error {
 
 func (h *handlerMulti) checkBalance(e echo.Context) error {
 	address := e.QueryParam("address")
-	//TODO: where to get the wallet file?
-	walletFile := "somewallet file"
-	addrInt, err := strconv.Atoi(address)
-	if err != nil {
-		log.Errorf("converting to int failed %v", err)
-		return err
-	}
-	rsp, err := h.service.CheckBalance(walletFile, addrInt)
+	rsp, err := h.service.CheckBalance(address)
 	if err != nil {
 		log.Errorf("balance checking error %v", err)
 	}
