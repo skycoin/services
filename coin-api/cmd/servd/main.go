@@ -53,9 +53,9 @@ func Start(config *Config) (*echo.Echo, error) {
 	btcGroup := apiGroupV1.Group("/btc")
 
 	// ping server
-	apiGroupV1.GET("/ping", hMulti.generateSeed)
+	// apiGroupV1.GET("/ping", hMulti.generateSeed)
 	// show currencies and api's list
-	apiGroupV1.GET("/list", hMulti.generateSeed)
+	// apiGroupV1.GET("/list", hMulti.generateSeed)
 	// generate keys
 	skyGroup.POST("/keys", hMulti.generateKeys)
 	// generate address
