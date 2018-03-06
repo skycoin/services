@@ -4,8 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"bytes"
-
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
 	ehandler "github.com/skycoin/services/errhandler"
@@ -111,12 +109,9 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 }
 
 // SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transid string) (rsp *model.Response, err error) {
+func (s *SkyСoinService) SignTransaction(transid cipher.SecKey, ux coin.UxBody) (rsp *model.Response, err error) {
 	//TODO: VERIFY this sign transaction logic
-	var buf bytes.Buffer
-	buf.WriteString(transid)
-	strbytes := buf.Bytes()
-	var secKey cipher.SecKey
+	rsp = &model.Response{}
 	defer func() {
 		if r := recover(); r != nil {
 			rsp.Status = model.StatusError
@@ -124,15 +119,14 @@ func (s *SkyСoinService) SignTransaction(transid string) (rsp *model.Response, 
 			rsp.Result = &model.TransactionSign{}
 		}
 	}()
-	secKey = cipher.NewSecKey(strbytes)
-	trans := coin.Transaction{
-	//TODO: some creds here?
-	}
-	keysSec := make([]cipher.SecKey, 0, 1)
-	keysSec = append(keysSec, secKey)
-	trans.SignInputs(keysSec)
+	secKeyTrans := []cipher.SecKey{transid}
+	trans := &coin.Transaction{}
+	trans.PushInput(ux.Hash())
+	trans.SignInputs(secKeyTrans)
+	//TODO: DO I need it here? -> PushOutput Adds a TransactionOutput, sending coins & hours to an Address
 	//TODO: maybe we have to show all signatures?
 	signid := trans.Sigs[0]
+	// println("model.StatusOk", model.StatusOk, model.StatusError)
 	rsp.Status = model.StatusOk
 	rsp.Code = 0
 	rsp.Result = &model.TransactionSign{
