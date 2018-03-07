@@ -16,7 +16,9 @@ import (
 )
 
 const (
-	rawTxID = "bdc4a85a3e9d17a8fe00aa7430d0347c7f1dd6480a16da7147b6e43905057d43"
+	// rawTxID = "bdc4a85a3e9d17a8fe00aa7430d0347c7f1dd6480a16da7147b6e43905057d43"
+	rawTxID  = "bff13a47a98402ecf2d2eee40464959ad26e0ed6047de5709ffb0c0c9fc1fca5"
+	rawTxStr = "dc00000000a8558b814926ed0062cd720a572bd67367aa0d01c0769ea4800adcc89cdee524010000008756e4bde4ee1c725510a6a9a308c6a90d949de7785978599a87faba601d119f27e1be695cbb32a1e346e5dd88653a97006bf1a93c9673ac59cf7b5db7e07901000100000079216473e8f2c17095c6887cc9edca6c023afedfac2e0c5460e8b6f359684f8b020000000060dfa95881cdc827b45a6d49b11dbc152ecd4de640420f00000000000000000000000000006409744bcacb181bf98b1f02a11e112d7e4fa9f940f1f23a000000000000000000000000"
 )
 
 func TestGenerateAddress(t *testing.T) {
@@ -65,29 +67,11 @@ func TestTransaction(t *testing.T) {
 	}
 
 	skyService := multi.NewSkyService(&loc)
-	t.Run("inject transaction", func(t *testing.T) {
-		rsp, err := skyService.InjectTransaction(rawTxID)
-		if !assert.NoError(t, err) {
-			println("err.Error()", err.Error())
-			t.FailNow()
-		}
-		assertCodeZero(t, rsp)
-		assertStatusOk(t, rsp)
-		result := rsp.Result
-		bRsp, ok := result.(*model.Transaction)
-		if !ok {
-			t.Fatalf("wrong type, *model.Transaction expected, given %s", reflect.TypeOf(result).String())
-		}
-		if len(bRsp.Transid) == 0 {
-			t.Fatalf("signid shouldn't be zero length")
-		}
-	})
-
 	t.Run("sign transaction", func(t *testing.T) {
 		//TODO: check this logic
 		_, secKey := makeUxBodyWithSecret(t)
 		secKeyHex := secKey.Hex()
-		rsp, err := skyService.SignTransaction(secKeyHex, rawTxID)
+		rsp, err := skyService.SignTransaction(secKeyHex, rawTxStr)
 		if !assert.NoError(t, err) {
 			println("err.Error()", err.Error())
 			t.FailNow()
@@ -100,6 +84,24 @@ func TestTransaction(t *testing.T) {
 			t.Fatalf("wrong type, *model.TransactionSign expected, given %s", reflect.TypeOf(result).String())
 		}
 		if len(bRsp.Signid) == 0 {
+			t.Fatalf("signid shouldn't be zero length")
+		}
+	})
+
+	t.Run("inject transaction", func(t *testing.T) {
+		rsp, err := skyService.InjectTransaction(rawTxStr)
+		if !assert.NoError(t, err) {
+			println("err.Error()", err.Error())
+			t.FailNow()
+		}
+		assertCodeZero(t, rsp)
+		assertStatusOk(t, rsp)
+		result := rsp.Result
+		bRsp, ok := result.(*model.Transaction)
+		if !ok {
+			t.Fatalf("wrong type, *model.Transaction expected, given %s", reflect.TypeOf(result).String())
+		}
+		if len(bRsp.Transid) == 0 {
 			t.Fatalf("signid shouldn't be zero length")
 		}
 	})
