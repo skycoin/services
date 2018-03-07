@@ -255,7 +255,7 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 		return decimal.NewFromFloat(0.0), nil
 	}
 
-	balance := r.Values[0].Balance / math.Pow10(int(8))
+	balance := r.Values[0].Balance * math.Pow10(int(8))
 	return decimal.NewFromFloat(balance), nil
 }
 

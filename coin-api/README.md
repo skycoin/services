@@ -205,7 +205,7 @@ ResponseBody {
 }
 ```
 
-#### BTC check the balance (and get unspent outputs) for an address
+#### BTC check the balance (and get unspent outputs) for an address in satoshis
 ##### GET /api/v1/btc/address/:address
 ##### Successful response:
 ```
