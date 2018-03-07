@@ -23,6 +23,7 @@ $ ./btcwallet -u username -P passphrase --create
 ```
 
 3. start otc
+
 **NOTES:**
 1. seed - seed of the new SkyCoin wallet
 2. account - passphrase of BTC wallet certificate
@@ -116,10 +117,13 @@ Nothing, just a GET.
 ```json
 {
 	"price": 119833,
+	"updated": 1519131184,
 	"source": "internal",
 	"paused": true
 }
 ```
+
+* `updated` is the last time price was updated (either from exchange or internal) in UTC
 
 ## /api/price
 
