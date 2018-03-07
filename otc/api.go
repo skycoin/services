@@ -72,13 +72,8 @@ func apiBind(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// get sky value of currency
-	value, err := DROPPER.Connections[currency].Value()
-	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
-		ERRS.Printf("api: %v\n", err)
-		return
-	}
+	// get current price
+	value, _ := DROPPER.Currencies[currency].GetValue()
 
 	// add for processing
 	if err = MODEL.AddNew(request); err != nil {
@@ -154,12 +149,7 @@ func apiGetConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO other OTC statuses
 
-	price, err := DROPPER.GetValue(types.BTC)
-	if err != nil {
-		http.Error(w, "error getting price value", http.StatusInternalServerError)
-		ERRS.Println(err)
-		return
-	}
+	price, _ := DROPPER.Currencies[types.BTC].GetValue()
 
 	balance, err := SKYCOIN.Balance()
 	if err != nil {

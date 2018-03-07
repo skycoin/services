@@ -17,6 +17,7 @@ user = "otc"
 pass = "otc"
 account = "otc"
 testnet = true
+price = 200000
 
 [scanner]
 tick = 5

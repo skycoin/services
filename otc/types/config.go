@@ -21,6 +21,7 @@ type Config struct {
 			User    string
 			Pass    string
 			Account string
+			Price   uint64
 		}
 	}
 	Api struct {

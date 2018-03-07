@@ -116,32 +116,44 @@ Nothing, just a GET.
 
 ```json
 {
-	"price": 119833,
-	"updated": 1519131184,
+	"prices": {
+		"internal": 150000,
+		"internal_updated": 1519131184,
+		"exchange": 119833,
+		"exchange_updated": 1519131184
+	},
 	"source": "internal",
 	"paused": true
 }
 ```
 
-* `updated` is the last time price was updated (either from exchange or internal) in UTC
-
 ## /api/price
 
-Set the price and price source (exchange or internal).
+Set the price of `internal` source. 
 
 **http request**
 
 ```json
 {
-	"price": 119833,
-	"source": "internal"
+	"price": 119833
 }
 ```
 
 * `price` is the satoshi value of 1 SKY. `119833` is equal to `0.00119833 BTC`.
-* `source` is what price source to use when executing transactions:
-	* `internal` use otc price (manually set)
-	* `exchange` use dynamic price from exchange
+
+## /api/source
+
+Set the price source.
+
+**http request**
+
+```json
+{
+	"source": "exchange"
+}
+```
+
+* `source` is either `exchange` to get pricing from an exchange, or `internal` to use the manually set `internal` price
 
 ## /api/pause
 
