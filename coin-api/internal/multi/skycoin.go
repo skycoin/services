@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
@@ -85,6 +86,8 @@ func getBalanceAddress(br *cli.BalanceResult) string {
 	return ""
 }
 
+var mu sync.Mutex
+
 // CheckBalance check the balance (and get unspent outputs) for an address
 func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 	addressesToGetBalance := make([]string, 0, 1)
@@ -113,30 +116,36 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 // SignTransaction sign a transaction
 func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.Response, err error) {
 	//TODO: VERIFY this sign transaction logic
-	var buf bytes.Buffer
-	buf.WriteString(transID)
-	secKeyBytes := buf.Bytes()
-	buf.Reset()
-	buf.WriteString(srcTrans)
-	srcTransByte := buf.Bytes()
-	cipherSecKey := cipher.NewSecKey(secKeyBytes)
-	ux := &coin.UxBody{
-		SrcTransaction: cipher.SumSHA256(srcTransByte),
-		Address:        cipher.AddressFromSecKey(cipherSecKey),
-		// Coins TODO: maybe we have to receive coins here ?
-		// Hours TODO: maybe we have to receive hours here ?
-	}
 	rsp = &model.Response{}
+	// println("transID len ", len(transID))
+	// println("srcTrans len ", len(srcTrans))
+
 	defer func() {
+		// println("pre recover!!!!!!!!!!")
 		if r := recover(); r != nil {
+			// println("recover!!!!!!!!!!")
 			rsp.Status = model.StatusError
 			rsp.Code = ehandler.RPCTransactionError
 			rsp.Result = &model.TransactionSign{}
 		}
 	}()
+	cipherSecKey, err := cipher.SecKeyFromHex(transID)
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	buf.WriteString(srcTrans)
+
+	ux := &coin.UxBody{
+		SrcTransaction: cipher.SumSHA256(buf.Bytes()),
+		Address:        cipher.AddressFromSecKey(cipherSecKey),
+		// Coins TODO: maybe we have to receive coins here ?
+		// Hours TODO: maybe we have to receive hours here ?
+	}
 	secKeyTrans := []cipher.SecKey{cipherSecKey}
 	trans := &coin.Transaction{}
-	trans.PushInput(ux.Hash())
+	uxHash := ux.Hash()
+	trans.PushInput(uxHash)
 	trans.SignInputs(secKeyTrans)
 	//TODO: DO I need it here? -> PushOutput Adds a TransactionOutput, sending coins & hours to an Address
 	//TODO: maybe we have to show all signatures?
@@ -170,7 +179,6 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Response, error) {
 	injectedT, err := s.client.InjectTransactionString(rawtx)
 	if err != nil {
-		// println("error msg ", err.Error())
 		return nil, err
 	}
 	statusT, err := s.client.GetTransactionByID(injectedT)
