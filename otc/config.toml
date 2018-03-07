@@ -7,15 +7,15 @@ name = "teller"
 url = "http://172.104.145.6:9090"
 
 [dropper.BTC]
-# source determines where address balances are fetched from, "explorer" means
-# otc gets balances from a third party api, and "node" means otc uses a btcd 
-# to get balances
-source = "explorer"
+# btcwallet node
 node = "localhost:18332"
+# btcwallet rpc user
 user = "otc"
+# btcwallet rpc pass
 pass = "otc"
+# btcwallet account
 account = "otc"
-testnet = true
+# default internal price for sky/btc (in satoshis)
 price = 200000
 
 [scanner]

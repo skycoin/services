@@ -16,8 +16,6 @@ import (
 type BTCConnection struct {
 	client  *rpcclient.Client
 	account string
-	testnet bool
-	source  string
 
 	// coin-api path
 	capiPath string
@@ -82,8 +80,6 @@ func NewBTCConnection(config *types.Config) (*BTCConnection, error) {
 	return &BTCConnection{
 		client:   client,
 		account:  config.Dropper.BTC.Account,
-		testnet:  config.Dropper.BTC.Testnet,
-		source:   config.Dropper.BTC.Source,
 		capiPath: config.CoinApi.URL,
 	}, nil
 }

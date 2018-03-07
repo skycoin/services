@@ -15,9 +15,7 @@ type Config struct {
 	}
 	Dropper struct {
 		BTC struct {
-			Source  string
 			Node    string
-			Testnet bool
 			User    string
 			Pass    string
 			Account string
