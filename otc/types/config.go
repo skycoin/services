@@ -10,6 +10,9 @@ type Config struct {
 		Seed string
 		Name string
 	}
+	CoinApi struct {
+		Node string
+	}
 	Dropper struct {
 		BTC struct {
 			Source  string

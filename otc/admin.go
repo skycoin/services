@@ -59,9 +59,10 @@ func adminPrice(w http.ResponseWriter, r *http.Request) {
 }
 
 type adminStatusResponse struct {
-	Price  uint64         `json:"price"`
-	Source dropper.Source `json:"source"`
-	Paused bool           `json:"paused"`
+	Price   uint64         `json:"price"`
+	Updated int64          `json:"updated"`
+	Source  dropper.Source `json:"source"`
+	Paused  bool           `json:"paused"`
 }
 
 func adminStatus(w http.ResponseWriter, r *http.Request) {
@@ -72,8 +73,9 @@ func adminStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(&adminStatusResponse{
-		Price:  price,
-		Source: DROPPER.GetValueSource(),
-		Paused: MODEL.Paused(),
+		Price:   price,
+		Updated: DROPPER.GetUpdated(types.BTC).Unix(),
+		Source:  DROPPER.GetValueSource(),
+		Paused:  MODEL.Paused(),
 	})
 }
