@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
-	"github.com/shopspring/decimal"
 	"github.com/skycoin/services/coin-api/internal/btc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"log"
@@ -17,7 +16,7 @@ type keyPairResponse struct {
 }
 
 type balanceResponse struct {
-	Balance decimal.Decimal `json:"balance"`
+	Balance float64 `json:"balance"`
 	Address string          `json:"address"`
 }
 
@@ -194,6 +193,8 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		return nil
 	}
 
+	balanceFloat, _ := balance.Float64()
+
 	resp := struct {
 		Status string          `json:"status"`
 		Code   int             `json:"code"`
@@ -202,7 +203,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		Status: "Ok",
 		Code:   http.StatusOK,
 		Result: balanceResponse{
-			Balance: balance,
+			Balance: balanceFloat,
 			Address: address,
 		},
 	}

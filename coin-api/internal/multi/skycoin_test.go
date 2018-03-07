@@ -60,20 +60,16 @@ func TestGenerateAddress(t *testing.T) {
 func TestTransaction(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
+		// Port: 20200,
 		Port: 6430,
 	}
-	// trustedPeerPort = 20000
-	// daemonPort      = 20100
-	// rpcPort         = 20200
-	// guiPort         = 20300
-	skyService := multi.NewSkyService(&loc)
 
+	skyService := multi.NewSkyService(&loc)
 	t.Run("inject transaction", func(t *testing.T) {
-		//TODO: returns 404 for now and has to be fixed
 		rsp, err := skyService.InjectTransaction(rawTxID)
 		if !assert.NoError(t, err) {
 			println("err.Error()", err.Error())
-			t.Fatal()
+			t.FailNow()
 		}
 		assertCodeZero(t, rsp)
 		assertStatusOk(t, rsp)
@@ -87,24 +83,14 @@ func TestTransaction(t *testing.T) {
 		}
 	})
 
-	t.Run("check transaction status", func(t *testing.T) {
-		txID := rawTxID
-		//TODO: returns 404 for now and has to be fixed
-		transStatus, err := skyService.CheckTransactionStatus(txID)
-		if !assert.NoError(t, err) {
-			t.Fatal()
-		}
-		if transStatus.BlockSeq == 0 {
-			t.Fatalf("blockSeq shouldn't be zero length")
-		}
-	})
-
 	t.Run("sign transaction", func(t *testing.T) {
 		//TODO: check this logic
 		_, secKey := makeUxBodyWithSecret(t)
-		rsp, err := skyService.SignTransaction(secKey.Hex(), rawTxID)
+		secKeyHex := secKey.Hex()
+		rsp, err := skyService.SignTransaction(secKeyHex, rawTxID)
 		if !assert.NoError(t, err) {
-			t.Fatal()
+			println("err.Error()", err.Error())
+			t.FailNow()
 		}
 		assertCodeZero(t, rsp)
 		assertStatusOk(t, rsp)
@@ -115,6 +101,17 @@ func TestTransaction(t *testing.T) {
 		}
 		if len(bRsp.Signid) == 0 {
 			t.Fatalf("signid shouldn't be zero length")
+		}
+	})
+
+	t.Run("check transaction status", func(t *testing.T) {
+		transStatus, err := skyService.CheckTransactionStatus(rawTxID)
+		if !assert.NoError(t, err) {
+			println("err.Error()", err.Error())
+			t.FailNow()
+		}
+		if transStatus.BlockSeq == 0 {
+			t.Fatalf("blockSeq shouldn't be zero length")
 		}
 	})
 }
