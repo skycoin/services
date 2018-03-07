@@ -264,13 +264,13 @@ class Distribution extends React.Component {
 
   handleAddressChange = (event) => {
     this.setState({
-      skyAddress: event.target.value,
+      skyAddress: event.target.value.trim(),
     });
   }
 
   handleStatusAddressChange = (event) => {
     this.setState({
-      status_address: event.target.value,
+      status_address: event.target.value.trim(),
     });
   }
 
