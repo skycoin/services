@@ -215,7 +215,7 @@ ResponseBody {
     "code": 0,
     "result": {
         "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
-        "balance": 12.07,
+        "balance": 24261746,
     }
 }
 ```
