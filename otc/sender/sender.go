@@ -89,12 +89,7 @@ func (s *Sender) process() {
 		w := e.Value.(*types.Work)
 
 		// get value of amount
-		value, err := s.dropper.GetValue(w.Request.Currency)
-		if err != nil {
-			w.Return(err)
-			s.work.Remove(e)
-			continue
-		}
+		value, _ := s.dropper.Currencies[w.Request.Currency].GetValue()
 
 		// divide deposit amount over skycoin value to get skycoin equivalent
 		coins := uint64((float64(w.Request.Metadata.Amount) / float64(value) * 1e2)) * 1e4

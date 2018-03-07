@@ -48,6 +48,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	DROPPER.Start()
 
 	// manages connection and wallet for skycoin
 	SKYCOIN, err = skycoin.NewConnection(CONFIG)
@@ -101,6 +102,7 @@ func main() {
 	admin.HandleFunc("/api/status", adminStatus)
 	admin.HandleFunc("/api/pause", adminPause)
 	admin.HandleFunc("/api/price", adminPrice)
+	admin.HandleFunc("/api/source", adminSource)
 	go http.ListenAndServe(CONFIG.Admin.Listen, admin)
 
 	println("api listening on " + CONFIG.Api.Listen)

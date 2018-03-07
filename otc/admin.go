@@ -29,14 +29,28 @@ func adminPause(w http.ResponseWriter, r *http.Request) {
 }
 
 type adminPriceRequest struct {
-	Price  uint64 `json:"price"`
-	Source string `json:"source"`
+	Price uint64 `json:"price"`
 }
 
 func adminPrice(w http.ResponseWriter, r *http.Request) {
 	req := adminPriceRequest{}
 
 	// decode json
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	DROPPER.Currencies[types.BTC].SetValue(dropper.INTERNAL, req.Price)
+}
+
+type adminSourceRequest struct {
+	Source string `json:"source"`
+}
+
+func adminSource(w http.ResponseWriter, r *http.Request) {
+	req := adminSourceRequest{}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
@@ -54,28 +68,35 @@ func adminPrice(w http.ResponseWriter, r *http.Request) {
 		source = dropper.INTERNAL
 	}
 
-	DROPPER.SetValue(types.BTC, req.Price)
-	DROPPER.SetValueSource(source)
+	DROPPER.Currencies[types.BTC].SetSource(source)
 }
 
 type adminStatusResponse struct {
-	Price   uint64         `json:"price"`
-	Updated int64          `json:"updated"`
-	Source  dropper.Source `json:"source"`
-	Paused  bool           `json:"paused"`
+	Prices struct {
+		Internal        uint64 `json:"internal"`
+		InternalUpdated int64  `json:"internal_updated"`
+		Exchange        uint64 `json:"exchange"`
+		ExchangeUpdated int64  `json:"exchange_updated"`
+	} `json:"prices"`
+
+	Source dropper.Source `json:"source"`
+	Paused bool           `json:"paused"`
 }
 
 func adminStatus(w http.ResponseWriter, r *http.Request) {
-	price, err := DROPPER.GetValue(types.BTC)
-	if err != nil {
-		http.Error(w, "error getting value", http.StatusInternalServerError)
-		return
+	resp := &adminStatusResponse{
+		Source: DROPPER.Currencies[types.BTC].GetSource(),
+		Paused: MODEL.Paused(),
 	}
 
-	json.NewEncoder(w).Encode(&adminStatusResponse{
-		Price:   price,
-		Updated: DROPPER.GetUpdated(types.BTC).Unix(),
-		Source:  DROPPER.GetValueSource(),
-		Paused:  MODEL.Paused(),
-	})
+	i, iu := DROPPER.Currencies[types.BTC].Sources[dropper.INTERNAL].Get()
+	resp.Prices.Internal = i
+	resp.Prices.InternalUpdated = iu.UTC().Unix()
+
+	e, eu := DROPPER.Currencies[types.BTC].Sources[dropper.EXCHANGE].Get()
+	resp.Prices.Exchange = e
+	resp.Prices.ExchangeUpdated = eu.UTC().Unix()
+
+	// send response
+	json.NewEncoder(w).Encode(&resp)
 }

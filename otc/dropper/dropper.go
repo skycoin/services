@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/skycoin/services/otc/exchange"
 	"github.com/skycoin/services/otc/types"
 )
 
@@ -15,29 +16,94 @@ const (
 	INTERNAL Source = "internal"
 )
 
+type Dropper struct {
+	Connections types.Connections
+	Currencies  map[types.Currency]*Values
+}
+
+type Values struct {
+	Using   Source
+	Sources map[Source]*Value
+}
+
+func NewValues(s Source, v *Value) *Values {
+	values := &Values{
+		Using:   s,
+		Sources: make(map[Source]*Value, 0),
+	}
+
+	// add initial
+	values.Sources[s] = v
+
+	return values
+}
+
+func (v *Values) SetSource(s Source) { v.Using = s }
+
+func (v *Values) GetSource() Source { return v.Using }
+
+func (v *Values) GetValue() (uint64, time.Time) {
+	if v.Sources[v.Using] == nil {
+		return 0, time.Now()
+	}
+
+	return v.Sources[v.Using].Get()
+}
+
+func (v *Values) SetValue(s Source, a uint64) {
+	if v.Sources[s] == nil {
+		v.Sources[s] = NewValue(a)
+		return
+	}
+
+	v.Sources[s].Set(a)
+}
+
 type Value struct {
+	sync.RWMutex
 	Updated time.Time
 	Amount  uint64
 }
 
-type Dropper struct {
-	Connections types.Connections
+func NewValue(a uint64) *Value {
+	return &Value{
+		Updated: time.Now(),
+		Amount:  a,
+	}
+}
 
-	ValueMutex   sync.RWMutex
-	ValueSource  Source
-	Value        map[types.Currency]uint64
-	ValueUpdated map[types.Currency]time.Time
+func (v *Value) Get() (uint64, time.Time) {
+	v.RLock()
+	defer v.RUnlock()
+	return v.Amount, v.Updated
+}
+
+func (v *Value) Set(a uint64) {
+	v.Lock()
+	defer v.Unlock()
+	v.Amount = a
+	v.Updated = time.Now()
 }
 
 func NewDropper(config *types.Config) (*Dropper, error) {
 	btc, err := NewBTCConnection(config)
+	if err != nil {
+		return nil, err
+	}
 
-	return &Dropper{
-		Connections:  types.Connections{types.BTC: btc},
-		ValueSource:  EXCHANGE,
-		Value:        make(map[types.Currency]uint64, 0),
-		ValueUpdated: make(map[types.Currency]time.Time, 0),
-	}, err
+	d := &Dropper{
+		Connections: types.Connections{types.BTC: btc},
+		Currencies:  make(map[types.Currency]*Values, 0),
+	}
+
+	d.Currencies[types.BTC] = NewValues(
+		// default price source
+		INTERNAL,
+		// get default price from config
+		NewValue(config.Dropper.BTC.Price),
+	)
+
+	return d, nil
 }
 
 var ErrConnectionMissing = errors.New("connection doesn't exist")
@@ -51,59 +117,21 @@ func (d *Dropper) GetBalance(c types.Currency, a types.Drop) (uint64, error) {
 	return connection.Balance(a)
 }
 
-// GetValueSource gets the reference used to determine currency value.
-func (d *Dropper) GetValueSource() Source {
-	d.ValueMutex.RLock()
-	defer d.ValueMutex.RUnlock()
+// TODO: support more currencies / configs
+func (d *Dropper) Start() {
+	go func() {
+		for {
+			val, err := exchange.GetBTCValue()
+			if err != nil {
+				// if error with exchange, set new source to internal
+				//
+				// TODO: check if this is a good idea
+				d.Currencies[types.BTC].SetSource(INTERNAL)
+			}
 
-	return d.ValueSource
-}
+			d.Currencies[types.BTC].SetValue(EXCHANGE, val)
 
-// SetValueSource sets the reference for determining currency value. Currently
-// only EXCHANGE and INTERNAL are supported.
-func (d *Dropper) SetValueSource(s Source) {
-	d.ValueMutex.Lock()
-	defer d.ValueMutex.Unlock()
-
-	d.ValueSource = s
-}
-
-// SetValue sets the value of 1 SKY (amount) for the currency.
-func (d *Dropper) SetValue(c types.Currency, amount uint64) {
-	d.ValueMutex.Lock()
-	defer d.ValueMutex.Unlock()
-
-	d.ValueUpdated[c] = time.Now().In(time.UTC)
-	d.Value[c] = amount
-}
-
-// GetValue returns the equivalent of 1 SKY in the passed currency.
-func (d *Dropper) GetValue(c types.Currency) (uint64, error) {
-	d.ValueMutex.RLock()
-	defer d.ValueMutex.RUnlock()
-
-	if d.ValueSource == EXCHANGE {
-		if value, err := d.Connections[c].Value(); err != nil {
-			return 0, err
-		} else {
-			d.ValueUpdated[c] = time.Now().UTC()
-			return value, nil
+			<-time.After(time.Second * 15)
 		}
-	} else if d.ValueSource == INTERNAL {
-		if _, exists := d.Value[c]; !exists {
-			return 0, ErrConnectionMissing
-		} else {
-			return d.Value[c], nil
-		}
-	}
-
-	// should never be reached
-	return 0, nil
-}
-
-func (d *Dropper) GetUpdated(c types.Currency) time.Time {
-	d.ValueMutex.RLock()
-	defer d.ValueMutex.RUnlock()
-
-	return d.ValueUpdated[c]
+	}()
 }
