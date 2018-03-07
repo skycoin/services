@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+	"math"
 )
 
 const (
@@ -228,7 +229,7 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error)
 	}
 
 	log.Printf("Balance is equal to %f", amount)
-	balance := decimal.NewFromFloat(amount.ToBTC())
+	balance := decimal.NewFromFloat(amount.ToUnit(btcutil.AmountSatoshi))
 
 	return balance, nil
 }
@@ -254,7 +255,8 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 		return decimal.NewFromFloat(0.0), nil
 	}
 
-	return decimal.NewFromFloat(r.Values[0].Balance), nil
+	balance := r.Values[0].Balance / math.Pow10(int(8))
+	return decimal.NewFromFloat(balance), nil
 }
 
 // Api method for monitoring btc service circuit breaker
