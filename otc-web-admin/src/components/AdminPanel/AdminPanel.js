@@ -10,6 +10,7 @@ import { FormattedMessage, FormattedHTMLMessage, injectIntl } from 'react-intl';
 import { rem } from 'polished';
 import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
 import Switch from "react-switch";
+import TimeAgo from 'react-timeago';
 
 import Button from 'components/Button';
 import Container from 'components/Container';
@@ -21,7 +22,7 @@ import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
 
-import { getStatus, setPrice, setOctState } from './admin-api';
+import { getStatus, setPrice, setSource, setOctState } from './admin-api';
 
 const Panel = styled(Box) `
   background-color: #fff;
@@ -58,10 +59,23 @@ const TransparenWrapper = styled(Wrapper) `
   background-color: 'transparent';
 `;
 
-const PriceSource = ({ price, source }) => {
+const UpdatedPriceContainer = styled(Text) `
+  font-size: 10px;
+`;
+
+const UpdatePriceLabel = ({ updated, as }) => (
+  <UpdatedPriceContainer as={as || 'p'}>
+    Updated <TimeAgo date={new Date(updated * 1000)} /> at {new Date(updated * 1000).toLocaleDateString()} {new Date(updated * 1000).toLocaleTimeString()}
+  </UpdatedPriceContainer>
+);
+
+const PriceSource = ({ prices, source }) => {
   return (<div>
-    <Text as="p">
-      {source === 'internal' ? 'Internal price' : 'Exchange price'} {price / 1e8} BTC
+    <Text as="div">
+      <Text as="p" style={{ marginBottom: 0 }}>
+        {source === sources.internal ? `Internal price ${prices.internal / 1e8} ` : `Exchange price ${prices.exchange / 1e8} `} BTC
+      </Text>
+      <UpdatePriceLabel updated={source === sources.internal ? prices.internal_updated : prices.exchange_updated} />
     </Text>
   </div>)
 };
@@ -74,7 +88,7 @@ const PriceSelector = ({
   selectedPrice,
   selectedSource,
 
-  price,
+  prices,
   source,
 
   setPrice,
@@ -85,21 +99,31 @@ const PriceSelector = ({
   return (
     <TransparenContainer>
       <Text as="a" mr={5}>Internal</Text>
-      <Switch
-        onChange={checked => setSource(checked ? sources.exchange : sources.internal)}
-        checked={selectedSource === sources.exchange}
-        offColor={COLORS.blue[7]}
-        onColor={COLORS.green[8]}
-        uncheckedIcon={false}
-        checkedIcon={false}
-      />
-      <Text as="a" ml={5}>Exchange</Text>
-      {selectedSource === sources.internal &&
+      <div className="radio">
+        <label>
+          <input
+            type="radio"
+            value="option1"
+            checked={selectedSource === sources.exchange}
+            onChange={() => setSource(sources.exchange)} />
+          Exchange ({prices.exchange / 1e8} BTC <UpdatePriceLabel as="div" updated={prices.exchange_updated} />)
+        </label>
+      </div>
+      <div className="radio">
+        <label>
+          <input
+            type="radio"
+            value="option2"
+            checked={selectedSource === sources.internal}
+            onChange={() => setSource(sources.internal)} />
+          Internal (<UpdatePriceLabel as="div" updated={prices.internal_updated} />))
+      </label>
         <Input
           value={selectedPrice}
           style={isPriceValid ? {} : invalidInputStyle}
           onChange={e => setPrice(e.target.value)}
-          placeholder="Price" />}
+          placeholder="Price" />
+      </div>
       <TransparenContainer mt={5}>
         <Button
           bg={COLORS.green[8]}
@@ -110,21 +134,18 @@ const PriceSelector = ({
             }
           }}
         >Save</Button>
-        <Button
-          m={3}
-          bg={COLORS.blue[7]}
-          color="white"
-          onClick={() => {
-            setPrice(price);
-            setSource(source);
-          }}>Reset</Button>
       </TransparenContainer>
     </TransparenContainer>);
 };
 
 export default class extends React.Component {
   state = {
-    price: 0,
+    prices: {
+      internal: 0,
+      exchange: 0,
+      exchange_updated: 1519131184,
+      internal_updated: 1519131184,
+    },
     source: sources.internal,
     paused: true,
     loaded: false,
@@ -139,7 +160,7 @@ export default class extends React.Component {
       ...status,
 
       selectedSource: status.source,
-      selectedPrice: `${status.price / 1e8}`,
+      selectedPrice: `${status.prices.internal / 1e8}`,
     });
   }
   componentWillMount = async () => {
@@ -158,14 +179,15 @@ export default class extends React.Component {
     this.setState({ ...this.state, selectedPrice: price });
   }
   save = async (source, price) => {
-    await setPrice(Number.parseFloat(price) * 1e8, source);
+    await setPrice(Number.parseFloat(price) * 1e8);
+    await setSource(source);
     await this.refreshStatus();
   }
   render = () => {
     const {
       paused,
       source,
-      price,
+      prices,
 
       loaded,
 
@@ -191,20 +213,20 @@ export default class extends React.Component {
                 <Text>{paused ? 'Paused' : 'Running'}</Text>
                 {paused
                   ? (<Button
-                        bg={COLORS.green[8]}
-                        color="white"
-                        onClick={() => this.setOctState(false)}
-                        >Start</Button>)
-                  : (<Button 
-                        bg={COLORS.red[7]}
-                        color="white"
-                        onClick={() => this.setOctState(true)}>Pause</Button>)}
+                    bg={COLORS.green[8]}
+                    color="white"
+                    onClick={() => this.setOctState(false)}
+                  >Start</Button>)
+                  : (<Button
+                    bg={COLORS.red[7]}
+                    color="white"
+                    onClick={() => this.setOctState(true)}>Pause</Button>)}
               </Panel>
               <Panel mt={5}>
                 <H3Styled>Price source:</H3Styled>
-                <PriceSource source={source} price={price} />
+                <PriceSource source={source} prices={prices} />
                 <PriceSelector
-                  price={price}
+                  prices={prices}
                   source={source}
 
                   selectedSource={selectedSource}
