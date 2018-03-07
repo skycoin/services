@@ -34,7 +34,7 @@ export default {
     discord: 'Discord',
   },
   distribution: {
-    rate: 'Current OTC rate: {rate} SKY/BTC',
+    rate: 'Текущий курс OTC: {rate} SKY/BTC',
     inventory: 'Current inventory: {coins} SKY available',
     title: 'Skycoin OTC',
     heading: 'Skycoin OTC',
@@ -49,11 +49,8 @@ export default {
 <ul>
   <li>Введите ваш Skycoin адрес</li>
   <li>Вы получите уникальный Bitcoin адрес для приобретения SKY</li>
-  <li>Пошлите Bitcoin на полученый адрес</li>
+  <li>Отправьте Bitcoin на полученый адрес</li>
 </ul>
-
-<p>Вы можете проверить статус заказа, введя адрес SKY и нажав на <strong>Проверить статус</strong>.</p>
-<p>Каждый раз при нажатии на <strong>Получить адрес</strong>, генерируется новый BTC адрес.</p>
     `,
     statusFor: 'Статус по {skyAddress}',
     enterAddress: 'Введите адрес Skycoin',

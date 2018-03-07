@@ -50,9 +50,6 @@ export default {
   <li>您将收到一个唯一的比特币地址用来购买天空币</li>
   <li>将比特币发送到您收到的地址上</li>
 </ul>
-
-<p>您可以通过输入您的天空币地址并点击下面的"<strong>检查状态</strong>"来核实订单的状态</p>
-<p>每次当您点击<strong>获取地址</strong>, 系统会产生一个新的比特币地址</p>
     `,
     statusFor: '天空币地址{skyAddress}的订单状态',
     enterAddress: '输入天空币地址',
