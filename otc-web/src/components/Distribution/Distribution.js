@@ -40,6 +40,7 @@ const Address = Heading.extend`
   border-radius: ${BORDER_RADIUS.base};
   box-shadow: ${BOX_SHADOWS.base};
   padding: 1rem;
+  margin-bottom: 1rem;
 `;
 
 const StatusModal = ({ status, statusIsOpen, closeModals, skyAddress, intl }) => (
@@ -93,27 +94,30 @@ const StatusErrorMessage = ({ disabledReason }) => (<Flex column>
   </Text>
 </Flex>);
 
+const btcToSatochi = 0.00000001
+const roundTo = 100000000
 const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
   <div>
     <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
       <FormattedMessage id="distribution.heading" />
     </Heading>
+    {sky_btc_exchange_rate &&
     <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
-      <FormattedMessage
+      <FormattedHTMLMessage
         id="distribution.rate"
         values={{
-          rate: +sky_btc_exchange_rate,
+          rate: +(Math.round(sky_btc_exchange_rate * btcToSatochi * roundTo) / roundTo),
         }}
       />
-    </Text>
-    <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
+    </Text>}
+    {/* <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
       <FormattedMessage
         id="distribution.inventory"
         values={{
           coins: balance && balance.coins,
         }}
       />
-    </Text>
+    </Text> */}
 
     <Text heavy color="black" fontSize={[2, 3]} as="div">
       <FormattedHTMLMessage id="distribution.instructions" />
@@ -126,9 +130,11 @@ const DistributionForm = ({
   intl,
 
   address,
-  handleChange,
+  handleAddressChange,
 
   drop_address,
+  status_address,
+  handleStatusAddressChange,
   getAddress,
   addressLoading,
 
@@ -142,7 +148,7 @@ const DistributionForm = ({
         <Input
           placeholder={intl.formatMessage({ id: 'distribution.enterAddress' })}
           value={address}
-          onChange={handleChange}
+          onChange={handleAddressChange}
         />
 
         {drop_address && <Address heavy color="black" fontSize={[2, 3]} as="div">
@@ -168,7 +174,13 @@ const DistributionForm = ({
               ? <FormattedMessage id="distribution.loading" />
               : <FormattedMessage id="distribution.getAddress" />}
           </Button>
-
+        </div>
+        <Input
+          placeholder={intl.formatMessage({ id: 'distribution.enterAddressBTC' })}
+          value={status_address}
+          onChange={handleStatusAddressChange}
+        />
+        <div>
           <Button
             onClick={checkStatus}
             color="base"
@@ -189,17 +201,17 @@ class Distribution extends React.Component {
     status: [],
     skyAddress: null,
     drop_address: '',
+    status_address: '',
     statusIsOpen: false,
     addressLoading: false,
     statusLoading: false,
     enabled: true,
-    // TODO: These values should be taken from the OTC API
-    sky_btc_exchange_rate: 1,
+    sky_btc_exchange_rate: null,
   };
   componentWillMount = async () => {
     try {
       const config = await getConfig();
-      const stateMutation = {};
+      const stateMutation = {sky_btc_exchange_rate: config.price};
       switch (config.otcStatus) {
         case 'SOLD_OUT':
           stateMutation.disabledReason = 'coinsSoldOut';
@@ -237,6 +249,7 @@ class Distribution extends React.Component {
       .then((res) => {
         this.setState({
           drop_address: res.drop_address,
+          status_address: res.drop_address,
         });
       })
       .catch((err) => {
@@ -249,9 +262,15 @@ class Distribution extends React.Component {
       });
   }
 
-  handleChange = (event) => {
+  handleAddressChange = (event) => {
     this.setState({
-      skyAddress: event.target.value,
+      skyAddress: event.target.value.trim(),
+    });
+  }
+
+  handleStatusAddressChange = (event) => {
+    this.setState({
+      status_address: event.target.value.trim(),
     });
   }
 
@@ -262,7 +281,7 @@ class Distribution extends React.Component {
   }
 
   checkStatus = () => {
-    if (!this.state.drop_address) {
+    if (!this.state.status_address) {
       return alert(
         this.props.intl.formatMessage({
           id: 'distribution.errors.noDropAddress',
@@ -274,7 +293,7 @@ class Distribution extends React.Component {
       statusLoading: true,
     });
 
-    return checkStatus({ drop_address: this.state.drop_address, drop_currency: 'BTC' })
+    return checkStatus({ drop_address: this.state.status_address, drop_currency: 'BTC' })
       .then((res) => {
         this.setState({
           statusIsOpen: true,
@@ -297,8 +316,8 @@ class Distribution extends React.Component {
       enabled,
       sky_btc_exchange_rate,
       balance,
-      address,
       drop_address,
+      status_address,
       addressLoading,
       statusLoading } = this.state;
     return (
@@ -313,7 +332,7 @@ class Distribution extends React.Component {
           <StatusModal
             statusIsOpen={statusIsOpen}
             closeModals={this.closeModals}
-            skyAddress={skyAddress}
+            skyAddress={status_address}
             intl={intl}
             status={status}
           />
@@ -326,10 +345,13 @@ class Distribution extends React.Component {
                 balance={balance}
                 intl={intl}
 
-                address={address}
-                handleChange={this.handleChange}
+                address={skyAddress}
+                handleAddressChange={this.handleAddressChange}
 
                 drop_address={drop_address}
+                status_address={status_address}
+                handleStatusAddressChange={this.handleStatusAddressChange}
+
                 getAddress={this.getAddress}
                 addressLoading={addressLoading}
 

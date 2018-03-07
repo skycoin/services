@@ -1,7 +1,9 @@
 package dropper
 
 import (
+	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -12,10 +14,19 @@ import (
 	"github.com/skycoin/services/otc/types"
 )
 
+const (
+	EXPLORER              = "explorer"
+	EXPLORER_PATH         = "https://blockchain.info/unspent?active="
+	EXPLORER_PATH_TESTNET = "https://testnet.blockchain.info/unspent?active="
+
+	NODE = "node"
+)
+
 type BTCConnection struct {
 	client  *rpcclient.Client
 	account string
 	testnet bool
+	source  string
 }
 
 func NewBTCConnection(config *types.Config) (*BTCConnection, error) {
@@ -78,6 +89,7 @@ func NewBTCConnection(config *types.Config) (*BTCConnection, error) {
 		client:  client,
 		account: config.Dropper.BTC.Account,
 		testnet: config.Dropper.BTC.Testnet,
+		source:  config.Dropper.BTC.Source,
 	}, nil
 }
 
@@ -116,7 +128,41 @@ func (c *BTCConnection) Value() (uint64, error) {
 	return value, err
 }
 
+type ExplorerResponse struct {
+	UnspentOutputs []UnspentOutput `json:"unspent_outputs"`
+}
+
+type UnspentOutput struct {
+	Value uint64 `json:"value"`
+}
+
 func (c *BTCConnection) Balance(drop types.Drop) (uint64, error) {
+	if c.source == EXPLORER {
+		var path string
+		if c.testnet {
+			path = EXPLORER_PATH_TESTNET
+		} else {
+			path = EXPLORER_PATH
+		}
+
+		resp, err := http.Get(path + string(drop) + "&confirmations=1")
+		if err != nil {
+			return 0, err
+		}
+
+		var eo ExplorerResponse
+		if err = json.NewDecoder(resp.Body).Decode(&eo); err != nil {
+			return 0, nil
+		}
+
+		var sum uint64
+		for _, o := range eo.UnspentOutputs {
+			sum += o.Value
+		}
+
+		return sum, nil
+	}
+
 	var params *chaincfg.Params
 	if c.testnet {
 		params = &chaincfg.TestNet3Params

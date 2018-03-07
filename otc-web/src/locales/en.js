@@ -34,7 +34,7 @@ export default {
     discord: 'Discord',
   },
   distribution: {
-    rate: 'Current OTC rate: {rate} SKY/BTC',
+    rate: 'Current OTC rate: <strong>{rate} SKY/BTC</strong>',
     inventory: 'Current inventory: {coins} SKY available',
     title: 'Skycoin OTC',
     heading: 'Skycoin OTC',
@@ -42,21 +42,18 @@ export default {
     ended: `<p>Join the <a href="https://t.me/skycoin">Skycoin Telegram</a>
       or follow the
       <a href="https://twitter.com/skycoinproject">Skycoin Twitter</a>.`,
-    instructions: `<p>You can check the current market value for <a href="https://coinmarketcap.com/currencies/skycoin/">Skycoin at CoinMarketCap</a>.</p>
-
+    instructions: `<p>
 <p>To use the Skycoin OTC:</p>
 
 <ul>
-  <li>Enter your Skycoin address below</li>
+  <li>Enter your Skycoin address below and hit <strong>Get Address</strong></li>
   <li>You&apos;ll receive a unique Bitcoin address to purchase SKY</li>
   <li>Send BTC to the address</li>
 </ul>
-
-<p>You can check the status of your order by entering your address and selecting <strong>Check status</strong>.</p>
-<p>Each time you select <strong>Get Address</strong>, a new BTC address is generated. A single SKY address can have up to 5 BTC addresses assigned to it.</p>
     `,
     statusFor: 'Status for {skyAddress}',
     enterAddress: 'Enter Skycoin address',
+    enterAddressBTC: 'Enter BTC address',
     getAddress: 'Get address',
     checkStatus: 'Check status',
     loading: 'Loading...',

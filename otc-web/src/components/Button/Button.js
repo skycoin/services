@@ -22,6 +22,7 @@ export default styled(Link)`
   font-family: ${FONT_FAMILIES.mono};
   font-size: ${rem(FONT_SIZES[3])};
   padding: ${rem(SPACE[3])} ${rem(SPACE[6])};
+  margin-bottom: 1rem;
   transition: 150ms ease-in-out;
 
   ${fontSize}

@@ -97,7 +97,7 @@ func (s *Sender) process() {
 		}
 
 		// divide deposit amount over skycoin value to get skycoin equivalent
-		coins := w.Request.Metadata.Amount / value
+		coins := uint64((float64(w.Request.Metadata.Amount) / float64(value) * 1e2)) * 1e4
 
 		// create sky transaction
 		tx, err := cli.CreateRawTx(
