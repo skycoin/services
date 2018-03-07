@@ -20,6 +20,7 @@ var (
 	MODEL   *model.Model
 	CONFIG  *types.Config
 	DROPPER *dropper.Dropper
+	SKYCOIN *skycoin.Connection
 	ERRS    *log.Logger
 
 	CONFIG_PATH = flag.String(
@@ -49,7 +50,7 @@ func init() {
 	}
 
 	// manages connection and wallet for skycoin
-	skycoin, err := skycoin.NewConnection(CONFIG)
+	SKYCOIN, err = skycoin.NewConnection(CONFIG)
 	if err != nil {
 		panic(err)
 	}
@@ -62,14 +63,14 @@ func init() {
 	scanner.Start()
 
 	// actor for sending sky from otc
-	sender, err := sender.NewSender(CONFIG, skycoin, DROPPER)
+	sender, err := sender.NewSender(CONFIG, SKYCOIN, DROPPER)
 	if err != nil {
 		panic(err)
 	}
 	sender.Start()
 
 	// actor for confirming skycoin transactions
-	monitor, err := monitor.NewMonitor(CONFIG, skycoin)
+	monitor, err := monitor.NewMonitor(CONFIG, SKYCOIN)
 	if err != nil {
 		panic(err)
 	}
