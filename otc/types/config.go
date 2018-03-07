@@ -11,7 +11,7 @@ type Config struct {
 		Name string
 	}
 	CoinApi struct {
-		Node string
+		URL string
 	}
 	Dropper struct {
 		BTC struct {

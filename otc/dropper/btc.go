@@ -1,25 +1,16 @@
 package dropper
 
 import (
-	"encoding/json"
 	"io/ioutil"
-	"net/http"
 	"path/filepath"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
+	"github.com/skycoin/services/otc/capi"
 	"github.com/skycoin/services/otc/exchange"
 	"github.com/skycoin/services/otc/types"
-)
-
-const (
-	EXPLORER              = "explorer"
-	EXPLORER_PATH         = "https://blockchain.info/unspent?active="
-	EXPLORER_PATH_TESTNET = "https://testnet.blockchain.info/unspent?active="
-
-	NODE = "node"
 )
 
 type BTCConnection struct {
@@ -27,6 +18,9 @@ type BTCConnection struct {
 	account string
 	testnet bool
 	source  string
+
+	// coin-api path
+	capiPath string
 }
 
 func NewBTCConnection(config *types.Config) (*BTCConnection, error) {
@@ -86,10 +80,11 @@ func NewBTCConnection(config *types.Config) (*BTCConnection, error) {
 	}
 
 	return &BTCConnection{
-		client:  client,
-		account: config.Dropper.BTC.Account,
-		testnet: config.Dropper.BTC.Testnet,
-		source:  config.Dropper.BTC.Source,
+		client:   client,
+		account:  config.Dropper.BTC.Account,
+		testnet:  config.Dropper.BTC.Testnet,
+		source:   config.Dropper.BTC.Source,
+		capiPath: config.CoinApi.URL,
 	}, nil
 }
 
@@ -128,72 +123,8 @@ func (c *BTCConnection) Value() (uint64, error) {
 	return value, err
 }
 
-type ExplorerResponse struct {
-	UnspentOutputs []UnspentOutput `json:"unspent_outputs"`
-}
-
-type UnspentOutput struct {
-	Value uint64 `json:"value"`
-}
-
 func (c *BTCConnection) Balance(drop types.Drop) (uint64, error) {
-	if c.source == EXPLORER {
-		var path string
-		if c.testnet {
-			path = EXPLORER_PATH_TESTNET
-		} else {
-			path = EXPLORER_PATH
-		}
-
-		resp, err := http.Get(path + string(drop) + "&confirmations=1")
-		if err != nil {
-			return 0, err
-		}
-
-		var eo ExplorerResponse
-		if err = json.NewDecoder(resp.Body).Decode(&eo); err != nil {
-			return 0, nil
-		}
-
-		var sum uint64
-		for _, o := range eo.UnspentOutputs {
-			sum += o.Value
-		}
-
-		return sum, nil
-	}
-
-	var params *chaincfg.Params
-	if c.testnet {
-		params = &chaincfg.TestNet3Params
-	} else {
-		params = &chaincfg.MainNetParams
-	}
-
-	// convert address string to btc struct
-	addr, err := btcutil.DecodeAddress(string(drop), params)
-	if err != nil {
-		return 0, nil
-	}
-
-	// get unspents of address
-	unspents, err := c.client.ListUnspentMinMaxAddresses(
-		1,                       // min confirmations
-		999999,                  // max confirmations
-		[]btcutil.Address{addr}, // only checking one address
-	)
-	if err != nil {
-		return 0, nil
-	}
-
-	var sum uint64
-	for _, res := range unspents {
-		if res.Spendable {
-			sum += uint64(res.Amount * 10e7)
-		}
-	}
-
-	return sum, nil
+	return capi.GetBalance(c.capiPath, types.BTC, drop)
 }
 
 func (c *BTCConnection) Confirmed(hash string) (bool, error) {

@@ -3,9 +3,8 @@ node = "localhost:6430"
 seed = ""
 name = "teller"
 
-# TODO:
-# [coinapi]
-# node = "172.104.145.6:9090"
+[coinapi]
+url = "http://172.104.145.6:9090"
 
 [dropper.BTC]
 # source determines where address balances are fetched from, "explorer" means
