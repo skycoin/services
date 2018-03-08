@@ -61,6 +61,14 @@ const TransparenWrapper = styled(Wrapper) `
 
 const UpdatedPriceContainer = styled(Text) `
   font-size: 10px;
+  line-height: 1.2;
+  display: block;
+  color: ${COLORS.gray[5]}
+`;
+
+const PriceHeading = styled(Text) `
+  line-height: 1.2;
+  margin-bottom: ${rem(SPACE[1])};
 `;
 
 const UpdatePriceLabel = ({ updated, as }) => (
@@ -72,9 +80,9 @@ const UpdatePriceLabel = ({ updated, as }) => (
 const PriceSource = ({ prices, source }) => {
   return (<div>
     <Text as="div">
-      <Text as="p" style={{ marginBottom: 0 }}>
+      <PriceHeading as="p">
         {source === sources.internal ? `Internal price ${prices.internal / 1e8} ` : `Exchange price ${prices.exchange / 1e8} `} BTC
-      </Text>
+      </PriceHeading>
       <UpdatePriceLabel updated={source === sources.internal ? prices.internal_updated : prices.exchange_updated} />
     </Text>
   </div>)
@@ -83,6 +91,41 @@ const PriceSource = ({ prices, source }) => {
 const invalidInputStyle = {
   borderColor: 'red'
 };
+
+const Radio = styled.input`
+  opacity: 0;
+  position: absolute;
+`;
+
+const RadioLabel = styled.label.attrs({ htmlFor: props => props.for }) `
+  display: block;
+  margin: ${rem(SPACE[2])} 0;
+`;
+
+const PriceType = styled.div`
+  ${RadioLabel} {
+    position: relative;
+    padding-left: 30px;
+
+    &::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+      border-radius: 100%;
+      background: white;
+      border: 5px solid white;
+      box-shadow: 0 0 1px black;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  }
+
+  ${Radio}:checked + ${RadioLabel}::before {
+    background: black;
+  }
+`;
 
 const PriceSelector = ({
   selectedPrice,
@@ -98,32 +141,35 @@ const PriceSelector = ({
   const isPriceValid = !isNaN(selectedPrice) && selectedPrice !== '';
   return (
     <TransparenContainer>
-      <Text as="a" mr={5}>Internal</Text>
-      <div className="radio">
-        <label>
-          <input
-            type="radio"
-            value="option1"
-            checked={selectedSource === sources.exchange}
-            onChange={() => setSource(sources.exchange)} />
-          Exchange ({prices.exchange / 1e8} BTC <UpdatePriceLabel as="div" updated={prices.exchange_updated} />)
-        </label>
-      </div>
-      <div className="radio">
-        <label>
-          <input
-            type="radio"
-            value="option2"
-            checked={selectedSource === sources.internal}
-            onChange={() => setSource(sources.internal)} />
-          Internal (<UpdatePriceLabel as="div" updated={prices.internal_updated} />))
-      </label>
+      <PriceType>
+        <Radio
+          type="radio"
+          id="radio_exchange"
+          value={sources.exchange}
+          checked={selectedSource === sources.exchange}
+          onChange={() => setSource(sources.exchange)} />
+        <RadioLabel for="radio_exchange">
+          Exchange ({prices.exchange / 1e8} BTC)
+          <UpdatePriceLabel as="span" updated={prices.exchange_updated} />
+        </RadioLabel>
+      </PriceType>
+      <PriceType>
+        <Radio
+          type="radio"
+          id="radio_internal"
+          value={sources.internal}
+          checked={selectedSource === sources.internal}
+          onChange={() => setSource(sources.internal)} />
+        <RadioLabel for="radio_internal">
+          Internal ({prices.internal / 1e8} BTC)
+          <UpdatePriceLabel as="span" updated={prices.internal_updated} />
+        </RadioLabel>
         <Input
           value={selectedPrice}
           style={isPriceValid ? {} : invalidInputStyle}
           onChange={e => setPrice(e.target.value)}
           placeholder="Price" />
-      </div>
+      </PriceType>
       <TransparenContainer mt={5}>
         <Button
           bg={COLORS.green[8]}
@@ -179,7 +225,8 @@ export default class extends React.Component {
     this.setState({ ...this.state, selectedPrice: price });
   }
   save = async (source, price) => {
-    await setPrice(Number.parseFloat(price) * 1e8);
+    const p = Number.parseFloat(price) * 1e8;
+    await setPrice(Math.round(p));
     await setSource(source);
     await this.refreshStatus();
   }
@@ -207,7 +254,7 @@ export default class extends React.Component {
         <Wrapper>
 
           <Container>
-            <Flex column width="33.3333%">
+            <Flex column width={[1, 1/3]}>
               <Panel>
                 <H3Styled>OTC Status:</H3Styled>
                 <Text>{paused ? 'Paused' : 'Running'}</Text>

@@ -2,17 +2,7 @@ import axios from 'axios';
 
 export const getStatus = () =>
   axios.get('/api/status')
-    // .then(response => response.data)
-    .then(() => ({
-      prices: {
-        internal: 150000,
-        exchange: 119833,
-        exchange_updated: 1519131184,
-        internal_updated: 1519131184,
-      },
-      source: 'internal',
-      paused: false,
-    }))
+    .then(response => response.data)
     .catch((error) => { throw new Error(error.response.data); });
 
 export const setPrice = price =>
@@ -27,7 +17,7 @@ export const setPrice = price =>
     });
 
 export const setSource = source =>
-  axios.post('/api/price', { source }, {
+  axios.post('/api/source', { source }, {
     headers: {
       'Content-Type': 'application/json',
     },
