@@ -162,14 +162,30 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
+	txId := ctx.ParamValues()[0]
+	status, err := h.btcService.CheckTxStatus(txId)
+
+	if err != nil {
+		ctx.JSONPretty(http.StatusOK, struct {
+			Status string `json:"status"`
+			Code   int    `json:"code"`
+			Result string `json:"result"`
+		}{
+			Status: "",
+			Code:   http.StatusOK,
+			Result: err.Error(),
+		}, "\t")
+		return nil
+	}
+
 	ctx.JSONPretty(http.StatusOK, struct {
 		Status string `json:"status"`
 		Code   int    `json:"code"`
-		Result string `json:"result"`
+		Result []byte `json:"result"`
 	}{
 		Status: "",
 		Code:   http.StatusOK,
-		Result: "Not implemented",
+		Result: status,
 	}, "\t")
 
 	return nil
