@@ -17,7 +17,7 @@ type keyPairResponse struct {
 
 type balanceResponse struct {
 	Balance float64 `json:"balance"`
-	Address string          `json:"address"`
+	Address string  `json:"address"`
 }
 
 type addressRequest struct {

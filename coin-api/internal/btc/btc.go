@@ -8,14 +8,15 @@ import (
 
 	"encoding/json"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"time"
-	"math"
 )
 
 const (
@@ -187,12 +188,81 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 
 // TODO(stgleb): Cover with unit tests
 func (s *ServiceBtc) CheckTxStatus(txId string) ([]byte, error) {
-	// TODO(stgleb): Add interaction with btcd node and curctui breaking on the next phase
-	//hash, err := chainhash.NewHash([]byte(txId))
-	//if err != nil {
-	//	return nil, err
-	//}
-	//s.client.GetTransaction(hash)
+	// If breaker is open - get info from block explorer
+	if s.isOpen == 1 {
+		status, err := s.getTxStatusFromExplorer(txId)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return status, nil
+	}
+
+	var i uint = 0
+
+	status, err := s.getTxStatusFromNode(txId)
+	if err != nil {
+		log.Printf("Get status from node returned error %s", err.Error())
+	}
+
+	for i < s.retryCount && err != nil {
+		if err != nil {
+			log.Printf("Get status from node returned error %s", err.Error())
+		}
+
+		status, err = s.getTxStatusFromNode(txId)
+
+		if err != nil {
+			time.Sleep(time.Millisecond * time.Duration(1<<i) * 100)
+		}
+		i++
+	}
+
+	if err != nil {
+		s.isOpen = 1
+
+		go func() {
+			time.Sleep(s.openTimeout)
+			// This assignment is atomic since on 64-bit platforms this operation is atomic
+			s.isOpen = 0
+		}()
+
+		status, err := s.getTxStatusFromExplorer(txId)
+
+		if err != nil {
+			return status, err
+		}
+
+		return status, nil
+	}
+
+	return status, nil
+}
+
+func (s *ServiceBtc) getTxStatusFromNode(txId string) ([]byte, error) {
+	hash, err := chainhash.NewHash([]byte(txId))
+
+	if err != nil {
+		return nil, err
+	}
+
+	rawTx, err := s.client.GetTransaction(hash)
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := json.Marshal(rawTx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (s *ServiceBtc) getTxStatusFromExplorer(txId string) ([]byte, error) {
 
 	url := s.blockExplorer + txStatusDefaultEndpoint + txId
 	resp, err := http.Get(url)
