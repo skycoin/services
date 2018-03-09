@@ -25,6 +25,7 @@
     "react-router-dom": "^4.1.2",
     "react-switch": "^2.3.0",
     "react-timeago": "^3.4.3",
+    "react-widgets": "^4.2.2",
     "styled-components": "^2.1.1",
     "styled-system": "1.0.0-4"
   },

@@ -11,6 +11,8 @@ import { rem } from 'polished';
 import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
 import Switch from "react-switch";
 import TimeAgo from 'react-timeago';
+import { DropdownList } from 'react-widgets';
+import 'react-widgets/dist/css/react-widgets.css';
 
 import Button from 'components/Button';
 import Container from 'components/Container';
@@ -23,6 +25,8 @@ import Text from 'components/Text';
 import media from '../../utils/media';
 
 import { getStatus, setPrice, setSource, setOctState } from './admin-api';
+
+import transactions from './transactions';
 
 const Panel = styled(Box) `
   background-color: #fff;
@@ -71,9 +75,13 @@ const PriceHeading = styled(Text) `
   margin-bottom: ${rem(SPACE[1])};
 `;
 
+
+const DateTimeView = ({ dt }) =>
+  (<div>{new Date(dt * 1000).toLocaleDateString()} {new Date(dt * 1000).toLocaleTimeString()}</div>);
+
 const UpdatePriceLabel = ({ updated, as }) => (
   <UpdatedPriceContainer as={as || 'p'}>
-    Updated <TimeAgo date={new Date(updated * 1000)} /> at {new Date(updated * 1000).toLocaleDateString()} {new Date(updated * 1000).toLocaleTimeString()}
+    Updated <TimeAgo date={new Date(updated * 1000)} /> at <DateTimeView dt={updated} />
   </UpdatedPriceContainer>
 );
 
@@ -184,8 +192,118 @@ const PriceSelector = ({
     </TransparenContainer>);
 };
 
+const OtcUnavailableMessage = () => (
+  <Wrapper>
+    <Container>
+      <Text>Skycoin OTC is currently unavailable.</Text>
+    </Container>
+  </Wrapper>);
+
+const transactionStatuses = {
+  waiting_confirm: 'Pending'
+};
+const transactionStatusToStr = s => transactionStatuses[s] || s;
+
+const TransactionsFilter = () => (
+  <Flex column mb={5}>
+    <Text as="h4">Filters</Text>
+    <Flex row justify="flex-start" align="flex-end">
+      <Box mr={5}>
+        State:
+      </Box>
+      <Box>
+        <DropdownList
+          style={{ width: '100px' }}
+          defaultValue="All"
+          data={['All', 'Pending', 'Completed']} />
+      </Box>
+    </Flex>
+  </Flex>
+);
+
+const TableHeadCell = styled.th`
+  font-size: 12px;
+  font-weight: normal;
+  padding: 0;
+`;
+
+const TableCell = styled.td`
+  font-size: 11px;
+  font-weight: normal;
+`;
+
+const TableRow = styled.tr`
+`;
+
+const Table = styled.table`
+  ${TableHeadCell}, ${TableCell} {
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    padding: 8px 4px;
+
+    &:first-child {
+      border-left: 0;
+    }
+    &:last-child {
+      border-right: 0;
+    }
+  }
+
+  ${TableRow}:last-child ${TableCell} {
+    border-bottom: 0;
+  }
+
+  border-collapse: collapse;
+`;
+
+const TableHead = styled.thead`
+`;
+
+const TransactionsTable = ({ transactions }) => {
+  return (
+    <div>
+      <H3Styled>Transactions:</H3Styled>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeadCell>Created</TableHeadCell>
+            <TableHeadCell>Deposited</TableHeadCell>
+            <TableHeadCell>Sky Sent</TableHeadCell>
+
+            <TableHeadCell>Status</TableHeadCell>
+            <TableHeadCell>Amount</TableHeadCell>
+            <TableHeadCell>Rate</TableHeadCell>
+            <TableHeadCell>Source</TableHeadCell>
+
+            <TableHeadCell>Sky Address</TableHeadCell>
+            <TableHeadCell>BTC Address</TableHeadCell>
+          </TableRow>
+        </TableHead>
+        <tbody>
+          {transactions.map((t, i) =>
+            (<TableRow key={i}>
+              <TableCell><DateTimeView dt={t.timestamps.created_at} /></TableCell>
+              <TableCell><DateTimeView dt={t.timestamps.deposited_at} /></TableCell>
+              <TableCell><DateTimeView dt={t.timestamps.sent_at} /></TableCell>
+
+              <TableCell>{transactionStatusToStr(t.status)}</TableCell>
+              <TableCell>{t.drop.amount / 1e8}</TableCell>
+              <TableCell>{t.rate.value / 1e8} </TableCell>
+              <TableCell>{t.rate.source[0]} </TableCell>
+
+              <TableCell>{t.address}</TableCell>
+              <TableCell>{t.drop.address}</TableCell>
+            </TableRow>))}
+        </tbody>
+      </Table>
+    </div>
+  );
+};
+
 export default class extends React.Component {
   state = {
+    otcAvailable: false,
     prices: {
       internal: 0,
       exchange: 0,
@@ -200,14 +318,20 @@ export default class extends React.Component {
     selectedPrice: '0',
   };
   refreshStatus = async () => {
-    const status = await getStatus();
-    this.setState({
-      ...this.state,
-      ...status,
+    try {
+      const status = await getStatus();
+      this.setState({
+        ...this.state,
+        ...status,
 
-      selectedSource: status.source,
-      selectedPrice: `${status.prices.internal / 1e8}`,
-    });
+        otcAvailable: true,
+
+        selectedSource: status.source,
+        selectedPrice: `${status.prices.internal / 1e8}`,
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
   componentWillMount = async () => {
     await this.refreshStatus();
@@ -237,12 +361,12 @@ export default class extends React.Component {
       prices,
 
       loaded,
+      otcAvailable,
 
       selectedSource,
       selectedPrice, } = this.state;
 
     if (!loaded) return null;
-
     return (
       <div>
         <Helmet>
@@ -250,42 +374,52 @@ export default class extends React.Component {
         </Helmet>
 
         <Header external />
+        {!otcAvailable && <OtcUnavailableMessage />}
+        {otcAvailable &&
+          <Wrapper>
 
-        <Wrapper>
+            <Container>
+              <Flex row wrap>
+                <Flex column flex={1}>
+                  <Panel>
+                    <H3Styled>OTC Status:</H3Styled>
+                    <Text>{paused ? 'Paused' : 'Running'}</Text>
+                    {paused
+                      ? (<Button
+                        bg={COLORS.green[8]}
+                        color="white"
+                        onClick={() => this.setOctState(false)}
+                      >Start</Button>)
+                      : (<Button
+                        bg={COLORS.red[7]}
+                        color="white"
+                        onClick={() => this.setOctState(true)}>Pause</Button>)}
+                  </Panel>
+                  <Panel mt={5}>
+                    <H3Styled>Price source:</H3Styled>
+                    <PriceSource source={source} prices={prices} />
+                    <PriceSelector
+                      prices={prices}
+                      source={source}
 
-          <Container>
-            <Flex column width={[1, 1/3]}>
-              <Panel>
-                <H3Styled>OTC Status:</H3Styled>
-                <Text>{paused ? 'Paused' : 'Running'}</Text>
-                {paused
-                  ? (<Button
-                    bg={COLORS.green[8]}
-                    color="white"
-                    onClick={() => this.setOctState(false)}
-                  >Start</Button>)
-                  : (<Button
-                    bg={COLORS.red[7]}
-                    color="white"
-                    onClick={() => this.setOctState(true)}>Pause</Button>)}
-              </Panel>
-              <Panel mt={5}>
-                <H3Styled>Price source:</H3Styled>
-                <PriceSource source={source} prices={prices} />
-                <PriceSelector
-                  prices={prices}
-                  source={source}
+                      selectedSource={selectedSource}
+                      selectedPrice={selectedPrice}
 
-                  selectedSource={selectedSource}
-                  selectedPrice={selectedPrice}
-
-                  setSource={this.setSource}
-                  setPrice={this.setPrice}
-                  save={this.save} />
-              </Panel>
-            </Flex>
-          </Container>
-        </Wrapper>
+                      setSource={this.setSource}
+                      setPrice={this.setPrice}
+                      save={this.save} />
+                  </Panel>
+                </Flex>
+                <Flex column flex="0.5 1 auto" mx={[0, 5]} my={[5, 0]}>
+                  <Panel>
+                    <TransactionsFilter />
+                    <TransactionsTable transactions={transactions} />
+                  </Panel>
+                </Flex>
+              </Flex>
+            </Container>
+          </Wrapper>
+        }
 
         <Footer external />
       </div>

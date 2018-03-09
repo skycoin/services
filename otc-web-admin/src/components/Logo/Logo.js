@@ -29,7 +29,7 @@ const Logo = props => (
       </StyledLink>
     </Box>
     <Box>
-      <Text as="h3" style={{ marginTop: '10px', marginLeft: '5px' }}> OTC Admin</Text>
+      <Text as="h3" style={{ marginTop: '13px', marginLeft: '5px' }}> OTC Admin</Text>
     </Box>
   </Flex>
 );
