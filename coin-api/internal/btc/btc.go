@@ -186,7 +186,6 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 	return balance, nil
 }
 
-// TODO(stgleb): Cover with unit tests
 func (s *ServiceBtc) CheckTxStatus(txId string) ([]byte, error) {
 	// If breaker is open - get info from block explorer
 	if s.isOpen == 1 {
@@ -263,9 +262,12 @@ func (s *ServiceBtc) getTxStatusFromNode(txId string) ([]byte, error) {
 }
 
 func (s *ServiceBtc) getTxStatusFromExplorer(txId string) ([]byte, error) {
-
 	url := s.blockExplorer + txStatusDefaultEndpoint + txId
 	resp, err := http.Get(url)
+
+	if err != nil {
+		return nil, err
+	}
 
 	data, err := ioutil.ReadAll(resp.Body)
 
