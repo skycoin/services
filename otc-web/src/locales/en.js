@@ -50,9 +50,6 @@ export default {
   <li>You&apos;ll receive a unique Bitcoin address to purchase SKY</li>
   <li>Send BTC to the address</li>
 </ul>
-
-<p>You can check the status of your order by entering your address and hitting <strong>Check status</strong>.</p>
-<p>Each time you hit <strong>Get Address</strong>, a new BTC address is generated.</p>
     `,
     statusFor: 'Status for {skyAddress}',
     enterAddress: 'Enter Skycoin address',

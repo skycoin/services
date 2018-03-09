@@ -1,17 +1,16 @@
 package manifest
 
 import (
-	"io/ioutil"
-	"fmt"
-	_"log"
-	"strconv"
 	"bufio"
-	"os"
-	"strings"
 	"encoding/csv"
+	"fmt"
+	"io/ioutil"
+	_ "log"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
-
 
 //SnapshotList show all snapshots in ./snapshots
 func SnapshotList(flag int) []string {
@@ -24,7 +23,9 @@ func SnapshotList(flag int) []string {
 
 		for _, f := range files {
 			if f.Name()[len(f.Name())-3:] == "csv" {
-				if flag == 1 {fmt.Println("Snapshot " + strconv.Itoa(snapCount) + ": " + f.Name()) }
+				if flag == 1 {
+					fmt.Println("Snapshot " + strconv.Itoa(snapCount) + ": " + f.Name())
+				}
 				str = append(str, "../snapshots/"+f.Name())
 				snapCount++
 			}
@@ -34,23 +35,22 @@ func SnapshotList(flag int) []string {
 	return str
 }
 
-
 //PromptCycle wait for user command
 func PromptCycle() {
-	for  {
+	for {
 		newCommand, args := InputFromCli()
 		if newCommand == "" {
 			continue
 		}
 		if newCommand == "merge" {
-				snaps := SnapshotList(2)
-				isCorrect, argsInt := CheckMergeArg(args, len(snaps))
+			snaps := SnapshotList(2)
+			isCorrect, argsInt := CheckMergeArg(args, len(snaps))
 
-				if isCorrect {
-					MergeSnapshot(snaps, argsInt)
-				} else {
-					fmt.Println("bad args.")
-				}
+			if isCorrect {
+				MergeSnapshot(snaps, argsInt)
+			} else {
+				fmt.Println("bad args.")
+			}
 		}
 	}
 }
@@ -80,7 +80,7 @@ func InputFromCli() (command string, args []string) {
 //CheckMergeArg that args will be correct
 func CheckMergeArg(args []string, snapCount int) (bool, []int) {
 	var argsInt []int
-	for _,arg := range args {
+	for _, arg := range args {
 		k, e := strconv.Atoi(arg)
 		if e != nil {
 			return false, argsInt
@@ -95,9 +95,8 @@ func CheckMergeArg(args []string, snapCount int) (bool, []int) {
 }
 
 //MergeSnapshot create new snapshot from two or more others
-func MergeSnapshot(snaps []string,args []int) {
+func MergeSnapshot(snaps []string, args []int) {
 	mainSnap := ReadCVS(snaps[args[0]])
-
 
 	args = args[1:]
 	for _, arg := range args {
@@ -118,14 +117,14 @@ func MergeSnapshot(snaps []string,args []int) {
 }
 
 //Merge two snapshots
-func Merge(main []FileInfo, next []FileInfo) ([]FileInfo){
+func Merge(main []FileInfo, next []FileInfo) []FileInfo {
 	flag := 0
 	for _, newfile := range next {
 
-		for i,oldfile := range main {
+		for i, oldfile := range main {
 			if oldfile.Path == newfile.Path {
-					main[i] = CompareFiles(oldfile, newfile)
-					flag = 1
+				main[i] = CompareFiles(oldfile, newfile)
+				flag = 1
 			}
 		}
 		if flag == 0 {
@@ -135,18 +134,17 @@ func Merge(main []FileInfo, next []FileInfo) ([]FileInfo){
 		}
 	}
 
-
 	return main
 }
 
 //CompareFiles check what file was modified early
 func CompareFiles(old FileInfo, new FileInfo) FileInfo {
 	t1, err := time.Parse("2006-01-02 15:04:05", old.Modified)
-	if err != nil{
+	if err != nil {
 		fmt.Println("can't parse time")
 	}
 	t2, err := time.Parse("2006-01-02 15:04:05", new.Modified)
-	if err != nil{
+	if err != nil {
 		fmt.Println("can't parse time")
 	}
 	if t1.Sub(t2) < 0*time.Second {
@@ -156,7 +154,7 @@ func CompareFiles(old FileInfo, new FileInfo) FileInfo {
 }
 
 //ReadCVS converts CSV into struct
-func ReadCVS (path string) []FileInfo {
+func ReadCVS(path string) []FileInfo {
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println("bad path.")
@@ -175,4 +173,3 @@ func ReadCVS (path string) []FileInfo {
 
 	return filesInfo
 }
-

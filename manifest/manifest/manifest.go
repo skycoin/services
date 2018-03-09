@@ -1,28 +1,28 @@
 package manifest
 
 import (
+	"crypto/sha256"
+	"encoding/csv"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
-	"strconv"
 	"os"
-	"encoding/csv"
-	"time"
-	"crypto/sha256"
-	"io"
-	"encoding/hex"
+	"strconv"
 	"sync"
+	"time"
 )
 
 var lock sync.Mutex
 
 //FileInfo represent info about file
 type FileInfo struct {
-	Path string
-	Name string
-	Size string
+	Path     string
+	Name     string
+	Size     string
 	Modified string
-	Hash string
+	Hash     string
 }
 
 //ReadFiles takes paths to folders and read information about all files where.
@@ -38,18 +38,16 @@ func ReadFiles(path []string) {
 	w := csv.NewWriter(csvFile)
 
 	wg.Add(len(path))
-	for i :=0; i<len(path); i++ {
+	for i := 0; i < len(path); i++ {
 		go GetFilesFromFolder(path[i], w, &wg)
 	}
 
 	wg.Wait()
 	csvFile.Close()
 
-
 }
 
-
-func GetFilesFromFolder(path string, w *csv.Writer, wg *sync.WaitGroup)  {
+func GetFilesFromFolder(path string, w *csv.Writer, wg *sync.WaitGroup) {
 	defer wg.Done()
 	var filesInfo []FileInfo
 	var subFolders []string
@@ -63,9 +61,9 @@ func GetFilesFromFolder(path string, w *csv.Writer, wg *sync.WaitGroup)  {
 		//write files info into struct if files exist
 		if len(files) != 0 {
 			filesInfo, subFolders = FormatFiles(files, path)
-			for _,sub := range subFolders{
+			for _, sub := range subFolders {
 				wg.Add(1)
-				go  GetFilesFromFolder(sub, w, wg)
+				go GetFilesFromFolder(sub, w, wg)
 			}
 
 			WriteIntoCSV(w, filesInfo)
@@ -97,7 +95,7 @@ func WriteIntoCSV(w *csv.Writer, filesInfo []FileInfo) {
 //FormatFiles get files and format information about they into struct
 func FormatFiles(files []os.FileInfo, path string) ([]FileInfo, []string) {
 	filesInfo := make([]FileInfo, len(files))
-    var subFolders []string
+	var subFolders []string
 
 	for k, file := range files {
 		if file.IsDir() == false {
@@ -109,12 +107,11 @@ func FormatFiles(files []os.FileInfo, path string) ([]FileInfo, []string) {
 			filesInfo[k].Modified = file.ModTime().UTC().Format("2006-01-02 15:04:05.11")
 			filesInfo[k].Hash = CreateHash(p)
 		} else {
-			subFolders = append(subFolders, path + "/" + file.Name())
+			subFolders = append(subFolders, path+"/"+file.Name())
 		}
 	}
-		return filesInfo, subFolders
+	return filesInfo, subFolders
 }
-
 
 //CreateHash return a unique hash256 of file
 func CreateHash(path string) string {
@@ -123,7 +120,6 @@ func CreateHash(path string) string {
 	if err != nil {
 		return "no access to file"
 	}
-
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {

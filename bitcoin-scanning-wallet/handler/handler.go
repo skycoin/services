@@ -1,15 +1,15 @@
 package handler
 
 import (
-	"net/http"
-	"time"
 	"encoding/json"
 	"fmt"
-	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
-	"github.com/skycoin/services/bitcoin-scanning-wallet/config"
-	"strconv"
-	"io/ioutil"
 	"github.com/Jeffail/gabs"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/config"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 func responseMessage(data interface{}, response http.ResponseWriter, request *http.Request) {
@@ -110,6 +110,7 @@ var FarScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request
 	}
 	responseMessage(addrs, response, request)
 })
+
 //ShortScanHandler scan short block
 var ShortScanHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 	addrs, err := scan.LoadWallet(config.Config.Wallet.File)
@@ -182,7 +183,6 @@ var AddAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, requ
 
 })
 
-
 //AddAddressHandler get address and return all transactions
 var GetAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 	address := request.URL.Query().Get("address")
@@ -196,5 +196,3 @@ var GetAddressHandler = http.HandlerFunc(func(response http.ResponseWriter, requ
 	responseMessage(newAddr, response, request)
 
 })
-
-

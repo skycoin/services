@@ -5,8 +5,19 @@ export const getStatus = () =>
     .then(response => response.data)
     .catch((error) => { throw new Error(error.response.data); });
 
-export const setPrice = (price, source) =>
-  axios.post('/api/price', { price, source }, {
+export const setPrice = price =>
+  axios.post('/api/price', { price }, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      throw new Error(error.response.data || 'An unknown error occurred.');
+    });
+
+export const setSource = source =>
+  axios.post('/api/source', { source }, {
     headers: {
       'Content-Type': 'application/json',
     },
