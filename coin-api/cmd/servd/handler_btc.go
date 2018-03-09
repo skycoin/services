@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"net/http"
 
+	"encoding/json"
 	"github.com/labstack/echo"
 	"github.com/skycoin/services/coin-api/internal/btc"
 	"github.com/skycoin/skycoin/src/cipher"
@@ -17,7 +18,7 @@ type keyPairResponse struct {
 
 type balanceResponse struct {
 	Balance float64 `json:"balance"`
-	Address string          `json:"address"`
+	Address string  `json:"address"`
 }
 
 type addressRequest struct {
@@ -36,6 +37,35 @@ type handlerBTC struct {
 type BtcStats struct {
 	NodeStatus bool   `json:"node-status"`
 	NodeHost   string `json:"node-host"`
+}
+
+type TxStatus struct {
+	Ver    int `json:"ver"`
+	Inputs []struct {
+		Sequence int64  `json:"sequence"`
+		Witness  string `json:"witness"`
+		Script   string `json:"script"`
+	} `json:"inputs"`
+	Weight      int    `json:"weight"`
+	BlockHeight int    `json:"block_height"`
+	RelayedBy   string `json:"relayed_by"`
+	Out         []struct {
+		Spent   bool   `json:"spent"`
+		TxIndex int    `json:"tx_index"`
+		Type    int    `json:"type"`
+		Addr    string `json:"addr,omitempty"`
+		Value   int    `json:"value"`
+		N       int    `json:"n"`
+		Script  string `json:"script"`
+	} `json:"out"`
+	LockTime    int    `json:"lock_time"`
+	Size        int    `json:"size"`
+	DoubleSpend bool   `json:"double_spend"`
+	Time        int    `json:"time"`
+	TxIndex     int    `json:"tx_index"`
+	VinSz       int    `json:"vin_sz"`
+	Hash        string `json:"hash"`
+	VoutSz      int    `json:"vout_sz"`
 }
 
 func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*handlerBTC, error) {
@@ -63,18 +93,7 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 	public, private := btc.ServiceBtc{}.GenerateKeyPair()
 
 	if err := public.Verify(); err != nil {
-		resp := struct {
-			Status string `json:"status"`
-			Code   int    `json:"code"`
-			Result string `json:"result"`
-		}{
-			"Ok",
-			http.StatusOK,
-			err.Error(),
-		}
-
-		ctx.JSON(http.StatusOK, resp)
-		return nil
+		return handleError(ctx, err)
 	}
 
 	resp := struct {
@@ -99,16 +118,7 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 	var req addressRequest
 
 	if err := ctx.Bind(&req); err != nil {
-		ctx.JSONPretty(http.StatusOK, &struct {
-			Status string `json:"status"`
-			Code   int    `json:"code"`
-			Result string `json:"result"`
-		}{
-			Status: "",
-			Code:   http.StatusOK,
-			Result: err.Error(),
-		}, "\t")
-		return nil
+		return handleError(ctx, err)
 	}
 
 	if len(req.PublicKey) == 0 {
@@ -118,31 +128,13 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 	publicKey, err := cipher.PubKeyFromHex(req.PublicKey)
 
 	if err != nil {
-		ctx.JSONPretty(http.StatusOK, struct {
-			Status string `json:"status"`
-			Code   int    `json:"code"`
-			Result string `json:"result"`
-		}{
-			Status: "",
-			Code:   http.StatusOK,
-			Result: err.Error(),
-		}, "\t")
-		return nil
+		return handleError(ctx, err)
 	}
 
 	address, err := btc.ServiceBtc{}.GenerateAddr(publicKey)
 
 	if err != nil {
-		ctx.JSONPretty(http.StatusOK, struct {
-			Status string `json:"status"`
-			Code   int    `json:"code"`
-			Result string `json:"result"`
-		}{
-			Status: "",
-			Code:   http.StatusOK,
-			Result: err.Error(),
-		}, "\t")
-		return nil
+		return handleError(ctx, err)
 	}
 
 	resp := struct {
@@ -162,14 +154,29 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
+	txId := ctx.ParamValues()[0]
+	data, err := h.btcService.CheckTxStatus(txId)
+
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	status := &TxStatus{}
+	err = json.Unmarshal(data, status)
+
+	if err != nil {
+		handleError(ctx, err)
+		return nil
+	}
+
 	ctx.JSONPretty(http.StatusOK, struct {
-		Status string `json:"status"`
-		Code   int    `json:"code"`
-		Result string `json:"result"`
+		Status string   `json:"status"`
+		Code   int      `json:"code"`
+		Result TxStatus `json:"result"`
 	}{
 		Status: "",
 		Code:   http.StatusOK,
-		Result: "Not implemented",
+		Result: *status,
 	}, "\t")
 
 	return nil
@@ -181,16 +188,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	balance, err := h.checker.CheckBalance(address)
 
 	if err != nil {
-		ctx.JSONPretty(http.StatusOK, struct {
-			Status string `json:"status"`
-			Code   int    `json:"code"`
-			Result string `json:"result"`
-		}{
-			Status: "",
-			Code:   http.StatusOK,
-			Result: err.Error(),
-		}, "\t")
-		return nil
+		return handleError(ctx, err)
 	}
 
 	balanceFloat, _ := balance.Float64()
@@ -220,4 +218,16 @@ func (h handlerBTC) CollectStatuses(stats *Status) {
 		NodeHost:   h.btcService.GetHost(),
 		NodeStatus: h.btcService.IsOpen(),
 	}
+}
+
+func handleError(ctx echo.Context, err error) error {
+	return ctx.JSONPretty(http.StatusOK, struct {
+		Status string `json:"status"`
+		Code   int    `json:"code"`
+		Result string `json:"result"`
+	}{
+		Status: "",
+		Code:   http.StatusOK,
+		Result: err.Error(),
+	}, "\t")
 }

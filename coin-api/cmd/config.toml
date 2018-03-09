@@ -4,14 +4,14 @@ User="aaa"
 Password="123"
 CertFile=""
 TLS=false
-BlockExplorer="https://api.blockchain.info"
+BlockExplorer="https://blockchain.info"
 
 [skycoin]
 Host="127.0.0.1"
 Port="6420"
 
 [server]
-ListenStr="0.0.0.0:8080"
+ListenStr="0.0.0.0:9090"
 ReadTimeout = 5
 WriteTimeout = 10
 IdleTimeout = 120

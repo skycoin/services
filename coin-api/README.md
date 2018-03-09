@@ -241,7 +241,55 @@ ResponseBody {
     "code": 0,
     "result": {
         "transid": "7ba9a55593f8cf0abecc30d041e094",
-        "status":"pending",
+        "status": {
+           "ver":1,
+           "inputs":[
+              {
+                 "sequence":4294967295,
+                 "witness":"",
+                 "prev_out":{
+                    "spent":true,
+                    "tx_index":335439599,
+                    "type":0,
+                    "addr":"1PiMMmKxbpDhoPBweEDKiu3FCEsjLwsyqc",
+                    "value":293717322,
+                    "n":1,
+                    "script":"76a914f924d0d0959f4a45e4a0b6ff390ebd38cdff726d88ac"
+                 },
+                 "script":"47304402206de55e3b9f013f337cf31399d9314a5181b9eb5f02c1a9a3618f8b812901871902202ecce58957c179b33a53229bbf4b7eb9fad65dc18cdc3a07e0881008a6c858ee01210213209d0af0becd42171eb83befdc3be1e408ec4e2953e9e1d1442eae9958fb02"
+              }
+           ],
+           "weight":900,
+           "relayed_by":"0.0.0.0",
+           "out":[
+              {
+                 "spent":false,
+                 "tx_index":335447338,
+                 "type":0,
+                 "addr":"1PK3WGyQ7t1JPVjrCJihCH9rfGjq94q5on",
+                 "value":293156277,
+                 "n":0,
+                 "script":"76a914f4bc586d07e7936eb743c697fa4885b9294472cf88ac"
+              },
+              {
+                 "spent":false,
+                 "tx_index":335447338,
+                 "type":0,
+                 "addr":"1LVNiEn7rYdGfbEhR5GgkeHqB7zu3jubQg",
+                 "value":556185,
+                 "n":1,
+                 "script":"76a914d5c82905d98094e3bc348fa874ff9810ffc0b9f288ac"
+              }
+           ],
+           "lock_time":0,
+           "size":225,
+           "double_spend":false,
+           "time":1520610698,
+           "tx_index":335447338,
+           "vin_sz":1,
+           "hash":"ac2e8c4dd81253c819824c8725f7ad359ab76a43824b3b3e9338fb1baf90b819",
+           "vout_sz":2
+        },
     }
 }
 ```
