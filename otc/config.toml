@@ -1,41 +1,11 @@
-[skycoin]
+[SKY]
 node = "localhost:6430"
-seed = ""
-name = "teller"
+seed = "seed"
+name = "otc"
 
-[coinapi]
-url = "http://172.104.145.6:9090"
-
-[dropper.BTC]
-# btcwallet node
+[BTC]
 node = "localhost:18332"
-# btcwallet rpc user
 user = "otc"
-# btcwallet rpc pass
 pass = "otc"
-# btcwallet account
 account = "otc"
-# default internal price for sky/btc (in satoshis)
-price = 200000
-
-[scanner]
-tick = 5
-# number of hours before expiring
-expiration = 24
-
-[sender]
-tick = 5
-
-[model]
-tick = 5
-path = "db/"
-paused = false
-
-[monitor]
-tick = 5
-
-[api]
-listen = ":8080"
-
-[admin]
-listen = ":8000"
+testnet = true
