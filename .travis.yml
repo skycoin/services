@@ -1,10 +1,19 @@
-language: go
-
-go:
-  - 1.9
-install:
-- go get -t ./otc/...
-sudo: required
-script: 
-- cd otc
-- go build
+matrix:
+  include:
+    - language: go
+      go: 1.9
+      install:
+        - go get -t ./otc/...
+      sudo: required
+      before_script: cd otc
+      script: 
+        - go build
+    - language: node_js
+        node_js: 8
+        before_install:
+          - npm install -g yarn --cache-min 999999999
+        before_script: 
+          - cd otc-web
+          - yarn install
+        script:
+          yarn build
