@@ -3,7 +3,7 @@ language: go
 go:
   - 1.9
 install:
-- go get -t ./...
+- go get -t ./otc/...
 sudo: required
 script: 
 - cd otc
