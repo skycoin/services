@@ -29,7 +29,7 @@ const (
 var integration bool = false
 
 // rpcApiMck - its a mock of client web rpc API but be careful if you want laucnh tests in parallel, you may get race on
-// the package-level variables and in this case you'd better off moving this variable somewhere to the package
+// the package-level variables and in this case you'd better off moving this variable somewhere to the getTestedService() function
 var rpcApiMck *mock.WebRPCAPIMock
 
 func TestGenerateAddress(t *testing.T) {
