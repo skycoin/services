@@ -6,7 +6,7 @@ matrix:
       before_script: 
         - go get -t ./otc/...
       script: 
-        - cd otc
+        - cd ./otc
         - go build
     - language: node_js
       node_js: 
