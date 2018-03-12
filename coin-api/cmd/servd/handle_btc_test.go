@@ -3,19 +3,26 @@ package servd
 import (
 	"encoding/json"
 	"github.com/labstack/echo"
+	"github.com/skycoin/services/coin-api/internal/btc"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
-type balanceChecker struct {
+type checker struct {
 	expected float64
+	txStatus *btc.TxStatus
 }
 
-func (b balanceChecker) CheckBalance(address string) (float64, error) {
+func (b checker) CheckBalance(address string) (float64, error) {
 	return b.expected, nil
+}
+
+func (b checker) CheckTxStatus(txId string) (*btc.TxStatus, error) {
+	return b.txStatus, nil
 }
 
 func TestGenerateKeyPair(t *testing.T) {
@@ -99,7 +106,7 @@ func TestCheckBalance(t *testing.T) {
 	e := echo.New()
 	expected := 42.0
 
-	checker := balanceChecker{
+	checker := checker{
 		expected: expected,
 	}
 
@@ -142,4 +149,60 @@ func TestCheckBalance(t *testing.T) {
 	}
 }
 
-// TODO(stgleb): Add test for check tx status transaction
+func TestCheckTransaction(t *testing.T) {
+	e := echo.New()
+	expectedConfirmations := int64(42)
+	timeConfirmed := time.Now().Unix()
+	hash := "89f04c437ee192a28c59470c010359c50239e28df903e44778286fb56b8e6e6f"
+
+	checker := checker{
+		expected: 42.0,
+		txStatus: &btc.TxStatus{
+			Hash:          hash,
+			Confirmations: expectedConfirmations,
+			Confirmed:     timeConfirmed,
+		},
+	}
+
+	handler := handlerBTC{
+		checker: checker,
+	}
+
+	req := httptest.NewRequest(echo.GET, "/", nil)
+
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	ctx.SetParamNames("transid")
+	ctx.SetParamValues("89f04c437ee192a28c59470c010359c50239e28df903e44778286fb56b8e6e6f")
+
+	handler.checkTransaction(ctx)
+
+	type response struct {
+		Status string        `json:"status"`
+		Code   int           `json:"code"`
+		Result *btc.TxStatus `json:"result"`
+	}
+
+	var resp response
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Wrong status code expected %d actual %d", http.StatusOK, rec.Code)
+		return
+	}
+
+	err := json.Unmarshal(rec.Body.Bytes(), &resp)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if resp.Result.Confirmations != expectedConfirmations {
+		t.Errorf("Wrong confirmations count expected %d actual %d", expectedConfirmations, resp.Result.Confirmations)
+	}
+
+	if resp.Result.Hash != hash {
+		t.Errorf("Wrong hash value expected %s actual %s", hash, resp.Result.Hash)
+	}
+}

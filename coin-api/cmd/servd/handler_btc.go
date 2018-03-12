@@ -28,8 +28,9 @@ type addressResponse struct {
 }
 
 type handlerBTC struct {
+	// TODO(stgleb): extract btc service to separate interface for generating key-pair and address
 	btcService *btc.ServiceBtc
-	checker    BalanceChecker
+	checker    Checker
 }
 
 type BtcStats struct {
@@ -124,7 +125,7 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 	txId := ctx.Param("transid")
-	status, err := h.btcService.CheckTxStatus(txId)
+	status, err := h.checker.CheckTxStatus(txId)
 
 	if err != nil {
 		return handleError(ctx, err)
