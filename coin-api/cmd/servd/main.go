@@ -96,6 +96,7 @@ func Start(config *Config) (*echo.Echo, error) {
 	})
 
 	e.GET("/status", statusFunc)
+	// e.StartAutoTLS()
 	err = e.Start(config.Server.ListenStr)
 	e.Logger.Fatal(err)
 	return e, err
