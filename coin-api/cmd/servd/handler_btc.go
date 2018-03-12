@@ -39,6 +39,22 @@ type BtcStats struct {
 	NodeHost   string `json:"node-host"`
 }
 
+// TODO(stgleb): Needs to be aligned with btcjson.GetTransactionResult
+//type GetTransactionResult struct {
+//	Amount          float64                       `json:"amount"`
+//	Fee             float64                       `json:"fee,omitempty"`
+//	Confirmations   int64                         `json:"confirmations"`
+//	BlockHash       string                        `json:"blockhash"`
+//	BlockIndex      int64                         `json:"blockindex"`
+//	BlockTime       int64                         `json:"blocktime"`
+//	TxID            string                        `json:"txid"`
+//	WalletConflicts []string                      `json:"walletconflicts"`
+//	Time            int64                         `json:"time"`
+//	TimeReceived    int64                         `json:"timereceived"`
+//	Details         []GetTransactionDetailsResult `json:"details"`
+//	Hex             string                        `json:"hex"`
+//}
+
 type TxStatus struct {
 	Ver    int `json:"ver"`
 	Inputs []struct {

@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"sync"
+	"reflect"
 
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
@@ -18,17 +18,34 @@ import (
 	"github.com/skycoin/skycoin/src/wallet"
 )
 
+var getBalanceAddresses = func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {
+	webRPC, ok := client.(*webrpc.Client)
+	if !ok {
+		panic(fmt.Sprintf("wrong type %s *webrpc.Client expected", reflect.TypeOf(webRPC).String()))
+	}
+	return cli.GetBalanceOfAddresses(webRPC, addresses)
+}
+
+// WebRPCClientAPI describes skycoin RPC client API
+type WebRPCClientAPI interface {
+	GetTransactionByID(string) (*webrpc.TxnResult, error)
+	InjectTransactionString(string) (string, error)
+}
+
 // SkyСoinService provides generic access to various coins API
 type SkyСoinService struct {
-	// client interface{} // coin client API
-	client *webrpc.Client
+	client WebRPCClientAPI
+	// client       *webrpc.Client
+	checkBalance func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error)
 }
 
 // NewSkyService returns new multicoin generic service
 func NewSkyService(n *locator.Node) *SkyСoinService {
-	s := &SkyСoinService{}
-	s.client = &webrpc.Client{
-		Addr: fmt.Sprintf("%s:%d", n.GetNodeHost(), n.GetNodePort()),
+	s := &SkyСoinService{
+		client: &webrpc.Client{
+			Addr: fmt.Sprintf("%s:%d", n.GetNodeHost(), n.GetNodePort()),
+		},
+		checkBalance: getBalanceAddresses,
 	}
 	return s
 }
@@ -36,6 +53,7 @@ func NewSkyService(n *locator.Node) *SkyСoinService {
 func getRand() []byte {
 	return cipher.RandByte(1024)
 }
+
 func getSeed() string {
 	return cipher.SumSHA256(getRand()).Hex()
 }
@@ -65,7 +83,6 @@ func (s *SkyСoinService) GenerateKeyPair() *model.Response {
 	seed := getRand()
 	rand.Read(seed)
 	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
-	// address := cipher.AddressFromSecKey(sec)
 	rsp := model.Response{
 		Status: model.StatusOk,
 		Code:   0,
@@ -86,13 +103,11 @@ func getBalanceAddress(br *cli.BalanceResult) string {
 	return ""
 }
 
-var mu sync.Mutex
-
 // CheckBalance check the balance (and get unspent outputs) for an address
 func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 	addressesToGetBalance := make([]string, 0, 1)
 	addressesToGetBalance = append(addressesToGetBalance, addr)
-	balanceResult, err := cli.GetBalanceOfAddresses(s.client, addressesToGetBalance)
+	balanceResult, err := s.checkBalance(s.client, addressesToGetBalance)
 	if err != nil {
 		return nil, err
 	}
@@ -117,13 +132,9 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.Response, err error) {
 	//TODO: VERIFY this sign transaction logic
 	rsp = &model.Response{}
-	// println("transID len ", len(transID))
-	// println("srcTrans len ", len(srcTrans))
 
 	defer func() {
-		// println("pre recover!!!!!!!!!!")
 		if r := recover(); r != nil {
-			// println("recover!!!!!!!!!!")
 			rsp.Status = model.StatusError
 			rsp.Code = ehandler.RPCTransactionError
 			rsp.Result = &model.TransactionSign{}
