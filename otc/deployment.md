@@ -1,4 +1,4 @@
-# OCT Deployment instructions
+# OTC Deployment instructions
 
 ## Environement
 Following software must be installed on the deployment environment:

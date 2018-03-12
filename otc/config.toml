@@ -1,42 +1,11 @@
-[skycoin]
+[SKY]
 node = "localhost:6430"
-seed = ""
-name = "teller"
+seed = "seed"
+name = "otc"
 
-# TODO:
-# [coinapi]
-# node = "172.104.145.6:9090"
-
-[dropper.BTC]
-# source determines where address balances are fetched from, "explorer" means
-# otc gets balances from a third party api, and "node" means otc uses a btcd 
-# to get balances
-source = "explorer"
+[BTC]
 node = "localhost:18332"
 user = "otc"
 pass = "otc"
 account = "otc"
 testnet = true
-price = 200000
-
-[scanner]
-tick = 5
-# number of hours before expiring
-expiration = 24
-
-[sender]
-tick = 5
-
-[model]
-tick = 5
-path = "db/"
-paused = false
-
-[monitor]
-tick = 5
-
-[api]
-listen = ":8080"
-
-[admin]
-listen = ":8000"
