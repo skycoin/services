@@ -26,8 +26,8 @@ func TestCheckBalance(t *testing.T) {
 		retryCount:    1,
 		client:        client,
 		isOpen:        0,
-		openTimeout:   time.Second * 1,
-		blockExplorer: "https://blockchain.info",
+		openTimeout:   time.Second * 10,
+		blockExplorer: "https://api.blockcypher.com",
 	}
 
 	service.CheckBalance("02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc")
@@ -56,19 +56,19 @@ func TestServiceBtcCheckTxStatus(t *testing.T) {
 		retryCount:    1,
 		client:        client,
 		isOpen:        0,
-		openTimeout:   time.Second * 1,
-		blockExplorer: "https://blockchain.info",
+		openTimeout:   time.Second * 10,
+		blockExplorer: "https://api.blockcypher.com",
 	}
 
-	status, err := service.CheckTxStatus("1c12443203a48f42cdf7b1acee5b4b1c1fedc144cb909a3bf5edbffafb0cd204")
+	status, err := service.CheckTxStatus("f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449")
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	if len(status) == 0 {
-		t.Errorf("Transaction status must not be empty")
+	if status.Confirmations == 0 {
+		t.Errorf("Transaction confirmations must be greater than zero")
 		return
 	}
 
