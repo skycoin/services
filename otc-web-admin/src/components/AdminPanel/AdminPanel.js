@@ -1,15 +1,11 @@
 /* eslint-disable no-alert */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import moment from 'moment';
 import Helmet from 'react-helmet';
 import { Flex, Box } from 'grid-styled';
-import { FormattedMessage, FormattedHTMLMessage, injectIntl } from 'react-intl';
 import { rem } from 'polished';
-import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
-import Switch from "react-switch";
+import { COLORS, SPACE } from 'config';
 import TimeAgo from 'react-timeago';
 import 'react-widgets/dist/css/react-widgets.css';
 
@@ -17,9 +13,7 @@ import Button from 'components/Button';
 import Container from 'components/Container';
 import Footer from 'components/Footer';
 import Header from 'components/Header';
-import Heading from 'components/Heading';
 import Input from 'components/Input';
-import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
 
@@ -54,10 +48,6 @@ const Wrapper = styled.div`
   ${media.md.css`
     padding: ${rem(SPACE[7])} 0;
   `}
-`;
-
-const TransparenWrapper = styled(Wrapper) `
-  background-color: 'transparent';
 `;
 
 const UpdatedPriceContainer = styled(Text) `
