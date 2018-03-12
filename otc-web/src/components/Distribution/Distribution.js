@@ -102,22 +102,22 @@ const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
       <FormattedMessage id="distribution.heading" />
     </Heading>
     {sky_btc_exchange_rate &&
+      <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
+        <FormattedHTMLMessage
+          id="distribution.rate"
+          values={{
+            rate: +(Math.round(sky_btc_exchange_rate * btcToSatochi * roundTo) / roundTo),
+          }}
+        />
+      </Text>}
     <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
-      <FormattedHTMLMessage
-        id="distribution.rate"
-        values={{
-          rate: +(Math.round(sky_btc_exchange_rate * btcToSatochi * roundTo) / roundTo),
-        }}
-      />
-    </Text>}
-    {/* <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
       <FormattedMessage
         id="distribution.inventory"
         values={{
-          coins: balance && balance.coins,
+          coins: (balance / 1e6).toString(),
         }}
       />
-    </Text> */}
+    </Text>
 
     <Text heavy color="black" fontSize={[2, 3]} as="div">
       <FormattedHTMLMessage id="distribution.instructions" />
@@ -206,12 +206,13 @@ class Distribution extends React.Component {
     addressLoading: false,
     statusLoading: false,
     enabled: true,
+    balance: 0,
     sky_btc_exchange_rate: null,
   };
   componentWillMount = async () => {
     try {
       const config = await getConfig();
-      const stateMutation = {sky_btc_exchange_rate: config.price};
+      const stateMutation = { sky_btc_exchange_rate: config.price };
       switch (config.otcStatus) {
         case 'SOLD_OUT':
           stateMutation.disabledReason = 'coinsSoldOut';
@@ -222,7 +223,7 @@ class Distribution extends React.Component {
           stateMutation.enabled = false;
           break;
         case 'WORKING':
-          stateMutation.balance = { coins: config.balance };
+          stateMutation.balance = config.balance;
           stateMutation.enabled = true;
           break;
       }

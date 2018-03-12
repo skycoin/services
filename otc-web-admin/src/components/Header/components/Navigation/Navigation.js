@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { FormattedMessage } from 'react-intl';
 import { rem } from 'polished';
 
 import { SPACE, FONT_SIZES, FONT_FAMILIES, COLORS } from 'config';
@@ -47,24 +46,11 @@ const StyledLink = styled(Link)`
 
 const Navigation = ({ white }) => (
   <Wrapper>
-    <StyledLink white={white} href="https://www.skycoin.net/downloads" target="_blank">
-      <FormattedMessage id="header.navigation.downloads" />
+    <StyledLink white={white} to="/">
+      Home
     </StyledLink>
-
-    <StyledLink white={white} href="https://www.skycoin.net/whitepapers" target="_blank">
-      <FormattedMessage id="header.navigation.whitepapers" />
-    </StyledLink>
-
-    <StyledLink white={white} href="https://www.skycoin.net/roadmap" target="_blank">
-      <FormattedMessage id="header.navigation.roadmap" />
-    </StyledLink>
-
-    <StyledLink white={white} href="https://explorer.skycoin.net" target="_blank">
-      <FormattedMessage id="header.navigation.explorer" />
-    </StyledLink>
-
-    <StyledLink white={white} href="https://www.skycoin.net/blog" target="_blank">
-      <FormattedMessage id="header.navigation.blog" />
+    <StyledLink white={white} to="/transactions">
+      Transactions
     </StyledLink>
   </Wrapper>
 );
