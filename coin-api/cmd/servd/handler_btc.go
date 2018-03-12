@@ -123,7 +123,7 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
-	txId := ctx.ParamValues()[0]
+	txId := ctx.Param("transid")
 	status, err := h.btcService.CheckTxStatus(txId)
 
 	if err != nil {
@@ -144,15 +144,12 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 }
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
-	// TODO(stgleb): Check why address param is not passed
-	address := ctx.ParamValues()[0]
+	address := ctx.Param("address")
 	balance, err := h.checker.CheckBalance(address)
 
 	if err != nil {
 		return handleError(ctx, err)
 	}
-
-	balanceFloat, _ := balance.Float64()
 
 	resp := struct {
 		Status string          `json:"status"`
@@ -162,7 +159,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		Status: "Ok",
 		Code:   http.StatusOK,
 		Result: balanceResponse{
-			Balance: balanceFloat,
+			Balance: balance,
 			Address: address,
 		},
 	}

@@ -3,7 +3,7 @@ package servd
 import (
 	"encoding/json"
 	"github.com/labstack/echo"
-	"github.com/shopspring/decimal"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,10 +11,10 @@ import (
 )
 
 type balanceChecker struct {
-	expected decimal.Decimal
+	expected float64
 }
 
-func (b balanceChecker) CheckBalance(address string) (decimal.Decimal, error) {
+func (b balanceChecker) CheckBalance(address string) (float64, error) {
 	return b.expected, nil
 }
 
@@ -97,7 +97,7 @@ func TestGenerateAddress(t *testing.T) {
 
 func TestCheckBalance(t *testing.T) {
 	e := echo.New()
-	expected := decimal.NewFromFloat(42.0)
+	expected := 42.0
 
 	checker := balanceChecker{
 		expected: expected,
@@ -107,10 +107,13 @@ func TestCheckBalance(t *testing.T) {
 		checker: checker,
 	}
 
-	req := httptest.NewRequest(echo.GET, "/address/1M3GipkG2YyHPDMPewqTpup83jitXvBg9N", nil)
+	req := httptest.NewRequest(echo.GET, "/", nil)
 
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
+
+	ctx.SetParamNames("address")
+	ctx.SetParamValues("1M3GipkG2YyHPDMPewqTpup83jitXvBg9N")
 
 	handler.checkBalance(ctx)
 
@@ -134,10 +137,9 @@ func TestCheckBalance(t *testing.T) {
 		return
 	}
 
-	actual, _ := resp.Result.Balance.Float64()
-	expectedFloat, _ := expected.Float64()
-
-	if !resp.Result.Balance.Equal(expected) {
-		t.Errorf("Wrong account balance expected %f actual %f", expectedFloat, actual)
+	if math.Abs(resp.Result.Balance-expected) > 0.0001 {
+		t.Errorf("Wrong account balance expected %f actual %f", expected, resp.Result.Balance)
 	}
 }
+
+// TODO(stgleb): Add test for check tx status transaction

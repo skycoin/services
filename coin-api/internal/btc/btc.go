@@ -11,7 +11,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
-	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
 	"io/ioutil"
 	"net/http"
@@ -84,7 +83,7 @@ type explorerAddressResponse struct {
 	Address            string  `json:"address"`
 	TotalReceived      int     `json:"total_received"`
 	TotalSent          int     `json:"total_sent"`
-	Balance            int     `json:"balance"`
+	Balance            int64   `json:"balance"`
 	UnconfirmedBalance float64 `json:"unconfirmed_balance"`
 	FinalBalance       float64 `json:"final_balance"`
 	NTx                int     `json:"n_tx"`
@@ -154,13 +153,13 @@ func (s ServiceBtc) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 }
 
 // CheckBalance checks a balance for given bitcoin wallet
-func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
+func (s *ServiceBtc) CheckBalance(address string) (float64, error) {
 	// If breaker is open - get info from block explorer
 	if s.isOpen == 1 {
 		balance, err := s.getBalanceFromExplorer(address)
 
 		if err != nil {
-			return decimal.NewFromFloat(0.0), err
+			return 0, err
 		}
 
 		return balance, nil
@@ -198,7 +197,7 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 		balance, err := s.getBalanceFromExplorer(address)
 
 		if err != nil {
-			return decimal.NewFromFloat(0.0), err
+			return 0.0, err
 		}
 
 		return balance, nil
@@ -331,40 +330,40 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (*TxStatus, error) {
 	return txStatus, nil
 }
 
-func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error) {
+func (s *ServiceBtc) getBalanceFromNode(address string) (float64, error) {
 	// First get an address in proper form
 	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
 
 	if err != nil {
-		return decimal.NewFromFloat(0.0), err
+		return 0.0, err
 	}
 
 	log.Printf("Get account of address %s", address)
 	account, err := s.client.GetAccount(a)
 
 	if err != nil {
-		return decimal.NewFromFloat(0.0), err
+		return 0.0, err
 	}
 
 	log.Printf("Send request for getting balance of address %s", address)
 	amount, err := s.client.GetBalance(account)
 
 	if err != nil {
-		return decimal.Decimal{}, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
+		return 0.0, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
 	}
 
 	log.Printf("Balance is equal to %f", amount)
-	balance := decimal.NewFromFloat(amount.ToUnit(btcutil.AmountSatoshi))
+	balance := amount.ToUnit(btcutil.AmountSatoshi)
 
 	return balance, nil
 }
 
-func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, error) {
+func (s *ServiceBtc) getBalanceFromExplorer(address string) (float64, error) {
 	url := s.blockExplorer + walletBalanceDefaultEndpoint + address
 	resp, err := http.Get(url)
 
 	if err != nil {
-		return decimal.NewFromFloat(0.0), err
+		return 0, err
 	}
 
 	var r explorerAddressResponse
@@ -372,10 +371,10 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 	err = json.NewDecoder(resp.Body).Decode(&r)
 
 	if err != nil {
-		return decimal.NewFromFloat(0.0), err
+		return 0, err
 	}
 
-	return decimal.NewFromFloat(r.FinalBalance), nil
+	return r.FinalBalance, nil
 }
 
 // Api method for monitoring btc service circuit breaker
