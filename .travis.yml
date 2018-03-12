@@ -5,11 +5,9 @@ matrix:
       sudo: required
       before_script: 
         - go get -t ./otc/...
-        - cd otc
       script: 
+        - cd otc
         - go build
-      after_success:
-        - 
     - language: node_js
       node_js: 
         - "8"
