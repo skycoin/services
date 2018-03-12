@@ -3,8 +3,8 @@ matrix:
     - language: go
       go: 1.9
       sudo: required
-      before_script: 
-        - go get -t ./otc/...
+      install: 
+        go get -t ./otc/...
       script: 
         - cd ./otc
         - go build
