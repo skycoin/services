@@ -226,6 +226,7 @@ class Distribution extends React.Component {
           stateMutation.balance = config.balance;
           stateMutation.enabled = true;
           break;
+        default: break;
       }
       this.setState({ ...this.state, ...stateMutation });
     } catch (_) {
