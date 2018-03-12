@@ -14,7 +14,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/skycoin/skycoin/src/cipher"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"time"
 )
@@ -39,9 +38,9 @@ rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
 FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
 ig==
 -----END CERTIFICATE-----`
-	defaultBlockExplorer         = "https://blockchain.info"
-	walletBalanceDefaultEndpoint = "/charts/balance?cors=true&format=json&lang=en&address="
-	txStatusDefaultEndpoint      = "/rawtx/"
+	defaultBlockExplorer         = "https://api.blockcypher.com"
+	walletBalanceDefaultEndpoint = "/v1/btc/main/addrs/"
+	txStatusDefaultEndpoint      = "/v1/btc/main/txs/"
 )
 
 // ServiceBtc encapsulates operations with bitcoin
@@ -55,18 +54,40 @@ type ServiceBtc struct {
 	blockExplorer string
 }
 
-type walletState struct {
-	Timestamp int64   `json:"x"`
-	Balance   float64 `json:"y"`
+type TxStatus struct {
+	Amount        float64 `json:"amount"`
+	Confirmations int64   `json:"confirmations"`
+	Fee           float64 `json:"fee"`
+
+	BlockHash  string `json:"blockhash"`
+	BlockIndex int64  `json:"block_index"`
+
+	Hash      string `json:"hash"`
+	Confirmed int64  `json:"confirmed"`
+	Received  int64  `json:"received"`
 }
 
-type explorerResponse struct {
-	Status      string        `json:"status"`
-	Name        string        `json:"name"`
-	Unit        string        `json:"unit"`
-	Period      string        `json:"period"`
-	Description string        `json:"description"`
-	Values      []walletState `json:"values"`
+type explorerTxStatus struct {
+	Total         float64 `json:"total"`
+	Fees          float64 `json:"fees"`
+	Confirmations int64   `json:"confirmations"`
+
+	BlockHash  string `json:"block_hash"`
+	BlockIndex int64  `json:"block_index"`
+
+	Hash      string    `json:"hash"`
+	Confirmed time.Time `json:"confirmed"`
+	Received  time.Time `json:"received"`
+}
+
+type explorerAddressResponse struct {
+	Address            string  `json:"address"`
+	TotalReceived      int     `json:"total_received"`
+	TotalSent          int     `json:"total_sent"`
+	Balance            int     `json:"balance"`
+	UnconfirmedBalance float64 `json:"unconfirmed_balance"`
+	FinalBalance       float64 `json:"final_balance"`
+	NTx                int     `json:"n_tx"`
 }
 
 // NewBTCService returns ServiceBtc instance
@@ -186,7 +207,7 @@ func (s *ServiceBtc) CheckBalance(address string) (decimal.Decimal, error) {
 	return balance, nil
 }
 
-func (s *ServiceBtc) CheckTxStatus(txId string) ([]byte, error) {
+func (s *ServiceBtc) CheckTxStatus(txId string) (*TxStatus, error) {
 	// If breaker is open - get info from block explorer
 	if s.isOpen == 1 {
 		status, err := s.getTxStatusFromExplorer(txId)
@@ -239,7 +260,7 @@ func (s *ServiceBtc) CheckTxStatus(txId string) ([]byte, error) {
 	return status, nil
 }
 
-func (s *ServiceBtc) getTxStatusFromNode(txId string) ([]byte, error) {
+func (s *ServiceBtc) getTxStatusFromNode(txId string) (*TxStatus, error) {
 	hash, err := chainhash.NewHash([]byte(txId))
 
 	if err != nil {
@@ -252,16 +273,27 @@ func (s *ServiceBtc) getTxStatusFromNode(txId string) ([]byte, error) {
 		return nil, err
 	}
 
-	data, err := json.Marshal(rawTx)
+	txStatus := &TxStatus{
+		Amount:        rawTx.Amount,
+		Confirmations: rawTx.Confirmations,
+		Fee:           rawTx.Fee,
+
+		BlockHash:  rawTx.BlockHash,
+		BlockIndex: rawTx.BlockIndex,
+
+		Hash:      rawTx.TxID,
+		Confirmed: rawTx.Time,
+		Received:  rawTx.TimeReceived,
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	return txStatus, nil
 }
 
-func (s *ServiceBtc) getTxStatusFromExplorer(txId string) ([]byte, error) {
+func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (*TxStatus, error) {
 	url := s.blockExplorer + txStatusDefaultEndpoint + txId
 	resp, err := http.Get(url)
 
@@ -275,7 +307,28 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) ([]byte, error) {
 		return nil, err
 	}
 
-	return data, nil
+	explorerResp := &explorerTxStatus{}
+	err = json.Unmarshal(data, explorerResp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	txStatus := &TxStatus{
+		// NOTE(stgleb): amount goes in satoshis
+		Amount:        explorerResp.Total,
+		Confirmations: explorerResp.Confirmations,
+		Fee:           explorerResp.Fees,
+
+		BlockHash:  explorerResp.BlockHash,
+		BlockIndex: explorerResp.BlockIndex,
+
+		Hash:      explorerResp.Hash,
+		Confirmed: explorerResp.Confirmed.Unix(),
+		Received:  explorerResp.Received.Unix(),
+	}
+
+	return txStatus, nil
 }
 
 func (s *ServiceBtc) getBalanceFromNode(address string) (decimal.Decimal, error) {
@@ -314,7 +367,7 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 		return decimal.NewFromFloat(0.0), err
 	}
 
-	var r explorerResponse
+	var r explorerAddressResponse
 
 	err = json.NewDecoder(resp.Body).Decode(&r)
 
@@ -322,13 +375,7 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (decimal.Decimal, er
 		return decimal.NewFromFloat(0.0), err
 	}
 
-	// In case if no values - balance is empty
-	if len(r.Values) == 0 {
-		return decimal.NewFromFloat(0.0), nil
-	}
-
-	balance := r.Values[0].Balance * math.Pow10(int(8))
-	return decimal.NewFromFloat(balance), nil
+	return decimal.NewFromFloat(r.FinalBalance), nil
 }
 
 // Api method for monitoring btc service circuit breaker

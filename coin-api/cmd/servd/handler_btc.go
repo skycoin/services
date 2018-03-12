@@ -2,13 +2,11 @@ package servd
 
 import (
 	"crypto/rand"
-	"net/http"
-
-	"encoding/json"
 	"github.com/labstack/echo"
 	"github.com/skycoin/services/coin-api/internal/btc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"log"
+	"net/http"
 )
 
 type keyPairResponse struct {
@@ -37,51 +35,6 @@ type handlerBTC struct {
 type BtcStats struct {
 	NodeStatus bool   `json:"node-status"`
 	NodeHost   string `json:"node-host"`
-}
-
-// TODO(stgleb): Needs to be aligned with btcjson.GetTransactionResult
-//type GetTransactionResult struct {
-//	Amount          float64                       `json:"amount"`
-//	Fee             float64                       `json:"fee,omitempty"`
-//	Confirmations   int64                         `json:"confirmations"`
-//	BlockHash       string                        `json:"blockhash"`
-//	BlockIndex      int64                         `json:"blockindex"`
-//	BlockTime       int64                         `json:"blocktime"`
-//	TxID            string                        `json:"txid"`
-//	WalletConflicts []string                      `json:"walletconflicts"`
-//	Time            int64                         `json:"time"`
-//	TimeReceived    int64                         `json:"timereceived"`
-//	Details         []GetTransactionDetailsResult `json:"details"`
-//	Hex             string                        `json:"hex"`
-//}
-
-type TxStatus struct {
-	Ver    int `json:"ver"`
-	Inputs []struct {
-		Sequence int64  `json:"sequence"`
-		Witness  string `json:"witness"`
-		Script   string `json:"script"`
-	} `json:"inputs"`
-	Weight      int    `json:"weight"`
-	BlockHeight int    `json:"block_height"`
-	RelayedBy   string `json:"relayed_by"`
-	Out         []struct {
-		Spent   bool   `json:"spent"`
-		TxIndex int    `json:"tx_index"`
-		Type    int    `json:"type"`
-		Addr    string `json:"addr,omitempty"`
-		Value   int    `json:"value"`
-		N       int    `json:"n"`
-		Script  string `json:"script"`
-	} `json:"out"`
-	LockTime    int    `json:"lock_time"`
-	Size        int    `json:"size"`
-	DoubleSpend bool   `json:"double_spend"`
-	Time        int    `json:"time"`
-	TxIndex     int    `json:"tx_index"`
-	VinSz       int    `json:"vin_sz"`
-	Hash        string `json:"hash"`
-	VoutSz      int    `json:"vout_sz"`
 }
 
 func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*handlerBTC, error) {
@@ -171,28 +124,20 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 	txId := ctx.ParamValues()[0]
-	data, err := h.btcService.CheckTxStatus(txId)
+	status, err := h.btcService.CheckTxStatus(txId)
 
 	if err != nil {
 		return handleError(ctx, err)
 	}
 
-	status := &TxStatus{}
-	err = json.Unmarshal(data, status)
-
-	if err != nil {
-		handleError(ctx, err)
-		return nil
-	}
-
 	ctx.JSONPretty(http.StatusOK, struct {
-		Status string   `json:"status"`
-		Code   int      `json:"code"`
-		Result TxStatus `json:"result"`
+		Status string        `json:"status"`
+		Code   int           `json:"code"`
+		Result *btc.TxStatus `json:"result"`
 	}{
 		Status: "",
 		Code:   http.StatusOK,
-		Result: *status,
+		Result: status,
 	}, "\t")
 
 	return nil
