@@ -1,4 +1,5 @@
-db/*.json
-db/requests/*.json
-debug
 otc
+!otc/
+.otc/reqs/*.json
+.otc/logs/*.json
+.otc/*.json

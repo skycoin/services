@@ -1,87 +1,38 @@
 package main
 
 import (
-	"flag"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 
-	"github.com/skycoin/services/otc/dropper"
-	"github.com/skycoin/services/otc/model"
-	"github.com/skycoin/services/otc/monitor"
-	"github.com/skycoin/services/otc/scanner"
-	"github.com/skycoin/services/otc/sender"
-	"github.com/skycoin/services/otc/skycoin"
-	"github.com/skycoin/services/otc/types"
+	"github.com/skycoin/services/otc/pkg/api/admin"
+	"github.com/skycoin/services/otc/pkg/api/public"
+	"github.com/skycoin/services/otc/pkg/currencies"
+	"github.com/skycoin/services/otc/pkg/currencies/btc"
+	"github.com/skycoin/services/otc/pkg/currencies/sky"
+	"github.com/skycoin/services/otc/pkg/model"
+	"github.com/skycoin/services/otc/pkg/otc"
 )
 
-var (
-	MODEL   *model.Model
-	CONFIG  *types.Config
-	DROPPER *dropper.Dropper
-	SKYCOIN *skycoin.Connection
-	ERRS    *log.Logger
-
-	CONFIG_PATH = flag.String(
-		"config",
-		"config.toml",
-		"path to config .toml file",
-	)
-)
+var CURRENCIES = currencies.New()
 
 func init() {
-	flag.Parse()
-	var err error
-
-	// load config file from disk
-	CONFIG, err = types.NewConfig(*CONFIG_PATH)
+	conf, err := otc.NewConfig("config.toml")
 	if err != nil {
 		panic(err)
 	}
 
-	// error logging
-	ERRS = log.New(os.Stdout, types.LOG_ERRS, types.LOG_FLAGS)
-
-	// manages connection to btc daemon
-	DROPPER, err = dropper.NewDropper(CONFIG)
+	SKY, err := sky.New(conf)
 	if err != nil {
 		panic(err)
 	}
+	CURRENCIES.Add(otc.SKY, SKY)
 
-	// manages connection and wallet for skycoin
-	SKYCOIN, err = skycoin.NewConnection(CONFIG)
+	BTC, err := btc.New(conf)
 	if err != nil {
 		panic(err)
 	}
-
-	// actor for scanning drops
-	scanner, err := scanner.NewScanner(CONFIG, DROPPER)
-	if err != nil {
-		panic(err)
-	}
-	scanner.Start()
-
-	// actor for sending sky from otc
-	sender, err := sender.NewSender(CONFIG, SKYCOIN, DROPPER)
-	if err != nil {
-		panic(err)
-	}
-	sender.Start()
-
-	// actor for confirming skycoin transactions
-	monitor, err := monitor.NewMonitor(CONFIG, SKYCOIN)
-	if err != nil {
-		panic(err)
-	}
-	monitor.Start()
-
-	// actor for managing state
-	MODEL, err = model.NewModel(CONFIG, scanner, sender, monitor, ERRS)
-	if err != nil {
-		panic(err)
-	}
-	MODEL.Start()
+	CURRENCIES.Add(otc.BTC, BTC)
 }
 
 func main() {
@@ -89,24 +40,19 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 
-	// public facing otc api
-	api := http.NewServeMux()
-	api.HandleFunc("/api/bind", apiBind)
-	api.HandleFunc("/api/status", apiStatus)
-	api.HandleFunc("/api/config", apiGetConfiguration)
-	go http.ListenAndServe(CONFIG.Api.Listen, api)
+	modl, err := model.New(CURRENCIES)
+	if err != nil {
+		panic(err)
+	}
 
-	// private facing admin api
-	admin := http.NewServeMux()
-	admin.HandleFunc("/api/status", adminStatus)
-	admin.HandleFunc("/api/pause", adminPause)
-	admin.HandleFunc("/api/price", adminPrice)
-	go http.ListenAndServe(CONFIG.Admin.Listen, admin)
+	admin := admin.New(CURRENCIES, modl)
+	go http.ListenAndServe(":8000", admin)
 
-	println("api listening on " + CONFIG.Api.Listen)
-	println("admin listening on " + CONFIG.Admin.Listen)
+	public := public.New(CURRENCIES, modl)
+	println("listening")
+	go http.ListenAndServe(":8080", public)
 
 	<-stop
 	println("stopping")
-	MODEL.Stop()
+	modl.Stop()
 }
