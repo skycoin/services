@@ -4,8 +4,8 @@ matrix:
       go: 1.9
       sudo: required
       before_script: 
+        - go get -t ./otc/...
         - cd otc
-        - go get -t ./...
       script: 
         - go build
       after_success:
