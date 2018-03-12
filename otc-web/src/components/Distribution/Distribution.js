@@ -114,7 +114,7 @@ const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
       <FormattedMessage
         id="distribution.inventory"
         values={{
-          coins: balance.toString(),
+          coins: (balance / 1e6).toString(),
         }}
       />
     </Text>
