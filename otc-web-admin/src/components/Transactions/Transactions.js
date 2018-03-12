@@ -13,7 +13,7 @@ import Footer from 'components/Footer';
 import Container from 'components/Container';
 import media from '../../utils/media';
 
-import transactions from './transactions.json';
+import { transactionFilters, getTransactions } from './transactionsApi';
 
 const H3Styled = styled.h3`
   font-family: "Montreal", sans-serif;
@@ -34,11 +34,17 @@ const DateTimeView = ({ dt }) =>
   (<div>{new Date(dt * 1000).toLocaleDateString()} {new Date(dt * 1000).toLocaleTimeString()}</div>);
 
 const transactionStatuses = {
-  waiting_confirm: 'Pending'
+  waiting_confirm: 'Pending',
+  waiting_deposit: 'Pending',
 };
 const transactionStatusToStr = s => transactionStatuses[s] || s;
+const transactionStateFilters = [
+  { id: 'all', name: 'All' },
+  { id: 'pending', name: 'Pending' },
+  { id: 'completed', name: 'Completed' },
+];
 
-const TransactionsFilter = () => (
+const TransactionsFilter = ({ changeFilterState }) => (
   <Flex column mb={5}>
     <Text as="h4">Filters</Text>
     <Flex row justify="flex-start" align="flex-end">
@@ -49,7 +55,10 @@ const TransactionsFilter = () => (
         <DropdownList
           style={{ width: '150px' }}
           defaultValue="All"
-          data={['All', 'Pending', 'Completed']} />
+          valueField="id"
+          textField="name"
+          onChange={({ id }) => changeFilterState(id)}
+          data={transactionStateFilters} />
       </Box>
     </Flex>
   </Flex>
@@ -126,13 +135,19 @@ const TransactionsTable = ({ transactions }) => {
           {transactions.map((t, i) =>
             (<TableRow key={i}>
               <TableCell><DateTimeView dt={t.timestamps.created_at} /></TableCell>
-              <TableCell><DateTimeView dt={t.timestamps.deposited_at} /></TableCell>
-              <TableCell><DateTimeView dt={t.timestamps.sent_at} /></TableCell>
+              <TableCell>
+                {t.timestamps.deposited_at !== 0 && <DateTimeView dt={t.timestamps.deposited_at} />}
+                {t.timestamps.deposited_at === 0 && 'N/A'}
+              </TableCell>
+              <TableCell>
+                {t.timestamps.sent_at !== 0 && <DateTimeView dt={t.timestamps.sent_at} />}
+                {t.timestamps.sent_at === 0 && 'N/A'}
+              </TableCell>
 
               <TableCell>{transactionStatusToStr(t.status)}</TableCell>
               <TableCell>{t.drop.amount / 1e8}</TableCell>
-              <TableCell>{t.rate.value / 1e8} </TableCell>
-              <TableCell>{t.rate.source[0]} </TableCell>
+              <TableCell>{t.rate && t.rate.value / 1e8} {!t.rate && 'N/A'} </TableCell>
+              <TableCell>{t.rate && t.rate.source[0]} {!t.rate && 'N/A'} </TableCell>
 
               <TableCell>{t.address}</TableCell>
               <TableCell>{t.drop.address}</TableCell>
@@ -143,8 +158,47 @@ const TransactionsTable = ({ transactions }) => {
   );
 };
 
+const ActivityIndicator = () => (
+  <div className="spinner">
+    <div className="dot1"></div>
+    <div className="dot2"></div>
+  </div>
+);
+
+const EmptyDataSet = () => (
+  <H3Styled>No transactions were found by specified filter.</H3Styled>
+);
+
 export default class extends React.Component {
+  state = {
+    transactions: [],
+    loading: true,
+    filter: {
+      state: transactionFilters.byState.all.name
+    }
+  }
+  loadData = async filter => {
+    this.setState({
+      ...this.state,
+      loading: true,
+    });
+    const transactions = await getTransactions(filter);
+    this.setState({
+      ...this.state,
+      transactions,
+      loading: false,
+    });
+  }
+  componentWillMount = async () => {
+    await this.loadData(this.state.filter);
+  }
+  changeFilterState = async state => {
+    const filter = { ...this.state.filter, state };
+    this.setState({ ...this.state, filter });
+    await this.loadData(filter);
+  }
   render = () => {
+    const { transactions, loading } = this.state;
     return (
       <div>
         <Helmet>
@@ -158,8 +212,10 @@ export default class extends React.Component {
             margin: '0 auto',
             maxWidth: '70rem',
           }}>
-            <TransactionsFilter />
-            <TransactionsTable transactions={transactions} />
+            <TransactionsFilter changeFilterState={this.changeFilterState} />
+            {loading && <ActivityIndicator />}
+            {!loading && transactions.length !== 0 && <TransactionsTable transactions={transactions} />}
+            {!loading && transactions.length === 0 && <EmptyDataSet />}
           </Container>
         </Wrapper>
 
