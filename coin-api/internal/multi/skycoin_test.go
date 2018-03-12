@@ -73,7 +73,7 @@ func TestGenerateAddress(t *testing.T) {
 }
 
 func TestTransaction(t *testing.T) {
-	skyService := getTestedService()
+	skyService := getTestedMockedService()
 	t.Run("sign transaction", func(t *testing.T) {
 		//TODO: check this logic
 		_, secKey := makeUxBodyWithSecret(t)
@@ -96,7 +96,6 @@ func TestTransaction(t *testing.T) {
 	})
 
 	t.Run("inject transaction", func(t *testing.T) {
-
 		// testing doubles: test input and generate output
 		rpcApiMck.On("GetTransactionByID", mocklib.MatchedBy(func(txid string) bool {
 			if rawTxID != txid {
@@ -166,18 +165,12 @@ func TestTransaction(t *testing.T) {
 	})
 }
 
-var getTestedService = func() *multi.SkyСoinService {
+var getTestedMockedService = func() *multi.SkyСoinService {
 	loc := locator.Node{
 		Host: "127.0.0.1",
 		Port: 6430,
 	}
-
-	// if we want to launch integration tests - we just return skyCoinService constructed usual way without any mocks
-	if integration {
-		return multi.NewSkyService(&loc)
-	}
-	// if not - just parametrize tested service with mocked/stubbed external services
-
+	// parametrize tested service with mocked/stubbed external services
 	// this way we mock our helpers which commit 3-d party package calls which cannot be mocked usual way because they deal with types
 	// instead of interfaces
 	getBalanceAddresses := func(client multi.WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {
@@ -191,6 +184,7 @@ var getTestedService = func() *multi.SkyСoinService {
 
 	rpcApiMck = &mock.WebRPCAPIMock{}
 	skyService := multi.NewSkyService(&loc)
+	// inject mocked dependencies into tested service
 	skyService.InjectRPCAPIMock(rpcApiMck)
 	skyService.InjectCheckBalanceMock(getBalanceAddresses)
 
