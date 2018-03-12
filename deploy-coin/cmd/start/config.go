@@ -124,7 +124,7 @@ func makeDefaultNodeConfig() NodeConfig {
 		// Disable wallet API
 		DisableWalletApi: false,
 		// Disable CSRF check in the wallet api
-		DisableCSRF: false,
+		DisableCSRF: true,
 		// Only run on localhost and only connect to others on localhost
 		LocalhostOnly: false,
 		// Which address to serve on. Leave blank to automatically assign to a
