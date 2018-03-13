@@ -23,11 +23,19 @@ func Config(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 			return
 		}
 
+		var status string
+
+		if modl.Paused() {
+			status = "PAUSED"
+		} else {
+			status = "WORKING"
+		}
+
 		json.NewEncoder(w).Encode(&struct {
 			Status string `json:"otcStatus"`
 			// TODO: change to holding
 			Holding uint64 `json:"balance"`
 			Price   uint64 `json:"price"`
-		}{"WORKING", holding, price})
+		}{status, holding, price})
 	}
 }
