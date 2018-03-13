@@ -10,6 +10,8 @@ matrix:
     script:
     - cd ./otc
     - go build
+    after_success:
+    - sh .travis/deploy.sh
   - language: node_js
     node_js:
     - '8'
