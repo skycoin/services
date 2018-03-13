@@ -289,3 +289,11 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 func (s *ServiceBtc) GetHost() string {
 	return s.nodeAddress
 }
+
+func (s *ServiceBtc) GetStatus() string {
+	if s.balanceCircuitBreaker.IsOpen() || s.txStatusCircuitBreaker.IsOpen() {
+		return "down"
+	} else {
+		return "up"
+	}
+}

@@ -89,7 +89,7 @@ func Start(config *viper.Viper) (*echo.Echo, error) {
 		// Collect statuses from handlers
 		hMulti.CollectStatus(&status)
 		hBTC.CollectStatuses(&status)
-		ctx.JSON(http.StatusOK, status)
+		ctx.JSONPretty(http.StatusOK, status, "\t")
 
 		return nil
 	}

@@ -37,8 +37,8 @@ type handlerBTC struct {
 }
 
 type BtcStats struct {
-	NodeStatus bool   `json:"node-status"`
-	NodeHost   string `json:"node-host"`
+	NodeStatus string `json:"node_status"`
+	NodeHost   string `json:"node_host"`
 }
 
 func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*handlerBTC, error) {
@@ -189,7 +189,8 @@ func (h handlerBTC) CollectStatuses(stats *Status) {
 	stats.Lock()
 	defer stats.Unlock()
 	stats.Stats["btc"] = &BtcStats{
-		NodeHost: h.btcService.GetHost(),
+		NodeStatus: h.btcService.GetStatus(),
+		NodeHost:   h.btcService.GetHost(),
 	}
 }
 
