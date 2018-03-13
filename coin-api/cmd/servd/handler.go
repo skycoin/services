@@ -42,9 +42,8 @@ func (h *handlerMulti) generateKeys(e echo.Context) error {
 }
 
 func (h *handlerMulti) generateSeed(e echo.Context) error {
-	// key := e.QueryParam("key")
-	// TODO: in service implementation, seems, we don't need a key, check the service logic
-	rsp, err := h.service.GenerateAddr(1, true)
+	key := e.QueryParam("key")
+	rsp, err := h.service.GenerateAddr(key)
 	data, err := json.Marshal(rsp)
 	if err != nil {
 		log.Errorf("error encoding response %v, code %d", err, rsp.Code)
@@ -75,8 +74,7 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 }
 
 func (h *handlerMulti) signTransaction(e echo.Context) error {
-	//TODO: signid in request seems excessive here
-	transid := e.QueryParam("transid")
+	transid := e.QueryParam("signid")
 	srcTrans := e.QueryParam("sourceTrans")
 	rsp, err := h.service.SignTransaction(transid, srcTrans)
 	if err != nil {
@@ -95,7 +93,6 @@ func (h *handlerMulti) signTransaction(e echo.Context) error {
 }
 
 func (h *handlerMulti) injectTransaction(e echo.Context) error {
-	// netid := e.QueryParam("netid")
 	transid := e.Param("transid")
 	rsp, err := h.service.InjectTransaction(transid)
 	if err != nil {

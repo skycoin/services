@@ -15,7 +15,6 @@ import (
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/visor"
-	"github.com/skycoin/skycoin/src/wallet"
 )
 
 var getBalanceAddresses = func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {
@@ -59,19 +58,14 @@ func getSeed() string {
 }
 
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
-func (s *SkyСoinService) GenerateAddr(count int, hideSecret bool) (*model.Response, error) {
-	seed := getSeed()
-	w, err := wallet.CreateAddresses(wallet.CoinTypeSkycoin, seed, count, false)
-	if err != nil {
-		return nil, err
-	}
-
-	entry := w.Entries[0]
+func (s *SkyСoinService) GenerateAddr(pubStr string) (*model.Response, error) {
+	pubKey := cipher.MustPubKeyFromHex(pubStr)
+	address := cipher.AddressFromPubKey(pubKey)
 	rsp := model.Response{
 		Status: model.StatusOk,
 		Code:   0,
 		Result: &model.AddressResponse{
-			Address: entry.Address,
+			Address: address.String(),
 		},
 	}
 
@@ -120,7 +114,7 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
 			Balance: balanceResult.Spendable.Coins,
 			// balanceResult.
 			// 	Coin: model.Coin{
-			// //TODO: fill data here
+			// //TODO: maybe coin info will required in the nearest future
 			// },
 		},
 	}

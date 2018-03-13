@@ -32,43 +32,58 @@ var integration bool = false
 // the package-level variables and in this case you'd better off moving this variable somewhere to the getTestedService() function
 var rpcApiMck *mock.WebRPCAPIMock
 
-func TestGenerateAddress(t *testing.T) {
+func TestGenerateKeyPair(t *testing.T) {
 	loc := locator.Node{
 		Host: "127.0.0.1",
-		Port: 6430,
+		Port: 6420,
 	}
-
 	skyService := multi.NewSkyService(&loc)
-	rsp, err := skyService.GenerateAddr(1, true)
-	assert.NoError(t, err)
+	rsp := skyService.GenerateKeyPair()
 	assertCodeZero(t, rsp)
 	assertStatusOk(t, rsp)
 	result := rsp.Result
-	rspAdd, ok := result.(*model.AddressResponse)
-
+	keysResponse, ok := result.(*model.KeysResponse)
 	if !ok {
-		t.Fatalf("wrong type, result.(*model.AddressResponse) expected, given %s", reflect.TypeOf(result).String())
+		t.Fatalf("wrong type, result.(*model.KeysResponse) expected, given %s", reflect.TypeOf(result).String())
 	}
-	if len(rspAdd.Address) == 0 {
-		t.Fatalf("address cannot be zero lenght")
+	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
+		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
 	}
 
-	t.Run("check balance", func(t *testing.T) {
-		address := rspAdd.Address
-		rsp, err := skyService.CheckBalance(address)
-		if !assert.NoError(t, err) {
-			t.Fatal()
-		}
+	t.Run("TestGenerateAddress", func(t *testing.T) {
+		rsp, err := skyService.GenerateAddr(keysResponse.Private)
+		assert.NoError(t, err)
 		assertCodeZero(t, rsp)
 		assertStatusOk(t, rsp)
 		result := rsp.Result
-		bRsp, ok := result.(*model.BalanceResponse)
+		rspAdd, ok := result.(*model.AddressResponse)
+
 		if !ok {
-			t.Fatalf("wrong type, *model.BalanceResponse expected, given %s", reflect.TypeOf(result).String())
+			t.Fatalf("wrong type, result.(*model.AddressResponse) expected, given %s", reflect.TypeOf(result).String())
 		}
-		if len(bRsp.Address) == 0 {
-			t.Fatalf("Address shouldn't be zero length")
+		if len(rspAdd.Address) == 0 {
+			t.Fatalf("address cannot be zero lenght")
 		}
+
+		t.Run("check balance", func(t *testing.T) {
+			address := rspAdd.Address
+			skyServiceIsolated := getTestedMockedService()
+			rsp, err := skyServiceIsolated.CheckBalance(address)
+			if !assert.NoError(t, err) {
+				t.Fatal()
+			}
+
+			assertCodeZero(t, rsp)
+			assertStatusOk(t, rsp)
+			result := rsp.Result
+			bRsp, ok := result.(*model.BalanceResponse)
+			if !ok {
+				t.Fatalf("wrong type, *model.BalanceResponse expected, given %s", reflect.TypeOf(result).String())
+			}
+			if bRsp.Balance != "23" || bRsp.Hours != "3" {
+				t.Fatalf("wrong balance")
+			}
+		})
 	})
 }
 
@@ -179,6 +194,10 @@ var getTestedMockedService = func() *multi.SkyСoinService {
 				Coins: "23",
 				Hours: "3",
 			},
+			Spendable: cli.Balance{
+				Coins: "23",
+				Hours: "3",
+			},
 		}, nil
 	}
 
@@ -189,25 +208,6 @@ var getTestedMockedService = func() *multi.SkyСoinService {
 	skyService.InjectCheckBalanceMock(getBalanceAddresses)
 
 	return skyService
-}
-
-func TestGenerateKeyPair(t *testing.T) {
-	loc := locator.Node{
-		Host: "127.0.0.1",
-		Port: 6420,
-	}
-	skyService := multi.NewSkyService(&loc)
-	rsp := skyService.GenerateKeyPair()
-	assertCodeZero(t, rsp)
-	assertStatusOk(t, rsp)
-	result := rsp.Result
-	keysResponse, ok := result.(*model.KeysResponse)
-	if !ok {
-		t.Fatalf("wrong type, result.(*model.KeysResponse) expected, given %s", reflect.TypeOf(result).String())
-	}
-	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
-		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
-	}
 }
 
 func makeUxBodyWithSecret(t *testing.T) (coin.UxBody, cipher.SecKey) {
