@@ -11,11 +11,11 @@ ssh-keyscan $IP >> ~/.ssh/known_hosts
 
 # prepeare deployment
 tar -czvf otc-ui.tar.gz build
-scp otc-ui.tar.gz $RUN_USER@$IP:/home/apps/deploy
+scp otc-ui.tar.gz $RUN_USER@$IP:/home/apps/deploy-otc-ui
 
 # start updated services
 ssh $RUN_USER@$IP <<EOF
-  cd /home/apps/deploy
+  cd /home/apps/deploy-otc-ui
   tar -zxvf otc-ui.tar.gz
   cp -r ./build/** /var/www/otc-ui
 EOF

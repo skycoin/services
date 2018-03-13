@@ -11,11 +11,11 @@ ssh-keyscan $IP >> ~/.ssh/known_hosts
 
 # prepeare deployment
 tar -czvf admin-ui.tar.gz build
-scp admin-ui.tar.gz $RUN_USER@$IP:/home/apps/deploy
+scp admin-ui.tar.gz $RUN_USER@$IP:/home/apps/deploy-otc-admin-ui
 
 # start updated services
 ssh $RUN_USER@$IP <<EOF
-  cd /home/apps/deploy
+  cd /home/apps/deploy-otc-admin-ui
   tar -zxvf admin-ui.tar.gz
   cp -r ./build/** /var/www/otc-admin-ui
 EOF
