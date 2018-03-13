@@ -9,6 +9,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/spf13/viper"
 )
 
 type Status struct {
@@ -17,18 +18,21 @@ type Status struct {
 }
 
 // Start starts the server
-func Start(config *Config) (*echo.Echo, error) {
+func Start(config *viper.Viper) (*echo.Echo, error) {
 	e := echo.New()
 	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
 	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
 
-	// e.Pre(middleware.MethodOverride())
-	hMulti := newHandlerMulti()
+	log.Printf("Create handler for skyledger based coins on %s:%d",
+		config.Sub("skycoin").GetString("Host"),
+		config.Sub("skycoin").GetInt("Port"))
+	hMulti := newHandlerMulti(config.Sub("skycoin").GetString("Host"),
+		config.Sub("skycoin").GetInt("Port"))
 
 	var cert []byte
 
-	if config.Bitcoin.TLS {
-		f, err := os.Open(config.Bitcoin.CertFile)
+	if config.Sub("bitcoin").GetBool("TLS") {
+		f, err := os.Open(config.Sub("bitcoin").GetString("CertFile"))
 
 		if err != nil {
 			log.Fatal(err)
@@ -41,12 +45,13 @@ func Start(config *Config) (*echo.Echo, error) {
 		}
 	}
 
-	hBTC, err := newHandlerBTC(config.Bitcoin.NodeAddress,
-		config.Bitcoin.User,
-		config.Bitcoin.Password,
-		!config.Bitcoin.TLS,
+	hBTC, err := newHandlerBTC(
+		config.Sub("bitcoin").GetString("NodeAddress"),
+		config.Sub("bitcoin").GetString("User"),
+		config.Sub("bitcoin").GetString("Password"),
+		!config.Sub("bitcoin").GetBool("TLS"),
 		cert,
-		config.Bitcoin.BlockExplorer)
+		config.Sub("bitcoin").GetString("BlockExplorer"))
 
 	apiGroupV1 := e.Group("/api/v1")
 	skyGroup := apiGroupV1.Group("/sky")
@@ -97,7 +102,7 @@ func Start(config *Config) (*echo.Echo, error) {
 
 	e.GET("/status", statusFunc)
 	// e.StartAutoTLS()
-	err = e.Start(config.Server.ListenStr)
+	err = e.Start(config.Sub("server").GetString("ListenStr"))
 	e.Logger.Fatal(err)
 	return e, err
 }

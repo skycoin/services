@@ -2,14 +2,16 @@ package servd
 
 import (
 	"encoding/json"
-	"github.com/labstack/echo"
-	"github.com/skycoin/services/coin-api/internal/btc"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/labstack/echo"
+
+	"github.com/skycoin/services/coin-api/internal/btc"
 )
 
 type checker struct {
