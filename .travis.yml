@@ -22,6 +22,8 @@ matrix:
     - yarn install
     script:
     - yarn build
+    after_success:
+    - sh .travis/deploy.sh
   - language: node_js
     node_js:
     - '8'

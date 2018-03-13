@@ -34,7 +34,7 @@ export default () => (
     <Flag
       name="russian"
       render={() => (
-        <Language><StyledLink to="/ru/">Ру́сский</StyledLink></Language>
+        <Language><StyledLink to="/ru/">Русский</StyledLink></Language>
       )}
     />
   </Languages>
