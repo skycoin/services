@@ -28,7 +28,6 @@ type addressResponse struct {
 }
 
 type handlerBTC struct {
-	// TODO(stgleb): extract btc service to separate interface for generating key-pair and address
 	btcService *btc.ServiceBtc
 	checker    Checker
 }

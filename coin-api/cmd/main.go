@@ -23,11 +23,9 @@ func main() {
 	}
 
 	cfg := viper.New()
-
 	cfg.SetConfigType("toml")
 	cfg.AddConfigPath(".")
 	cfg.ReadConfig(f)
-	cfg.Debug()
 
 	servd.Start(cfg)
 }
