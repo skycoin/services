@@ -1,11 +1,12 @@
 package btc
 
 import (
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/skycoin/skycoin/src/cipher"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/skycoin/skycoin/src/cipher"
 )
 
 func TestCheckBalance(t *testing.T) {

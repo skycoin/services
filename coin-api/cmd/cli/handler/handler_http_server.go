@@ -3,11 +3,13 @@ package handler
 import (
 	"context"
 
+	"log"
+
 	"github.com/BurntSushi/toml"
 	"github.com/labstack/echo"
-	"github.com/skycoin/services/coin-api/cmd/servd"
 	"github.com/urfave/cli"
-	"log"
+
+	"github.com/skycoin/services/coin-api/cmd/servd"
 )
 
 // ServerHTTP is a CLI handler of an HTTP server

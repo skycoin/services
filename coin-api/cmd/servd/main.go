@@ -23,8 +23,11 @@ func Start(config *viper.Viper) (*echo.Echo, error) {
 	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
 	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
 
-	// e.Pre(middleware.MethodOverride())
-	hMulti := newHandlerMulti()
+	log.Printf("Create handler for skyledger based coins on %s:%d",
+		config.Sub("skycoin").GetString("Host"),
+		config.Sub("skycoin").GetInt("Port"))
+	hMulti := newHandlerMulti(config.Sub("skycoin").GetString("Host"),
+		config.Sub("skycoin").GetInt("Port"))
 
 	var cert []byte
 

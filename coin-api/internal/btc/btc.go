@@ -7,14 +7,15 @@ import (
 	"log"
 
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"time"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
 	"github.com/skycoin/skycoin/src/cipher"
-	"io/ioutil"
-	"net/http"
-	"time"
 )
 
 const (

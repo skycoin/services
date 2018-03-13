@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/skycoin/services/coin-api/cmd/servd"
-	"github.com/spf13/viper"
 	"log"
 	"os"
+
+	"github.com/spf13/viper"
+
+	"github.com/skycoin/services/coin-api/cmd/servd"
 )
 
 var configFile string

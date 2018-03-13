@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/urfave/cli"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
 const (
