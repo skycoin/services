@@ -389,7 +389,8 @@ ResponseBody {
 ##### Successful response:
 ```
 Request {
-    "signid":"392900939dijdked"
+    "signid":"392900939dijdked",
+    "sourceTrans":"392900939dijdked392900939dijdked",
 }
 
 ResponseHeader: 201
