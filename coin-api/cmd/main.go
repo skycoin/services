@@ -2,9 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/BurntSushi/toml"
-	"github.com/skycoin/services/coin-api/cmd/servd"
 	"log"
+	"os"
+
+	"github.com/spf13/viper"
+
+	"github.com/skycoin/services/coin-api/cmd/servd"
 )
 
 var configFile string
@@ -15,12 +18,16 @@ func init() {
 }
 
 func main() {
-	var config = &servd.Config{}
-	_, err := toml.DecodeFile(configFile, config)
+	f, err := os.Open(configFile)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	servd.Start(config)
+	cfg := viper.New()
+	cfg.SetConfigType("toml")
+	cfg.AddConfigPath(".")
+	cfg.ReadConfig(f)
+
+	servd.Start(cfg)
 }

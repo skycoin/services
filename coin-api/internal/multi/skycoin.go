@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/skycoin/services/coin-api/internal/locator"
-	"github.com/skycoin/services/coin-api/internal/model"
 	ehandler "github.com/skycoin/services/errhandler"
 	"github.com/skycoin/skycoin/src/api/cli"
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/visor"
+
+	"github.com/skycoin/services/coin-api/internal/locator"
+	"github.com/skycoin/services/coin-api/internal/model"
 )
 
 var getBalanceAddresses = func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {

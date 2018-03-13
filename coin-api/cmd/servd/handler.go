@@ -8,9 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/labstack/echo"
+	"github.com/skycoin/skycoin/src/visor"
+
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/multi"
-	"github.com/skycoin/skycoin/src/visor"
 )
 
 type handlerMulti struct {
@@ -22,8 +23,8 @@ type MultiStats struct {
 	Message string `json:"message"`
 }
 
-func newHandlerMulti() *handlerMulti {
-	service := multi.NewSkyService(locator.NewLocatorNode())
+func newHandlerMulti(host string, port int) *handlerMulti {
+	service := multi.NewSkyService(locator.NewLocatorNode(host, port))
 
 	return &handlerMulti{
 		service: service,

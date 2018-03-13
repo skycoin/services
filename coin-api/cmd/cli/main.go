@@ -3,8 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/skycoin/services/coin-api/cmd/cli/handler"
 	"github.com/urfave/cli"
+
+	"github.com/skycoin/services/coin-api/cmd/cli/handler"
 )
 
 var (

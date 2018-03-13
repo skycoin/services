@@ -2,11 +2,15 @@ package servd
 
 import (
 	"crypto/rand"
-	"github.com/labstack/echo"
-	"github.com/skycoin/services/coin-api/internal/btc"
-	"github.com/skycoin/skycoin/src/cipher"
 	"log"
 	"net/http"
+
+	"github.com/labstack/echo"
+	"github.com/skycoin/skycoin/src/cipher"
+
+	"github.com/pkg/errors"
+
+	"github.com/skycoin/services/coin-api/internal/btc"
 )
 
 type keyPairResponse struct {
@@ -28,14 +32,13 @@ type addressResponse struct {
 }
 
 type handlerBTC struct {
-	// TODO(stgleb): extract btc service to separate interface for generating key-pair and address
 	btcService *btc.ServiceBtc
 	checker    Checker
 }
 
 type BtcStats struct {
-	NodeStatus bool   `json:"node-status"`
-	NodeHost   string `json:"node-host"`
+	NodeStatus string `json:"node_status"`
+	NodeHost   string `json:"node_host"`
 }
 
 func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*handlerBTC, error) {
@@ -80,7 +83,7 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 	}
 
 	// Write response with newly created key pair
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSONPretty(http.StatusCreated, resp, "\t")
 	return nil
 }
 
@@ -119,16 +122,22 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 		},
 	}
 
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSONPretty(http.StatusCreated, resp, "\t")
 	return nil
 }
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 	txId := ctx.Param("transid")
-	status, err := h.checker.CheckTxStatus(txId)
+	result, err := h.checker.CheckTxStatus(txId)
 
 	if err != nil {
 		return handleError(ctx, err)
+	}
+
+	status, ok := result.(*btc.TxStatus)
+
+	if !ok {
+		return handleError(ctx, errors.New("cannot convert result to *TxStatus"))
 	}
 
 	ctx.JSONPretty(http.StatusOK, struct {
@@ -146,10 +155,16 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
-	balance, err := h.checker.CheckBalance(address)
+	result, err := h.checker.CheckBalance(address)
 
 	if err != nil {
 		return handleError(ctx, err)
+	}
+
+	balance, ok := result.(float64)
+
+	if !ok {
+		return handleError(ctx, errors.New("cannot convert result to type float64"))
 	}
 
 	resp := struct {
@@ -165,7 +180,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		},
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSONPretty(http.StatusOK, resp, "\t")
 	return nil
 }
 
@@ -174,8 +189,8 @@ func (h handlerBTC) CollectStatuses(stats *Status) {
 	stats.Lock()
 	defer stats.Unlock()
 	stats.Stats["btc"] = &BtcStats{
+		NodeStatus: h.btcService.GetStatus(),
 		NodeHost:   h.btcService.GetHost(),
-		NodeStatus: h.btcService.IsOpen(),
 	}
 }
 

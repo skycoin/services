@@ -2,14 +2,16 @@ package servd
 
 import (
 	"encoding/json"
-	"github.com/labstack/echo"
-	"github.com/skycoin/services/coin-api/internal/btc"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/labstack/echo"
+
+	"github.com/skycoin/services/coin-api/internal/btc"
 )
 
 type checker struct {
@@ -17,11 +19,11 @@ type checker struct {
 	txStatus *btc.TxStatus
 }
 
-func (b checker) CheckBalance(address string) (float64, error) {
+func (b checker) CheckBalance(address string) (interface{}, error) {
 	return b.expected, nil
 }
 
-func (b checker) CheckTxStatus(txId string) (*btc.TxStatus, error) {
+func (b checker) CheckTxStatus(txId string) (interface{}, error) {
 	return b.txStatus, nil
 }
 

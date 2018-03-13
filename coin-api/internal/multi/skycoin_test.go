@@ -10,15 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	mocklib "github.com/stretchr/testify/mock"
 
-	"github.com/skycoin/services/coin-api/internal/locator"
-	"github.com/skycoin/services/coin-api/internal/mock"
-	"github.com/skycoin/services/coin-api/internal/model"
-	"github.com/skycoin/services/coin-api/internal/multi"
 	"github.com/skycoin/skycoin/src/api/cli"
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/testutil"
+
+	"github.com/skycoin/services/coin-api/internal/locator"
+	"github.com/skycoin/services/coin-api/internal/mock"
+	"github.com/skycoin/services/coin-api/internal/model"
+	"github.com/skycoin/services/coin-api/internal/multi"
 )
 
 const (
