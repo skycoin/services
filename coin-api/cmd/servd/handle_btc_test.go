@@ -19,11 +19,11 @@ type checker struct {
 	txStatus *btc.TxStatus
 }
 
-func (b checker) CheckBalance(address string) (float64, error) {
+func (b checker) CheckBalance(address string) (interface{}, error) {
 	return b.expected, nil
 }
 
-func (b checker) CheckTxStatus(txId string) (*btc.TxStatus, error) {
+func (b checker) CheckTxStatus(txId string) (interface{}, error) {
 	return b.txStatus, nil
 }
 
