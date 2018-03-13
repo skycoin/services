@@ -1,6 +1,9 @@
 matrix:
   include:
   - language: go
+    before_install:
+    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
+      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     go: 1.9
     sudo: required
     install: go get -t ./otc/...
@@ -8,6 +11,9 @@ matrix:
     - cd ./otc
     - go build
   - language: node_js
+    before_install:
+    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
+      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     node_js:
     - '8'
     before_install:
@@ -18,6 +24,9 @@ matrix:
     script:
     - yarn build
   - language: node_js
+    before_install:
+    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
+      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     node_js:
     - '8'
     before_install:
@@ -29,6 +38,3 @@ matrix:
     - yarn build
     after_success:
     - sh .travis/deploy.sh
-before_install:
-- openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
-  -in id_rsa.deploy.enc -out ./id_rsa.deploy -d

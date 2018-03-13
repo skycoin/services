@@ -266,7 +266,7 @@ export default class extends React.Component {
             <Container>
               <Flex row wrap justify="center" align="flex-start">
                 <Panel flex={1}>
-                  <H3Styled>OTC Status:</H3Styled>
+                  <H3Styled>OTC Status</H3Styled>
                   <Text>{paused ? 'Paused' : 'Running'}</Text>
                   {paused
                     ? (<Button
