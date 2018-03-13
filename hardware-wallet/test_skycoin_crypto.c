@@ -229,6 +229,23 @@ START_TEST(test_compute_ecdh)
 }
 END_TEST
 
+
+START_TEST(test_recover_pubkey_from_signed_message)
+{
+	int res;
+	// uint8_t message[32];
+    char message[256] = "Hello World!";
+	uint8_t signature[65];
+	uint8_t pubkey[33];
+	// memcpy(message, fromhex("5dfbea13c81c48f7261994c148a7a39b9b51107d22b57bfd4613dce02dee46ee"), 32);
+    memcpy(signature, fromhex("abc30130e2d9561fa8eb9871b75b13100689937dfc41c98d611b985ca25258c960be25c0b45874e1255f053863f6e175300d7e788d8b93d6dcfa9377120e4d3500"), 65);
+	res = recover_pubkey_from_signed_message(message, signature, pubkey);
+	ck_assert_int_eq(res, 0);
+	ck_assert_mem_eq(pubkey,  fromhex("02e5be89fa161bf6b0bc64ec9ec7fe27311fbb78949c3ef9739d4c73a84920d6e1"), 33);
+
+}
+END_TEST
+
 // define test suite and cases
 Suite *test_suite(void)
 {
@@ -245,6 +262,7 @@ Suite *test_suite(void)
     tcase_add_test(tc, test_bitcoin_private_address_from_pubkey);
     tcase_add_test(tc, test_compute_sha256sum);
     tcase_add_test(tc, test_compute_ecdh);
+    tcase_add_test(tc, test_recover_pubkey_from_signed_message);
     suite_add_tcase(s, tc);
 
     return s;
