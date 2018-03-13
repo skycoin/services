@@ -24,16 +24,20 @@ func TestCheckBalance(t *testing.T) {
 
 	service := ServiceBtc{
 		nodeAddress:   "0.0.0.0",
-		retryCount:    1,
 		client:        client,
-		isOpen:        0,
-		openTimeout:   time.Second * 10,
 		blockExplorer: "https://api.blockcypher.com",
 	}
 
+	// Create circuit breaker for btc service
+	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode,
+		service.getBalanceFromExplorer,
+		time.Second*10,
+		3)
+	service.balanceCircuitBreaker = balanceCircuitBreaker
+
 	service.CheckBalance("02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc")
 
-	if !service.IsOpen() {
+	if !service.balanceCircuitBreaker.IsOpen() {
 		t.Error("Expected curcuit breaker to be open, actual closed")
 	}
 }
@@ -54,26 +58,31 @@ func TestServiceBtcCheckTxStatus(t *testing.T) {
 
 	service := ServiceBtc{
 		nodeAddress:   "0.0.0.0",
-		retryCount:    1,
 		client:        client,
-		isOpen:        0,
-		openTimeout:   time.Second * 10,
 		blockExplorer: "https://api.blockcypher.com",
 	}
 
-	status, err := service.CheckTxStatus("f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449")
+	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode,
+		service.getTxStatusFromExplorer,
+		time.Second*10,
+		3)
+	service.txStatusCircuitBreaker = txStatusCircuitBreaker
+
+	result, err := service.CheckTxStatus("f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449")
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	status, _ := result.(*TxStatus)
+
 	if status.Confirmations == 0 {
 		t.Errorf("Transaction confirmations must be greater than zero")
 		return
 	}
 
-	if !service.IsOpen() {
+	if !service.txStatusCircuitBreaker.IsOpen() {
 		t.Error("Expected curcuit breaker to be open, actual closed")
 	}
 }
