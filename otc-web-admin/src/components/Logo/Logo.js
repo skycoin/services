@@ -23,13 +23,13 @@ const Img = styled.img.attrs({
 
 const Logo = props => (
   <Flex>
-    <Box width="50%">
+    <Box>
       <StyledLink to="/">
         <Img {...props} src={props.white ? logoWhite : logo} />
       </StyledLink>
     </Box>
-    <Box width="50%">
-      <Text as="h3" style={{ marginTop: '10px', marginLeft: '5px' }}> OTC Admin</Text>
+    <Box>
+      <Text as="h3" style={{ marginTop: '13px', marginLeft: '5px' }}> OTC Admin</Text>
     </Box>
   </Flex>
 );

@@ -4,7 +4,7 @@ User="aaa"
 Password="123"
 CertFile=""
 TLS=false
-BlockExplorer="https://blockchain.info"
+BlockExplorer="https://api.blockcypher.com"
 
 [skycoin]
 Host="127.0.0.1"

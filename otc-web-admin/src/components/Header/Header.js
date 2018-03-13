@@ -18,7 +18,7 @@ const Header = ({ white, border }) => (
   <Wrapper border={border}>
     <Container>
       <Flex align="center" wrap>
-        <Box width={[1 / 1, 1 / 4]}>
+        <Box>
           <Logo white={white} />
         </Box>
       </Flex>

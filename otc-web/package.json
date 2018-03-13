@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "axios": "^0.16.2",
-    "flag": "^2.0.3",
+    "flag": "^2.0.4",
     "flat": "^2.0.1",
     "grid-styled": "^2.0.0-9",
     "hidden-styled": "^1.0.0-0",
