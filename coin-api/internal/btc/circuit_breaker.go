@@ -81,3 +81,7 @@ func (c *CircuitBreaker) Do(arg string) (interface{}, error) {
 
 	return result, nil
 }
+
+func (c *CircuitBreaker) IsOpen() bool {
+	return c.isOpen == 1
+}

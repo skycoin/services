@@ -8,8 +8,9 @@ import (
 	"github.com/labstack/echo"
 	"github.com/skycoin/skycoin/src/cipher"
 
-	"github.com/skycoin/services/coin-api/internal/btc"
 	"github.com/pkg/errors"
+
+	"github.com/skycoin/services/coin-api/internal/btc"
 )
 
 type keyPairResponse struct {
