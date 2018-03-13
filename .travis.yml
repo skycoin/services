@@ -4,9 +4,10 @@ matrix:
     before_install:
     - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
       -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
-    go: 1.9
+    go:
+    - 1.9
     sudo: required
-    # install: go get -t ./otc/...
+    install: true
     script:
     - cd ./otc
     - go build
