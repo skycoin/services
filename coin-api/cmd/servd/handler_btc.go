@@ -80,7 +80,7 @@ func (h *handlerBTC) generateKeyPair(ctx echo.Context) error {
 	}
 
 	// Write response with newly created key pair
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSONPretty(http.StatusCreated, resp, "\t")
 	return nil
 }
 
@@ -119,7 +119,7 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 		},
 	}
 
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSONPretty(http.StatusCreated, resp, "\t")
 	return nil
 }
 
@@ -165,7 +165,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		},
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSONPretty(http.StatusOK, resp, "\t")
 	return nil
 }
 
