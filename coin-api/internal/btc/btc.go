@@ -133,8 +133,8 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 		blockExplorer: blockExplorer,
 	}
 
-	balanceCircuitBreaker := NewCurcuitBreaker(service.getBalanceFromNode, service.getBalanceFromExplorer, time.Second*10, 3)
-	txStatusCircuitBreaker := NewCurcuitBreaker(service.getTxStatusFromNode, service.getTxStatusFromExplorer, time.Second*10, 3)
+	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode, service.getBalanceFromExplorer, time.Second*10, 3)
+	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode, service.getTxStatusFromExplorer, time.Second*10, 3)
 
 	service.balanceCircuitBreaker = balanceCircuitBreaker
 	service.txStatusCircuitBreaker = txStatusCircuitBreaker

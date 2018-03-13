@@ -29,7 +29,7 @@ func TestCheckBalance(t *testing.T) {
 	}
 
 	// Create circuit breaker for btc service
-	balanceCircuitBreaker := NewCurcuitBreaker(service.getBalanceFromNode,
+	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode,
 		service.getBalanceFromExplorer,
 		time.Second*10,
 		3)
@@ -62,7 +62,7 @@ func TestServiceBtcCheckTxStatus(t *testing.T) {
 		blockExplorer: "https://api.blockcypher.com",
 	}
 
-	txStatusCircuitBreaker := NewCurcuitBreaker(service.getTxStatusFromNode,
+	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode,
 		service.getTxStatusFromExplorer,
 		time.Second*10,
 		3)

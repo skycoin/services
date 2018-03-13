@@ -18,7 +18,7 @@ type CircuitBreaker struct {
 	retryCount  uint
 }
 
-func NewCurcuitBreaker(success, fallback func(string) (interface{}, error), openTimeout time.Duration, retryCount uint) *CircuitBreaker {
+func NewCircuitBreaker(success, fallback func(string) (interface{}, error), openTimeout time.Duration, retryCount uint) *CircuitBreaker {
 	return &CircuitBreaker{
 		success:  success,
 		fallback: fallback,
