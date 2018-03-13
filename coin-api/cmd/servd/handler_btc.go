@@ -9,6 +9,7 @@ import (
 	"github.com/skycoin/skycoin/src/cipher"
 
 	"github.com/skycoin/services/coin-api/internal/btc"
+	"github.com/pkg/errors"
 )
 
 type keyPairResponse struct {
@@ -126,10 +127,16 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 	txId := ctx.Param("transid")
-	status, err := h.checker.CheckTxStatus(txId)
+	result, err := h.checker.CheckTxStatus(txId)
 
 	if err != nil {
 		return handleError(ctx, err)
+	}
+
+	status, ok := result.(*btc.TxStatus)
+
+	if !ok {
+		return handleError(ctx, errors.New("cannot convert result to *TxStatus"))
 	}
 
 	ctx.JSONPretty(http.StatusOK, struct {
@@ -147,10 +154,16 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
-	balance, err := h.checker.CheckBalance(address)
+	result, err := h.checker.CheckBalance(address)
 
 	if err != nil {
 		return handleError(ctx, err)
+	}
+
+	balance, ok := result.(float64)
+
+	if !ok {
+		return handleError(ctx, errors.New("cannot convert result to type float64"))
 	}
 
 	resp := struct {
@@ -175,8 +188,7 @@ func (h handlerBTC) CollectStatuses(stats *Status) {
 	stats.Lock()
 	defer stats.Unlock()
 	stats.Stats["btc"] = &BtcStats{
-		NodeHost:   h.btcService.GetHost(),
-		NodeStatus: h.btcService.IsOpen(),
+		NodeHost: h.btcService.GetHost(),
 	}
 }
 

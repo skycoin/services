@@ -47,10 +47,12 @@ ig==
 type ServiceBtc struct {
 	nodeAddress string
 	client      *rpcclient.Client
+
 	// Circuit breaker related fields
-	isOpen        uint32
-	openTimeout   time.Duration
-	retryCount    uint
+	balanceCircuitBreaker  *CircuitBreaker
+	txStatusCircuitBreaker *CircuitBreaker
+
+	// Block explorer url
 	blockExplorer string
 }
 
@@ -122,18 +124,22 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 	}, nil)
 
 	if err != nil {
-		//TODO: handle that stuff more meaningful way
 		return nil, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
 	}
 
-	return &ServiceBtc{
+	service := &ServiceBtc{
 		nodeAddress:   btcAddr,
 		client:        client,
-		retryCount:    3,
-		openTimeout:   time.Second * 10,
-		isOpen:        0,
 		blockExplorer: blockExplorer,
-	}, nil
+	}
+
+	balanceCircuitBreaker := NewCurcuitBreaker(service.getBalanceFromNode, service.getBalanceFromExplorer, time.Second*10, 3)
+	txStatusCircuitBreaker := NewCurcuitBreaker(service.getTxStatusFromNode, service.getTxStatusFromExplorer, time.Second*10, 3)
+
+	service.balanceCircuitBreaker = balanceCircuitBreaker
+	service.txStatusCircuitBreaker = txStatusCircuitBreaker
+
+	return service, nil
 }
 
 // GenerateAddr generates an address for bitcoin
@@ -154,113 +160,15 @@ func (s ServiceBtc) GenerateKeyPair() (cipher.PubKey, cipher.SecKey) {
 }
 
 // CheckBalance checks a balance for given bitcoin wallet
-func (s *ServiceBtc) CheckBalance(address string) (float64, error) {
-	// If breaker is open - get info from block explorer
-	if s.isOpen == 1 {
-		balance, err := s.getBalanceFromExplorer(address)
-
-		if err != nil {
-			return 0, err
-		}
-
-		return balance, nil
-	}
-
-	var i uint = 0
-
-	balance, err := s.getBalanceFromNode(address)
-	if err != nil {
-		log.Printf("Get balance from node returned error %s", err.Error())
-	}
-
-	for i < s.retryCount && err != nil {
-		if err != nil {
-			log.Printf("Get balance from node returned error %s", err.Error())
-		}
-
-		balance, err = s.getBalanceFromNode(address)
-
-		if err != nil {
-			time.Sleep(time.Millisecond * time.Duration(1<<i) * 100)
-		}
-		i++
-	}
-
-	if err != nil {
-		s.isOpen = 1
-
-		go func() {
-			time.Sleep(s.openTimeout)
-			// This assignment is atomic since on 64-bit platforms this operation is atomic
-			s.isOpen = 0
-		}()
-
-		balance, err := s.getBalanceFromExplorer(address)
-
-		if err != nil {
-			return 0.0, err
-		}
-
-		return balance, nil
-	}
-
-	return balance, nil
+func (s *ServiceBtc) CheckBalance(address string) (interface{}, error) {
+	return s.balanceCircuitBreaker.Do(address)
 }
 
-func (s *ServiceBtc) CheckTxStatus(txId string) (*TxStatus, error) {
-	// If breaker is open - get info from block explorer
-	if s.isOpen == 1 {
-		status, err := s.getTxStatusFromExplorer(txId)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return status, nil
-	}
-
-	var i uint = 0
-
-	status, err := s.getTxStatusFromNode(txId)
-	if err != nil {
-		log.Printf("Get status from node returned error %s", err.Error())
-	}
-
-	for i < s.retryCount && err != nil {
-		if err != nil {
-			log.Printf("Get status from node returned error %s", err.Error())
-		}
-
-		status, err = s.getTxStatusFromNode(txId)
-
-		if err != nil {
-			time.Sleep(time.Millisecond * time.Duration(1<<i) * 100)
-		}
-		i++
-	}
-
-	if err != nil {
-		s.isOpen = 1
-
-		go func() {
-			time.Sleep(s.openTimeout)
-			// This assignment is atomic since on 64-bit platforms this operation is atomic
-			s.isOpen = 0
-		}()
-
-		status, err := s.getTxStatusFromExplorer(txId)
-
-		if err != nil {
-			return status, err
-		}
-
-		return status, nil
-	}
-
-	return status, nil
+func (s *ServiceBtc) CheckTxStatus(txId string) (interface{}, error) {
+	return s.txStatusCircuitBreaker.Do(txId)
 }
 
-func (s *ServiceBtc) getTxStatusFromNode(txId string) (*TxStatus, error) {
+func (s *ServiceBtc) getTxStatusFromNode(txId string) (interface{}, error) {
 	hash, err := chainhash.NewHash([]byte(txId))
 
 	if err != nil {
@@ -293,7 +201,7 @@ func (s *ServiceBtc) getTxStatusFromNode(txId string) (*TxStatus, error) {
 	return txStatus, nil
 }
 
-func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (*TxStatus, error) {
+func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
 	url := s.blockExplorer + txStatusDefaultEndpoint + txId
 	resp, err := http.Get(url)
 
@@ -331,7 +239,7 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (*TxStatus, error) {
 	return txStatus, nil
 }
 
-func (s *ServiceBtc) getBalanceFromNode(address string) (float64, error) {
+func (s *ServiceBtc) getBalanceFromNode(address string) (interface{}, error) {
 	// First get an address in proper form
 	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
 
@@ -359,7 +267,7 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (float64, error) {
 	return balance, nil
 }
 
-func (s *ServiceBtc) getBalanceFromExplorer(address string) (float64, error) {
+func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error) {
 	url := s.blockExplorer + walletBalanceDefaultEndpoint + address
 	resp, err := http.Get(url)
 
@@ -376,11 +284,6 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (float64, error) {
 	}
 
 	return r.FinalBalance, nil
-}
-
-// Api method for monitoring btc service circuit breaker
-func (s *ServiceBtc) IsOpen() bool {
-	return s.isOpen == 1
 }
 
 func (s *ServiceBtc) GetHost() string {
