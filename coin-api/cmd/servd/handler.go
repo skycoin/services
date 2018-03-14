@@ -3,15 +3,15 @@ package servd
 import (
 	"net/http"
 
-	"encoding/json"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/labstack/echo"
 	"github.com/skycoin/skycoin/src/visor"
 
 	"github.com/skycoin/services/coin-api/internal/locator"
+	"github.com/skycoin/services/coin-api/internal/model"
 	"github.com/skycoin/services/coin-api/internal/multi"
+	"github.com/skycoin/services/errhandler"
 )
 
 type handlerMulti struct {
@@ -33,86 +33,140 @@ func newHandlerMulti(host string, port int) *handlerMulti {
 
 // generateKeys returns a keypair
 func (h *handlerMulti) generateKeys(e echo.Context) error {
-	rsp := h.service.GenerateKeyPair()
-	data, err := json.Marshal(rsp)
-	if err != nil || rsp.Code != 0 {
-		log.Errorf("unable to generate key, rsp code is %d, error %v", rsp.Code, err)
-		return err
+	keysResponse := h.service.GenerateKeyPair()
+	rsp := struct {
+		Status string              `json:"status"`
+		Code   int                 `json:"code"`
+		Result *model.KeysResponse `json:"result"`
+	}{
+		Status: model.StatusOk,
+		Code:   0,
+		Result: keysResponse,
 	}
-	return e.JSONBlob(http.StatusCreated, data)
+
+	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
 func (h *handlerMulti) generateSeed(e echo.Context) error {
-	// key := e.QueryParam("key")
-	// TODO: in service implementation, seems, we don't need a key, check the service logic
-	rsp, err := h.service.GenerateAddr(1, true)
-	data, err := json.Marshal(rsp)
+	key := e.QueryParam("key")
+	addressResponse, err := h.service.GenerateAddr(key)
 	if err != nil {
-		log.Errorf("error encoding response %v, code %d", err, rsp.Code)
-		return err
-	}
-	if rsp.Code != 0 {
-		e.JSONBlob(http.StatusNotFound, data)
+		log.Errorf("error encoding response %v, code", err)
+		rsp := struct {
+			Status string                 `json:"status"`
+			Code   int                    `json:"code"`
+			Result *model.AddressResponse `json:"result"`
+		}{
+			Status: model.StatusError,
+			Code:   errhandler.RPCInvalidAddressOrKey,
+			Result: &model.AddressResponse{},
+		}
+
+		return e.JSONPretty(http.StatusNotFound, rsp, "\t")
 	}
 
-	return e.JSONBlob(http.StatusCreated, data)
+	rsp := struct {
+		Status string                 `json:"status"`
+		Code   int                    `json:"code"`
+		Result *model.AddressResponse `json:"result"`
+	}{
+		Status: model.StatusOk,
+		Code:   0,
+		Result: addressResponse,
+	}
+
+	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
 func (h *handlerMulti) checkBalance(e echo.Context) error {
 	address := e.QueryParam("address")
-	rsp, err := h.service.CheckBalance(address)
+	balanceResponse, err := h.service.CheckBalance(address)
 	if err != nil {
 		log.Errorf("balance checking error %v", err)
+		rsp := struct {
+			Status string                 `json:"status"`
+			Code   int                    `json:"code"`
+			Result *model.BalanceResponse `json:"result"`
+		}{
+			Status: model.StatusError,
+			Code:   errhandler.RPCInvalidAddressOrKey,
+			Result: &model.BalanceResponse{},
+		}
+
+		return e.JSONPretty(http.StatusNotFound, rsp, "\t")
 	}
-	data, err := json.Marshal(rsp)
-	if err != nil {
-		log.Errorf("encoding response error %v", err)
-		return err
+
+	rsp := struct {
+		Status string                 `json:"status"`
+		Code   int                    `json:"code"`
+		Result *model.BalanceResponse `json:"result"`
+	}{
+		Status: model.StatusOk,
+		Code:   0,
+		Result: balanceResponse,
 	}
-	if rsp.Code != 0 {
-		return e.JSONBlob(http.StatusNotFound, data)
-	}
-	return e.JSONBlob(http.StatusOK, data)
+
+	return e.JSONPretty(http.StatusOK, rsp, "\t")
 }
 
 func (h *handlerMulti) signTransaction(e echo.Context) error {
-	//TODO: signid in request seems excessive here
-	transid := e.QueryParam("transid")
+	transid := e.QueryParam("signid")
 	srcTrans := e.QueryParam("sourceTrans")
-	rsp, err := h.service.SignTransaction(transid, srcTrans)
+	transactionSign, err := h.service.SignTransaction(transid, srcTrans)
 	if err != nil {
 		log.Errorf("sign transaction error %v", err)
-		return err
+		rsp := struct {
+			Status string                 `json:"status"`
+			Code   int                    `json:"code"`
+			Result *model.TransactionSign `json:"result"`
+		}{
+			Status: model.StatusError,
+			Code:   errhandler.RPCTransactionError,
+			Result: &model.TransactionSign{},
+		}
+		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
-	data, err := json.Marshal(rsp)
-	if err != nil {
-		log.Errorf("error encoding %v", err)
-		return err
+
+	rsp := struct {
+		Status string                 `json:"status"`
+		Code   int                    `json:"code"`
+		Result *model.TransactionSign `json:"result"`
+	}{
+		Status: model.StatusOk,
+		Code:   0,
+		Result: transactionSign,
 	}
-	if rsp.Code != 0 {
-		e.JSONBlob(http.StatusNotFound, data)
-	}
-	return e.JSONBlob(http.StatusOK, data)
+	return e.JSONPretty(http.StatusOK, &rsp, "\t")
 }
 
 func (h *handlerMulti) injectTransaction(e echo.Context) error {
-	// netid := e.QueryParam("netid")
 	transid := e.Param("transid")
-	rsp, err := h.service.InjectTransaction(transid)
+	injectedTransaction, err := h.service.InjectTransaction(transid)
 	if err != nil {
 		log.Errorf("inject transaction error %v", err)
-		return err
+		rsp := struct {
+			Status string             `json:"status"`
+			Code   int                `json:"code"`
+			Result *model.Transaction `json:"result"`
+		}{
+			Status: model.StatusError,
+			Code:   errhandler.RPCTransactionRejected,
+			Result: &model.Transaction{},
+		}
+		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
-	data, err := json.Marshal(rsp)
-	if err != nil {
-		log.Errorf("responce encoding error %v", err)
-		return err
+
+	rsp := struct {
+		Status string             `json:"status"`
+		Code   int                `json:"code"`
+		Result *model.Transaction `json:"result"`
+	}{
+		Status: model.StatusOk,
+		Code:   0,
+		Result: injectedTransaction,
 	}
-	if rsp.Code != 0 {
-		log.Warningf("response error %d", rsp.Code)
-		return e.JSONBlob(http.StatusNotFound, data)
-	}
-	return e.JSONBlob(http.StatusCreated, data)
+
+	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
 func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
@@ -125,7 +179,7 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 			Code   int    `json:"code"`
 			Result string `json:"result"`
 		}{
-			"Ok",
+			model.StatusOk,
 			0,
 			err.Error(),
 		}, "\t")
@@ -136,8 +190,8 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 		Code   int                     `json:"code"`
 		Result visor.TransactionStatus `json:"result"`
 	}{
-		"Ok",
-		http.StatusOK,
+		model.StatusOk,
+		0,
 		*status,
 	}, "\t")
 

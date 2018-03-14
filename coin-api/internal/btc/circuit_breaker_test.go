@@ -2,32 +2,33 @@ package btc
 
 import (
 	"testing"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func TestCircuitBreakerDo(t *testing.T) {
 	var success = "success"
 
-	testData := []struct{
+	testData := []struct {
 		success  func(string) (interface{}, error)
 		fallback func(string) (interface{}, error)
 		expected bool
 	}{
 		{
-			success: func(arg string) (interface{}, error){
+			success: func(arg string) (interface{}, error) {
 				return success, nil
 			},
-			fallback: func(arg string) (interface{}, error){
+			fallback: func(arg string) (interface{}, error) {
 				return struct{}{}, nil
 			},
 			expected: true,
 		},
 		{
-			success: func(arg string) (interface{}, error){
+			success: func(arg string) (interface{}, error) {
 				return struct{}{}, errors.New("error")
 			},
-			fallback: func(arg string) (interface{}, error){
+			fallback: func(arg string) (interface{}, error) {
 				return success, nil
 			},
 			expected: false,
@@ -36,12 +37,12 @@ func TestCircuitBreakerDo(t *testing.T) {
 
 	for _, test := range testData {
 		circuitBreaker := CircuitBreaker{
-			success: test.success,
+			success:  test.success,
 			fallback: test.fallback,
 
-			isOpen: 0,
+			isOpen:      0,
 			openTimeout: time.Second * 10,
-			retryCount: 3,
+			retryCount:  3,
 		}
 
 		result, err := circuitBreaker.Do("")

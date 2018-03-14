@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"reflect"
 
-	ehandler "github.com/skycoin/services/errhandler"
 	"github.com/skycoin/skycoin/src/api/cli"
 	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/visor"
-	"github.com/skycoin/skycoin/src/wallet"
 
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
@@ -60,40 +58,29 @@ func getSeed() string {
 }
 
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
-func (s *SkyСoinService) GenerateAddr(count int, hideSecret bool) (*model.Response, error) {
-	seed := getSeed()
-	w, err := wallet.CreateAddresses(wallet.CoinTypeSkycoin, seed, count, false)
-	if err != nil {
-		return nil, err
-	}
+func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *model.AddressResponse, err error) {
+	maddr = &model.AddressResponse{}
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("error generating address %s", r)
+		}
+	}()
+	pubKey := cipher.MustPubKeyFromHex(pubStr)
+	address := cipher.AddressFromPubKey(pubKey)
 
-	entry := w.Entries[0]
-	rsp := model.Response{
-		Status: model.StatusOk,
-		Code:   0,
-		Result: &model.AddressResponse{
-			Address: entry.Address,
-		},
-	}
-
-	return &rsp, nil
+	maddr.Address = address.String()
+	return maddr, nil
 }
 
 // GenerateKeyPair generates key pairs
-func (s *SkyСoinService) GenerateKeyPair() *model.Response {
+func (s *SkyСoinService) GenerateKeyPair() *model.KeysResponse {
 	seed := getRand()
 	rand.Read(seed)
 	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
-	rsp := model.Response{
-		Status: model.StatusOk,
-		Code:   0,
-		Result: &model.KeysResponse{
-			Private: pub.Hex(),
-			Public:  sec.Hex(),
-		},
+	return &model.KeysResponse{
+		Private: pub.Hex(),
+		Public:  sec.Hex(),
 	}
-
-	return &rsp
 }
 
 func getBalanceAddress(br *cli.BalanceResult) string {
@@ -105,40 +92,31 @@ func getBalanceAddress(br *cli.BalanceResult) string {
 }
 
 // CheckBalance check the balance (and get unspent outputs) for an address
-func (s *SkyСoinService) CheckBalance(addr string) (*model.Response, error) {
+func (s *SkyСoinService) CheckBalance(addr string) (*model.BalanceResponse, error) {
 	addressesToGetBalance := make([]string, 0, 1)
 	addressesToGetBalance = append(addressesToGetBalance, addr)
 	balanceResult, err := s.checkBalance(s.client, addressesToGetBalance)
 	if err != nil {
 		return nil, err
 	}
-	rsp := model.Response{
-		Status: model.StatusOk,
-		Code:   model.CodeNoError,
-		Result: &model.BalanceResponse{
-			Address: getBalanceAddress(balanceResult),
-			Hours:   balanceResult.Spendable.Hours,
-			Balance: balanceResult.Spendable.Coins,
-			// balanceResult.
-			// 	Coin: model.Coin{
-			// //TODO: fill data here
-			// },
-		},
-	}
 
-	return &rsp, nil
+	return &model.BalanceResponse{
+		Address: getBalanceAddress(balanceResult),
+		Hours:   balanceResult.Spendable.Hours,
+		Balance: balanceResult.Spendable.Coins,
+		// balanceResult.
+		// 	Coin: model.Coin{
+		// //TODO: maybe coin info will required in the nearest future
+		// },
+	}, nil
 }
 
 // SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.Response, err error) {
-	//TODO: VERIFY this sign transaction logic
-	rsp = &model.Response{}
-
+func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.TransactionSign, err error) {
+	rsp = &model.TransactionSign{}
 	defer func() {
 		if r := recover(); r != nil {
-			rsp.Status = model.StatusError
-			rsp.Code = ehandler.RPCTransactionError
-			rsp.Result = &model.TransactionSign{}
+			err = fmt.Errorf("error signing transaction %s", r)
 		}
 	}()
 	cipherSecKey, err := cipher.SecKeyFromHex(transID)
@@ -162,12 +140,7 @@ func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.
 	//TODO: DO I need it here? -> PushOutput Adds a TransactionOutput, sending coins & hours to an Address
 	//TODO: maybe we have to show all signatures?
 	signid := trans.Sigs[0]
-	rsp.Status = model.StatusOk
-	rsp.Code = 0
-	rsp.Result = &model.TransactionSign{
-		Signid: signid.Hex(),
-	}
-
+	rsp.Signid = signid.Hex()
 	return rsp, nil
 }
 
@@ -188,7 +161,7 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 }
 
 // InjectTransaction inject transaction into network
-func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Response, error) {
+func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Transaction, error) {
 	injectedT, err := s.client.InjectTransactionString(rawtx)
 	if err != nil {
 		return nil, err
@@ -204,14 +177,9 @@ func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Response, erro
 	} else {
 		tStatus = "unconfirmed"
 	}
-	rsp := model.Response{
-		Status: model.StatusOk,
-		Code:   0,
-		Result: &model.Transaction{
-			Transid: injectedT,
-			Status:  tStatus,
-		},
-	}
 
-	return &rsp, nil
+	return &model.Transaction{
+		Transid: injectedT,
+		Status:  tStatus,
+	}, nil
 }
