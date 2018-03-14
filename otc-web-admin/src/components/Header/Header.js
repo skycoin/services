@@ -7,6 +7,7 @@ import { rem } from 'polished';
 import { SPACE, COLORS } from 'config';
 import Container from '../Container';
 import Logo from '../Logo';
+import Navigation from './components/Navigation';
 
 const Wrapper = styled.div`
   padding: ${rem(SPACE[6])} 0;
@@ -18,8 +19,12 @@ const Header = ({ white, border }) => (
   <Wrapper border={border}>
     <Container>
       <Flex align="center" wrap>
-        <Box>
+        <Box width={[1 / 1, 1 / 4]}>
           <Logo white={white} />
+        </Box>
+
+        <Box width={[1 / 1, 3 / 4]}>
+          <Navigation white={white} />
         </Box>
       </Flex>
     </Container>
