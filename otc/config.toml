@@ -1,6 +1,6 @@
 [SKY]
 node = "localhost:6430"
-seed = "seed"
+seed = "otc"
 name = "otc"
 
 [BTC]
@@ -9,3 +9,9 @@ user = "otc"
 pass = "otc"
 account = "otc"
 testnet = true
+
+[API.Public]
+listen = ":8081"
+
+[API.Admin]
+listen = ":8080"

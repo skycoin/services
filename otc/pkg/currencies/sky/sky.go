@@ -36,16 +36,39 @@ func New(conf *otc.Config) (*Connection, error) {
 	}
 
 	// TODO: config to put coins in one address?
-	_ = w.GenerateAddresses(100)
+	_ = w.GenerateAddresses(10)
 	conn := &Connection{Wallet: w, Client: c}
 	conn.FromAddrs = conn.getFromAddrs()
 
 	return conn, nil
 }
 
-// TODO
+func (c *Connection) Used() ([]string, error) {
+	var (
+		addrs = c.Wallet.GetAddresses()
+		out   = make([]string, len(addrs), len(addrs))
+	)
+
+	// convert to string
+	for i := range addrs {
+		out[i] = addrs[i].String()
+	}
+
+	return out, nil
+}
+
 func (c *Connection) Balance(addr string) (uint64, error) {
-	return 0, nil
+	unspent, err := c.Client.GetUnspentOutputs([]string{addr})
+	if err != nil {
+		return 0, err
+	}
+
+	balance, err := unspent.Outputs.SpendableOutputs().Balance()
+	if err != nil {
+		return 0, err
+	}
+
+	return balance.Coins, nil
 }
 
 func (c *Connection) Holding() (uint64, error) {

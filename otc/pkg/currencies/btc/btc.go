@@ -49,6 +49,27 @@ func New(conf *otc.Config) (*Connection, error) {
 		return nil, err
 	}
 
+	accounts, err := client.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	found := false
+	for account, _ := range accounts {
+		if account == conf.BTC.Account {
+			found = true
+		}
+	}
+
+	if !found {
+		if err = client.WalletPassphrase(conf.BTC.Pass, 1); err != nil {
+			return nil, err
+		}
+		if err = client.CreateNewAccount(conf.BTC.Account); err != nil {
+			return nil, err
+		}
+	}
+
 	return &Connection{
 		Client:  client,
 		Account: conf.BTC.Account,
@@ -57,8 +78,17 @@ func New(conf *otc.Config) (*Connection, error) {
 }
 
 // TODO
+func (c *Connection) Used() ([]string, error) {
+	return nil, nil
+}
+
 func (c *Connection) Holding() (uint64, error) {
-	return 0, nil
+	holding, err := c.Client.GetBalance(c.Account)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(holding), nil
 }
 
 func (c *Connection) Balance(addr string) (uint64, error) {
