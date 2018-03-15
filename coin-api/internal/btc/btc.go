@@ -169,11 +169,8 @@ func (s *ServiceBtc) CheckTxStatus(txId string) (interface{}, error) {
 }
 
 func (s *ServiceBtc) getTxStatusFromNode(txId string) (interface{}, error) {
-	hash, err := chainhash.NewHash([]byte(txId))
-
-	if err != nil {
-		return nil, err
-	}
+	hash := &chainhash.Hash{}
+	chainhash.Decode(hash, txId)
 
 	rawTx, err := s.client.GetTransaction(hash)
 
