@@ -20,6 +20,7 @@ type Connection interface {
 	Confirmed(string) (bool, error)
 	Send(string, uint64) (string, error)
 	Address() (string, error)
+	Used() ([]string, error)
 	Connected() (bool, error)
 	Holding() (uint64, error)
 	Stop() error
@@ -68,6 +69,14 @@ func (c *Currencies) Add(curr otc.Currency, conn Connection) error {
 	}
 
 	return nil
+}
+
+func (c *Currencies) Used(curr otc.Currency) ([]string, error) {
+	if c.Connections[curr] == nil {
+		return nil, ErrConnMissing
+	}
+
+	return c.Connections[curr].Used()
 }
 
 func (c *Currencies) Holding(curr otc.Currency) (uint64, error) {

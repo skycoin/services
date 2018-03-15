@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -17,15 +18,36 @@ const (
 	LOGS string = "logs/"
 )
 
+type File struct {
+	Request *otc.Request `json:"request"`
+	Events  []*otc.Event `json:"events"`
+}
+
 func Save(req *otc.Request, res *otc.Result) error {
-	file, err := os.OpenFile(
-		PATH+REQS+req.Id()+".json",
-		os.O_CREATE|os.O_RDWR,
-		0644,
-	)
+	file, err := os.OpenFile(PATH+REQS+req.Id()+".json", os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
+
+	data := new(File)
+	if err = json.NewDecoder(file).Decode(&data); err != nil && err != io.EOF {
+		return err
+	}
+
+	// create new event
+	event := &otc.Event{
+		Status:   req.Status,
+		Finished: res.Finished,
+	}
+	if res.Err != nil {
+		event.Err = res.Err.Error()
+	}
+
+	// copy updated request
+	data.Request = req
+
+	// append new event
+	data.Events = append(data.Events, event)
 
 	// empty file
 	file.Truncate(0)
@@ -36,7 +58,7 @@ func Save(req *otc.Request, res *otc.Result) error {
 	enc.SetIndent("", "  ")
 
 	// write json to file
-	if err = enc.Encode(req); err != nil {
+	if err = enc.Encode(data); err != nil {
 		return err
 	}
 
@@ -50,10 +72,11 @@ func Save(req *otc.Request, res *otc.Result) error {
 		return err
 	}
 
-	return Log(req, res)
+	// log event to central file
+	return Log(req.Id(), event)
 }
 
-func Log(req *otc.Request, res *otc.Result) error {
+func Log(id string, event *otc.Event) error {
 	file, err := os.OpenFile(
 		PATH+LOGS+"log.json",
 		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
@@ -63,14 +86,8 @@ func Log(req *otc.Request, res *otc.Result) error {
 		return err
 	}
 
-	event := &otc.Event{
-		Id:       req.Id(),
-		Status:   req.Status,
-		Finished: res.Finished,
-	}
-	if res.Err != nil {
-		event.Err = res.Err.Error()
-	}
+	// add id to central log event
+	event.Id = id
 
 	if err = json.NewEncoder(file).Encode(&event); err != nil {
 		return err
@@ -132,11 +149,10 @@ func Read(path, filename string) (*otc.Request, error) {
 		return nil, err
 	}
 
-	var req *otc.Request
-
-	if err = json.NewDecoder(file).Decode(&req); err != nil {
+	data := new(File)
+	if err = json.NewDecoder(file).Decode(&data); err != nil {
 		return nil, err
 	}
 
-	return req, file.Close()
+	return data.Request, file.Close()
 }

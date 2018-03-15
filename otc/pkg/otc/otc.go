@@ -32,12 +32,13 @@ const (
 type Request struct {
 	sync.Mutex
 
-	Address string `json:"address"`
-	Status  Status `json:"status"`
-	TxId    string `json:"txid"`
-	Rate    *Rate  `json:"rate"`
-	Drop    *Drop  `json:"drop"`
-	Times   *Times `json:"timestamps"`
+	Affiliate string `json:"affiliate"`
+	Address   string `json:"address"`
+	Status    Status `json:"status"`
+	TxId      string `json:"txid"`
+	Rate      *Rate  `json:"rate"`
+	Drop      *Drop  `json:"drop"`
+	Times     *Times `json:"timestamps"`
 }
 
 func (r *Request) Id() string {
@@ -67,7 +68,7 @@ type Work struct {
 }
 
 type Event struct {
-	Id       string `json:"id"`
+	Id       string `json:"id,omitempty"`
 	Status   Status `json:"status"`
 	Finished int64  `json:"finished"`
 	Err      string `json:"error"`
