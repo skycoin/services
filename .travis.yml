@@ -6,7 +6,9 @@ matrix:
       -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     go: 1.9
     sudo: required
-    install: false
+    install: true
+    before_script:
+    - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/)
     script:
     - cd ./otc
     - go build
