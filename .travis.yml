@@ -6,7 +6,7 @@ matrix:
       -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     go: 1.9
     sudo: required
-    # install: go get -t ./otc/...
+    install: false
     script:
     - cd ./otc
     - go build
