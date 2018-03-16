@@ -1,18 +1,13 @@
 matrix:
   include:
   - language: go
+    go_import_path: github.com/alexey-belous/services
     before_install:
     - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
       -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     go: 1.9
     sudo: required
     install: true
-    before_script:
-    - cd ./otc
-    - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/) # All the .go files, excluding vendor/
-    - go get github.com/golang/lint/golint                        # Linter
-    - go get honnef.co/go/tools/cmd/megacheck                     # Badass static analyzer/linter
-    - go get github.com/fzipp/gocyclo
     script:
     - cd ./otc
     - go build
