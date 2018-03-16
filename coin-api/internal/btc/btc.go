@@ -4,18 +4,17 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log"
 
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcutil"
+	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
 	"github.com/skycoin/skycoin/src/cipher"
+	"log"
 )
 
 const (
@@ -54,6 +53,9 @@ type ServiceBtc struct {
 
 	// Block explorer url
 	blockExplorer string
+
+	// How deep we will analyze blockchain for deposits on address
+	blockDepth int64
 }
 
 type TxStatus struct {
@@ -93,7 +95,8 @@ type explorerAddressResponse struct {
 }
 
 // NewBTCService returns ServiceBtc instance
-func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*ServiceBtc, error) {
+func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool,
+	cert []byte, blockExplorer string, blockDepth int64) (*ServiceBtc, error) {
 	if len(btcAddr) == 0 {
 		btcAddr = defaultAddr
 	}
@@ -131,6 +134,7 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byt
 		nodeAddress:   btcAddr,
 		client:        client,
 		blockExplorer: blockExplorer,
+		blockDepth:    blockDepth,
 	}
 
 	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode, service.getBalanceFromExplorer, time.Second*10, 3)
@@ -237,29 +241,46 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
 }
 
 func (s *ServiceBtc) getBalanceFromNode(address string) (interface{}, error) {
-	// First get an address in proper form
-	a, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
+	var balance int64 = 0
+	var resultChan = make(chan int64)
+	var errorChan = make(chan error)
+
+	log.Printf("Analyze blocks to depth of %d for address %s", s.blockDepth, address)
+
+	height, err := s.client.GetBlockCount()
 
 	if err != nil {
-		return 0.0, err
+		return nil, err
 	}
 
-	log.Printf("Get account of address %s", address)
-	account, err := s.client.GetAccount(a)
+	for i := height - s.blockDepth; i <= height; i++ {
+		go func(blockHeight int64) {
+			log.Printf("Scan block with height %d", blockHeight)
+			deposits, err := scan.ScanBlock(s.client, blockHeight)
 
-	if err != nil {
-		return 0.0, err
+			if err != nil {
+				errorChan <- err
+				return
+			}
+
+			for _, deposit := range deposits {
+				if deposit.Addr == address {
+					balance += deposit.Tx.SatoshiAmount
+				}
+			}
+		}(i)
 	}
 
-	log.Printf("Send request for getting balance of address %s", address)
-	amount, err := s.client.GetBalance(account)
-
-	if err != nil {
-		return 0.0, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
+	for i := height - s.blockDepth; i <= height; i++ {
+		select {
+		case amount := <-resultChan:
+			balance += amount
+		case err := <-errorChan:
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
-
-	log.Printf("Balance is equal to %f", amount)
-	balance := amount.ToUnit(btcutil.AmountSatoshi)
 
 	return balance, nil
 }

@@ -51,7 +51,8 @@ func Start(config *viper.Viper) (*echo.Echo, error) {
 		config.Sub("bitcoin").GetString("Password"),
 		!config.Sub("bitcoin").GetBool("TLS"),
 		cert,
-		config.Sub("bitcoin").GetString("BlockExplorer"))
+		config.Sub("bitcoin").GetString("BlockExplorer"),
+		config.Sub("bitcoin").GetInt64("BlockDepth"))
 
 	apiGroupV1 := e.Group("/api/v1")
 	skyGroup := apiGroupV1.Group("/sky")
