@@ -19,8 +19,8 @@ type keyPairResponse struct {
 }
 
 type balanceResponse struct {
-	Balance float64 `json:"balance"`
-	Address string  `json:"address"`
+	Balance int64  `json:"balance"`
+	Address string `json:"address"`
 }
 
 type addressRequest struct {
@@ -41,9 +41,9 @@ type BtcStats struct {
 	NodeHost   string `json:"node_host"`
 }
 
-func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string) (*handlerBTC, error) {
+func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string, blockDepth int64) (*handlerBTC, error) {
 	log.Printf("Start new BTC handler with host %s user %s", btcAddr, btcUser)
-	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert, blockExplorer)
+	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert, blockExplorer, blockDepth)
 
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	balance, ok := result.(float64)
+	balance, ok := result.(int64)
 
 	if !ok {
 		return handleError(ctx, errors.New("cannot convert result to type float64"))

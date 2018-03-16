@@ -1,10 +1,11 @@
 [bitcoin]
-NodeAddress="localhost:8332"
-User="aaa"
-Password="123"
-CertFile="rpc.cert"
+NodeAddress="23.92.24.9:8334"
+User="YnWD3EmQAOw11IOrUJwWxAThAyobwLC"
+Password='f*Z"[1215o{qKW{Buj/wheO8@h.}j*u'
+CertFile="btcd.cert"
 TLS=true
 BlockExplorer="https://api.blockcypher.com"
+BlockDepth=1
 
 [skycoin]
 Host="127.0.0.1"
