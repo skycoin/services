@@ -17,7 +17,14 @@ import Input from 'components/Input';
 import Text from 'components/Text';
 import media from '../../utils/media';
 
-import { getStatus, setPrice, setSource, setOctState } from './admin-api';
+import {
+  getStatus,
+  setPrice,
+  setSource,
+  setOctState,
+  getHoldingBtc,
+  getSkyAddresses,
+} from './admin-api';
 
 const Panel = styled(Box) `
   background-color: #fff;
@@ -186,6 +193,13 @@ const OtcUnavailableMessage = () => (
     </Container>
   </Wrapper>);
 
+const WalletInfo = styled(Text) `
+  font-size: 12px;
+  // &:nth-child(odd) {
+  //   background-color: ${COLORS.blue[1]};
+  // }
+`;
+
 export default class extends React.Component {
   state = {
     otcAvailable: false,
@@ -199,17 +213,24 @@ export default class extends React.Component {
     paused: true,
     loaded: false,
 
+    holding: 0,
+    skyAddresses: [],
+
     selectedSource: sources.internal,
     selectedPrice: '0',
   };
   refreshStatus = async () => {
     try {
       const status = await getStatus();
+      const holdingBtc = await getHoldingBtc();
+      const skyAddresses = await getSkyAddresses();
       this.setState({
         ...this.state,
         ...status,
 
         otcAvailable: true,
+        holdingBtc: holdingBtc.holding,
+        skyAddresses,
 
         selectedSource: status.source,
         selectedPrice: `${status.prices.internal / 1e8}`,
@@ -248,6 +269,9 @@ export default class extends React.Component {
       loaded,
       otcAvailable,
 
+      holdingBtc,
+      skyAddresses,
+
       selectedSource,
       selectedPrice, } = this.state;
 
@@ -279,20 +303,31 @@ export default class extends React.Component {
                       color="white"
                       onClick={() => this.setOctState(true)}>Pause</Button>)}
                 </Panel>
-                <Panel ml={[0, 5]} mt={[5, 0]} flex="3 0 auto">
-                  <H3Styled>Price source:</H3Styled>
-                  <PriceSource source={source} prices={prices} />
-                  <PriceSelector
-                    prices={prices}
-                    source={source}
+                <Flex column ml={[0, 5]} mt={[5, 0]} flex="3 0 auto">
+                  <Panel>
+                    <H3Styled>Price source:</H3Styled>
+                    <PriceSource source={source} prices={prices} />
+                    <PriceSelector
+                      prices={prices}
+                      source={source}
 
-                    selectedSource={selectedSource}
-                    selectedPrice={selectedPrice}
+                      selectedSource={selectedSource}
+                      selectedPrice={selectedPrice}
 
-                    setSource={this.setSource}
-                    setPrice={this.setPrice}
-                    save={this.save} />
-                </Panel>
+                      setSource={this.setSource}
+                      setPrice={this.setPrice}
+                      save={this.save} />
+                  </Panel>
+                  <Panel flex={1} mt={[5]}>
+                    <H3Styled>OTC wallets</H3Styled>
+                    <WalletInfo as="p">BTC Holding: {holdingBtc / 1e8} BTC</WalletInfo>
+                    <Text mb={0}>Skycoin wallets</Text>
+                    <ol>
+                      {skyAddresses.map(({ address, balance }, i) =>
+                        <WalletInfo as="li" key={i}>{address}: {balance / 1e6} SKY</WalletInfo>)}
+                    </ol>
+                  </Panel>
+                </Flex>
               </Flex>
             </Container>
           </Wrapper>
