@@ -5,8 +5,8 @@ export const checkStatus = ({ drop_address, drop_currency }) =>
     .then(response => [response.data])
     .catch((error) => { throw new Error(error.response.data); });
 
-export const getAddress = skyAddress =>
-  axios.post('/api/bind', { address: skyAddress, drop_currency: 'BTC' }, {
+export const getAddress = (skyAddress, affiliate) =>
+  axios.post('/api/bind', { address: skyAddress, drop_currency: 'BTC', affiliate }, {
     headers: {
       'Content-Type': 'application/json',
     },
