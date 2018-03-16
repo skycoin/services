@@ -5,7 +5,7 @@ import { rem } from 'polished';
 import { Flex, Box } from 'grid-styled';
 import { DropdownList } from 'react-widgets';
 
-import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
+import { COLORS, SPACE } from 'config';
 
 import Text from 'components/Text';
 import Header from 'components/Header';

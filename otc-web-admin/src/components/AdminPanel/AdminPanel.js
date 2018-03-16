@@ -1,15 +1,11 @@
 /* eslint-disable no-alert */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import moment from 'moment';
 import Helmet from 'react-helmet';
 import { Flex, Box } from 'grid-styled';
-import { FormattedMessage, FormattedHTMLMessage, injectIntl } from 'react-intl';
 import { rem } from 'polished';
-import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
-import Switch from "react-switch";
+import { COLORS, SPACE } from 'config';
 import TimeAgo from 'react-timeago';
 import 'react-widgets/dist/css/react-widgets.css';
 
@@ -17,13 +13,18 @@ import Button from 'components/Button';
 import Container from 'components/Container';
 import Footer from 'components/Footer';
 import Header from 'components/Header';
-import Heading from 'components/Heading';
 import Input from 'components/Input';
-import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
 
-import { getStatus, setPrice, setSource, setOctState } from './admin-api';
+import {
+  getStatus,
+  setPrice,
+  setSource,
+  setOctState,
+  getHoldingBtc,
+  getSkyAddresses,
+} from './admin-api';
 
 const Panel = styled(Box) `
   background-color: #fff;
@@ -54,10 +55,6 @@ const Wrapper = styled.div`
   ${media.md.css`
     padding: ${rem(SPACE[7])} 0;
   `}
-`;
-
-const TransparenWrapper = styled(Wrapper) `
-  background-color: 'transparent';
 `;
 
 const UpdatedPriceContainer = styled(Text) `
@@ -196,6 +193,13 @@ const OtcUnavailableMessage = () => (
     </Container>
   </Wrapper>);
 
+const WalletInfo = styled(Text) `
+  font-size: 12px;
+  // &:nth-child(odd) {
+  //   background-color: ${COLORS.blue[1]};
+  // }
+`;
+
 export default class extends React.Component {
   state = {
     otcAvailable: false,
@@ -209,17 +213,24 @@ export default class extends React.Component {
     paused: true,
     loaded: false,
 
+    holding: 0,
+    skyAddresses: [],
+
     selectedSource: sources.internal,
     selectedPrice: '0',
   };
   refreshStatus = async () => {
     try {
       const status = await getStatus();
+      const holdingBtc = await getHoldingBtc();
+      const skyAddresses = await getSkyAddresses();
       this.setState({
         ...this.state,
         ...status,
 
         otcAvailable: true,
+        holdingBtc: holdingBtc.holding,
+        skyAddresses,
 
         selectedSource: status.source,
         selectedPrice: `${status.prices.internal / 1e8}`,
@@ -258,6 +269,9 @@ export default class extends React.Component {
       loaded,
       otcAvailable,
 
+      holdingBtc,
+      skyAddresses,
+
       selectedSource,
       selectedPrice, } = this.state;
 
@@ -276,7 +290,7 @@ export default class extends React.Component {
             <Container>
               <Flex row wrap justify="center" align="flex-start">
                 <Panel flex={1}>
-                  <H3Styled>OTC Status:</H3Styled>
+                  <H3Styled>OTC Status</H3Styled>
                   <Text>{paused ? 'Paused' : 'Running'}</Text>
                   {paused
                     ? (<Button
@@ -289,20 +303,31 @@ export default class extends React.Component {
                       color="white"
                       onClick={() => this.setOctState(true)}>Pause</Button>)}
                 </Panel>
-                <Panel ml={[0, 5]} mt={[5, 0]} flex="3 0 auto">
-                  <H3Styled>Price source:</H3Styled>
-                  <PriceSource source={source} prices={prices} />
-                  <PriceSelector
-                    prices={prices}
-                    source={source}
+                <Flex column ml={[0, 5]} mt={[5, 0]} flex="3 0 auto">
+                  <Panel>
+                    <H3Styled>Price source:</H3Styled>
+                    <PriceSource source={source} prices={prices} />
+                    <PriceSelector
+                      prices={prices}
+                      source={source}
 
-                    selectedSource={selectedSource}
-                    selectedPrice={selectedPrice}
+                      selectedSource={selectedSource}
+                      selectedPrice={selectedPrice}
 
-                    setSource={this.setSource}
-                    setPrice={this.setPrice}
-                    save={this.save} />
-                </Panel>
+                      setSource={this.setSource}
+                      setPrice={this.setPrice}
+                      save={this.save} />
+                  </Panel>
+                  <Panel flex={1} mt={[5]}>
+                    <H3Styled>OTC wallets</H3Styled>
+                    <WalletInfo as="p">BTC Holding: {holdingBtc / 1e8} BTC</WalletInfo>
+                    <Text mb={0}>Skycoin wallets</Text>
+                    <ol>
+                      {skyAddresses.map(({ address, balance }, i) =>
+                        <WalletInfo as="li" key={i}>{address}: {balance / 1e6} SKY</WalletInfo>)}
+                    </ol>
+                  </Panel>
+                </Flex>
               </Flex>
             </Container>
           </Wrapper>

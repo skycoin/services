@@ -20,6 +20,7 @@ import Input from 'components/Input';
 import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
+import { getParameterByName } from '../../utils/window';
 
 import { checkStatus, getAddress, getConfig, } from '../../utils/distributionAPI';
 
@@ -196,6 +197,19 @@ const DistributionForm = ({
       </Box>
     </Flex>);
 
+const affiliateCodeKey = 'affiliate';
+const getAffiliateCode = () => {
+  const fromUrl = getParameterByName(affiliateCodeKey);
+  if (fromUrl === null) {
+    const fromLocalStorage = localStorage.getItem(affiliateCodeKey);
+    if (fromLocalStorage === null) return null;
+    return fromLocalStorage;
+  } else {
+    localStorage.setItem(affiliateCodeKey, fromUrl);
+    return fromUrl;
+  }
+};
+
 class Distribution extends React.Component {
   state = {
     status: [],
@@ -226,6 +240,7 @@ class Distribution extends React.Component {
           stateMutation.balance = config.balance;
           stateMutation.enabled = true;
           break;
+        default: break;
       }
       this.setState({ ...this.state, ...stateMutation });
     } catch (_) {
@@ -246,7 +261,9 @@ class Distribution extends React.Component {
       addressLoading: true,
     });
 
-    return getAddress(this.state.skyAddress)
+    const affiliateCode = getAffiliateCode();
+
+    return getAddress(this.state.skyAddress, affiliateCode)
       .then((res) => {
         this.setState({
           drop_address: res.drop_address,

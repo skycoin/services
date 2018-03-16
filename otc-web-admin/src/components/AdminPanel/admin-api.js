@@ -35,3 +35,21 @@ export const setOctState = pause =>
   })
     .then(response => response.data)
     .catch((error) => { throw new Error(error.response.data); });
+
+export const getHoldingBtc = () =>
+  axios.get('/api/holding/btc', {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(response => response.data)
+  .catch((error) => { throw new Error(error.response.data); });
+
+export const getSkyAddresses = () =>
+  axios.get('/api/addresses/sky', {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(response => response.data)
+  .catch((error) => { throw new Error(error.response.data); });
