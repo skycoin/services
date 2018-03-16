@@ -208,7 +208,6 @@ const getAffiliateCode = () => {
     localStorage.setItem(affiliateCodeKey, fromUrl);
     return fromUrl;
   }
-  return null;
 };
 
 class Distribution extends React.Component {
