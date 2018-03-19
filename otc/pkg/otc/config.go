@@ -17,6 +17,14 @@ type Config struct {
 		Account string
 		Testnet bool
 	}
+	API struct {
+		Public struct {
+			Listen string
+		}
+		Admin struct {
+			Listen string
+		}
+	}
 }
 
 func NewConfig(path string) (*Config, error) {

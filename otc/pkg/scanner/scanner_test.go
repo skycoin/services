@@ -10,6 +10,10 @@ import (
 
 type MockConnection struct{}
 
+func (c *MockConnection) Used() ([]string, error) {
+	return nil, nil
+}
+
 func (c *MockConnection) Balance(addr string) (uint64, error) {
 	if addr == "empty" {
 		return 0, nil

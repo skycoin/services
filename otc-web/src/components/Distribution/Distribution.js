@@ -20,6 +20,7 @@ import Input from 'components/Input';
 import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
+import { getParameterByName } from '../../utils/window';
 
 import { checkStatus, getAddress, getConfig, } from '../../utils/distributionAPI';
 
@@ -102,22 +103,22 @@ const DistributionFormInfo = ({ sky_btc_exchange_rate, balance }) => (
       <FormattedMessage id="distribution.heading" />
     </Heading>
     {sky_btc_exchange_rate &&
+      <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
+        <FormattedHTMLMessage
+          id="distribution.rate"
+          values={{
+            rate: +(Math.round(sky_btc_exchange_rate * btcToSatochi * roundTo) / roundTo),
+          }}
+        />
+      </Text>}
     <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
-      <FormattedHTMLMessage
-        id="distribution.rate"
-        values={{
-          rate: +(Math.round(sky_btc_exchange_rate * btcToSatochi * roundTo) / roundTo),
-        }}
-      />
-    </Text>}
-    {/* <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
       <FormattedMessage
         id="distribution.inventory"
         values={{
-          coins: balance && balance.coins,
+          coins: (balance / 1e6).toString(),
         }}
       />
-    </Text> */}
+    </Text>
 
     <Text heavy color="black" fontSize={[2, 3]} as="div">
       <FormattedHTMLMessage id="distribution.instructions" />
@@ -196,6 +197,19 @@ const DistributionForm = ({
       </Box>
     </Flex>);
 
+const affiliateCodeKey = 'affiliate';
+const getAffiliateCode = () => {
+  const fromUrl = getParameterByName(affiliateCodeKey);
+  if (fromUrl === null) {
+    const fromLocalStorage = localStorage.getItem(affiliateCodeKey);
+    if (fromLocalStorage === null) return null;
+    return fromLocalStorage;
+  } else {
+    localStorage.setItem(affiliateCodeKey, fromUrl);
+    return fromUrl;
+  }
+};
+
 class Distribution extends React.Component {
   state = {
     status: [],
@@ -206,12 +220,13 @@ class Distribution extends React.Component {
     addressLoading: false,
     statusLoading: false,
     enabled: true,
+    balance: 0,
     sky_btc_exchange_rate: null,
   };
   componentWillMount = async () => {
     try {
       const config = await getConfig();
-      const stateMutation = {sky_btc_exchange_rate: config.price};
+      const stateMutation = { sky_btc_exchange_rate: config.price };
       switch (config.otcStatus) {
         case 'SOLD_OUT':
           stateMutation.disabledReason = 'coinsSoldOut';
@@ -222,9 +237,10 @@ class Distribution extends React.Component {
           stateMutation.enabled = false;
           break;
         case 'WORKING':
-          stateMutation.balance = { coins: config.balance };
+          stateMutation.balance = config.balance;
           stateMutation.enabled = true;
           break;
+        default: break;
       }
       this.setState({ ...this.state, ...stateMutation });
     } catch (_) {
@@ -245,7 +261,9 @@ class Distribution extends React.Component {
       addressLoading: true,
     });
 
-    return getAddress(this.state.skyAddress)
+    const affiliateCode = getAffiliateCode();
+
+    return getAddress(this.state.skyAddress, affiliateCode)
       .then((res) => {
         this.setState({
           drop_address: res.drop_address,

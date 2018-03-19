@@ -1,32 +1,30 @@
 /* eslint-disable no-alert */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import moment from 'moment';
 import Helmet from 'react-helmet';
 import { Flex, Box } from 'grid-styled';
-import { FormattedMessage, FormattedHTMLMessage, injectIntl } from 'react-intl';
 import { rem } from 'polished';
-import { COLORS, SPACE, BOX_SHADOWS, BORDER_RADIUS } from 'config';
-import Switch from "react-switch";
+import { COLORS, SPACE } from 'config';
 import TimeAgo from 'react-timeago';
-import { DropdownList } from 'react-widgets';
 import 'react-widgets/dist/css/react-widgets.css';
 
 import Button from 'components/Button';
 import Container from 'components/Container';
 import Footer from 'components/Footer';
 import Header from 'components/Header';
-import Heading from 'components/Heading';
 import Input from 'components/Input';
-import Modal, { styles } from 'components/Modal';
 import Text from 'components/Text';
 import media from '../../utils/media';
 
-import { getStatus, setPrice, setSource, setOctState } from './admin-api';
-
-import transactions from './transactions';
+import {
+  getStatus,
+  setPrice,
+  setSource,
+  setOctState,
+  getHoldingBtc,
+  getSkyAddresses,
+} from './admin-api';
 
 const Panel = styled(Box) `
   background-color: #fff;
@@ -57,10 +55,6 @@ const Wrapper = styled.div`
   ${media.md.css`
     padding: ${rem(SPACE[7])} 0;
   `}
-`;
-
-const TransparenWrapper = styled(Wrapper) `
-  background-color: 'transparent';
 `;
 
 const UpdatedPriceContainer = styled(Text) `
@@ -199,107 +193,12 @@ const OtcUnavailableMessage = () => (
     </Container>
   </Wrapper>);
 
-const transactionStatuses = {
-  waiting_confirm: 'Pending'
-};
-const transactionStatusToStr = s => transactionStatuses[s] || s;
-
-const TransactionsFilter = () => (
-  <Flex column mb={5}>
-    <Text as="h4">Filters</Text>
-    <Flex row justify="flex-start" align="flex-end">
-      <Box mr={5}>
-        State:
-      </Box>
-      <Box>
-        <DropdownList
-          style={{ width: '100px' }}
-          defaultValue="All"
-          data={['All', 'Pending', 'Completed']} />
-      </Box>
-    </Flex>
-  </Flex>
-);
-
-const TableHeadCell = styled.th`
+const WalletInfo = styled(Text) `
   font-size: 12px;
-  font-weight: normal;
-  padding: 0;
+  // &:nth-child(odd) {
+  //   background-color: ${COLORS.blue[1]};
+  // }
 `;
-
-const TableCell = styled.td`
-  font-size: 11px;
-  font-weight: normal;
-`;
-
-const TableRow = styled.tr`
-`;
-
-const Table = styled.table`
-  ${TableHeadCell}, ${TableCell} {
-    border-bottom: 1px solid black;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
-    padding: 8px 4px;
-
-    &:first-child {
-      border-left: 0;
-    }
-    &:last-child {
-      border-right: 0;
-    }
-  }
-
-  ${TableRow}:last-child ${TableCell} {
-    border-bottom: 0;
-  }
-
-  border-collapse: collapse;
-`;
-
-const TableHead = styled.thead`
-`;
-
-const TransactionsTable = ({ transactions }) => {
-  return (
-    <div>
-      <H3Styled>Transactions:</H3Styled>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableHeadCell>Created</TableHeadCell>
-            <TableHeadCell>Deposited</TableHeadCell>
-            <TableHeadCell>Sky Sent</TableHeadCell>
-
-            <TableHeadCell>Status</TableHeadCell>
-            <TableHeadCell>Amount</TableHeadCell>
-            <TableHeadCell>Rate</TableHeadCell>
-            <TableHeadCell>Source</TableHeadCell>
-
-            <TableHeadCell>Sky Address</TableHeadCell>
-            <TableHeadCell>BTC Address</TableHeadCell>
-          </TableRow>
-        </TableHead>
-        <tbody>
-          {transactions.map((t, i) =>
-            (<TableRow key={i}>
-              <TableCell><DateTimeView dt={t.timestamps.created_at} /></TableCell>
-              <TableCell><DateTimeView dt={t.timestamps.deposited_at} /></TableCell>
-              <TableCell><DateTimeView dt={t.timestamps.sent_at} /></TableCell>
-
-              <TableCell>{transactionStatusToStr(t.status)}</TableCell>
-              <TableCell>{t.drop.amount / 1e8}</TableCell>
-              <TableCell>{t.rate.value / 1e8} </TableCell>
-              <TableCell>{t.rate.source[0]} </TableCell>
-
-              <TableCell>{t.address}</TableCell>
-              <TableCell>{t.drop.address}</TableCell>
-            </TableRow>))}
-        </tbody>
-      </Table>
-    </div>
-  );
-};
 
 export default class extends React.Component {
   state = {
@@ -314,17 +213,24 @@ export default class extends React.Component {
     paused: true,
     loaded: false,
 
+    holding: 0,
+    skyAddresses: [],
+
     selectedSource: sources.internal,
     selectedPrice: '0',
   };
   refreshStatus = async () => {
     try {
       const status = await getStatus();
+      const holdingBtc = await getHoldingBtc();
+      const skyAddresses = await getSkyAddresses();
       this.setState({
         ...this.state,
         ...status,
 
         otcAvailable: true,
+        holdingBtc: holdingBtc.holding,
+        skyAddresses,
 
         selectedSource: status.source,
         selectedPrice: `${status.prices.internal / 1e8}`,
@@ -363,6 +269,9 @@ export default class extends React.Component {
       loaded,
       otcAvailable,
 
+      holdingBtc,
+      skyAddresses,
+
       selectedSource,
       selectedPrice, } = this.state;
 
@@ -379,23 +288,23 @@ export default class extends React.Component {
           <Wrapper>
 
             <Container>
-              <Flex row wrap>
-                <Flex column flex={1}>
+              <Flex row wrap justify="center" align="flex-start">
+                <Panel flex={1}>
+                  <H3Styled>OTC Status</H3Styled>
+                  <Text>{paused ? 'Paused' : 'Running'}</Text>
+                  {paused
+                    ? (<Button
+                      bg={COLORS.green[8]}
+                      color="white"
+                      onClick={() => this.setOctState(false)}
+                    >Start</Button>)
+                    : (<Button
+                      bg={COLORS.red[7]}
+                      color="white"
+                      onClick={() => this.setOctState(true)}>Pause</Button>)}
+                </Panel>
+                <Flex column ml={[0, 5]} mt={[5, 0]} flex="3 0 auto">
                   <Panel>
-                    <H3Styled>OTC Status:</H3Styled>
-                    <Text>{paused ? 'Paused' : 'Running'}</Text>
-                    {paused
-                      ? (<Button
-                        bg={COLORS.green[8]}
-                        color="white"
-                        onClick={() => this.setOctState(false)}
-                      >Start</Button>)
-                      : (<Button
-                        bg={COLORS.red[7]}
-                        color="white"
-                        onClick={() => this.setOctState(true)}>Pause</Button>)}
-                  </Panel>
-                  <Panel mt={5}>
                     <H3Styled>Price source:</H3Styled>
                     <PriceSource source={source} prices={prices} />
                     <PriceSelector
@@ -409,11 +318,14 @@ export default class extends React.Component {
                       setPrice={this.setPrice}
                       save={this.save} />
                   </Panel>
-                </Flex>
-                <Flex column flex="0.5 1 auto" mx={[0, 5]} my={[5, 0]}>
-                  <Panel>
-                    <TransactionsFilter />
-                    <TransactionsTable transactions={transactions} />
+                  <Panel flex={1} mt={[5]}>
+                    <H3Styled>OTC wallets</H3Styled>
+                    <WalletInfo as="p">BTC Holding: {holdingBtc / 1e8} BTC</WalletInfo>
+                    <Text mb={0}>Skycoin wallets</Text>
+                    <ol>
+                      {skyAddresses.map(({ address, balance }, i) =>
+                        <WalletInfo as="li" key={i}>{address}: {balance / 1e6} SKY</WalletInfo>)}
+                    </ol>
                   </Panel>
                 </Flex>
               </Flex>
