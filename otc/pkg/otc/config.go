@@ -25,6 +25,9 @@ type Config struct {
 			Listen string
 		}
 	}
+	CAPI struct {
+		Node string
+	}
 }
 
 func NewConfig(path string) (*Config, error) {

@@ -82,3 +82,10 @@ type Result struct {
 func (w *Work) Return(err error) {
 	w.Done <- &Result{time.Now().UTC().Unix(), err}
 }
+
+// coin-api
+type Output struct {
+	Confirmations int    `json:"confirmations"`
+	Amount        uint64 `json:"amount"`
+}
+type Unspents map[string]map[int]*Output
