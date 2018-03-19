@@ -24,6 +24,7 @@ func New(conf *otc.Config) *Client {
 	}
 }
 
+// TODO: use currency in path
 func (c *Client) Unspents(curr otc.Currency, addr string) (otc.Unspents, error) {
 	var buf bytes.Buffer
 
@@ -65,6 +66,7 @@ func (c *Client) Unspents(curr otc.Currency, addr string) (otc.Unspents, error) 
 	return out.Result, nil
 }
 
+// TODO: use currency in path
 func (c *Client) Register(curr otc.Currency, addr string) error {
 	var buf bytes.Buffer
 
