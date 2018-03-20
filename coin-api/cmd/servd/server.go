@@ -7,9 +7,12 @@ import (
 	"os"
 	"sync"
 
+	"github.com/coreos/go-systemd/daemon"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/spf13/viper"
+	"net"
+	"time"
 )
 
 type Status struct {
@@ -18,7 +21,7 @@ type Status struct {
 }
 
 // Start starts the server
-func Start(config *viper.Viper) (*echo.Echo, error) {
+func Start(config *viper.Viper) error {
 	e := echo.New()
 	e.Use(middleware.GzipWithConfig(middleware.DefaultGzipConfig))
 	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
@@ -102,8 +105,26 @@ func Start(config *viper.Viper) (*echo.Echo, error) {
 	})
 
 	e.GET("/status", statusFunc)
-	// e.StartAutoTLS()
-	err = e.Start(config.Sub("server").GetString("ListenStr"))
-	e.Logger.Fatal(err)
-	return e, err
+	// Create custom listener
+	listener, err := net.Listen("tcp", config.Sub("server").GetString("ListenStr"))
+
+	if err != nil {
+		return err
+	}
+
+	e.Listener = listener
+	// Signal about daemon readiness
+	daemon.SdNotify(false, "READY=1")
+
+	// Custom server with configured timeouts
+	server := &http.Server{
+		ReadTimeout:  config.Sub("server").GetDuration("ReadTimeout") * time.Second,
+		WriteTimeout: config.Sub("server").GetDuration("WriteTimeout") * time.Second,
+		IdleTimeout:  config.Sub("server").GetDuration("IdleTimeout") * time.Second,
+	}
+
+	// Start configured server with custom listener
+	err = e.StartServer(server)
+
+	return err
 }
