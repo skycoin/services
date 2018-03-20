@@ -3,7 +3,8 @@ Description=Coin-Api service
 
 [Service]
 Type=notify
-ExecStart=$GOPATH/bin/coin-api -config $GOPATH/bin/config.toml
+WorkingDirectory=/home/stgleb/go/bin/
+ExecStart=/home/stgleb/go/bin/coin-api -config config.toml
 WatchdogSec=30s
 Restart=on-failure
 
