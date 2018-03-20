@@ -126,6 +126,7 @@ func Start(config *viper.Viper) error {
 		IdleTimeout:  config.Sub("server").GetDuration("IdleTimeout") * time.Second,
 	}
 
+	watchDog()
 	interruptHandler(server)
 	// Start configured server with custom listener
 	err = e.StartServer(server)
@@ -144,5 +145,18 @@ func interruptHandler(server *http.Server) {
 		defer cancel()
 		log.Printf("Handle SIGINT, shutdown server gracefully with timeout %f seconds", server.WriteTimeout.Seconds())
 		server.Shutdown(ctx)
+	}()
+}
+
+func watchDog() {
+	go func() {
+		interval, err := daemon.SdWatchdogEnabled(false)
+		if err != nil || interval == 0 {
+			return
+		}
+		for {
+			daemon.SdNotify(false, "WATCHDOG=1")
+			time.Sleep(interval / 3)
+		}
 	}()
 }
