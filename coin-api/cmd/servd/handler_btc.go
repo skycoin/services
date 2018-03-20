@@ -128,16 +128,45 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 	txId := ctx.Param("transid")
-	result, err := h.checker.CheckTxStatus(txId)
+
+	resultChan := make(chan *btc.TxStatus)
+	errChan := make(chan error)
+
+	go func() {
+		result, err := h.checker.CheckTxStatus(txId)
+		status, ok := result.(*btc.TxStatus)
+
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		if !ok {
+			errChan <- errors.New("cannot convert result to *TxStatus")
+			return
+		}
+
+		resultChan <- status
+	}()
+
+	var (
+		status *btc.TxStatus
+		err  error
+		done bool
+	)
+	select{
+		case status = <- resultChan:
+			case err = <- errChan:
+				case <- ctx.Request().Context().Done():
+					done = true
+	}
+
+	if done {
+		return ctx.NoContent(http.StatusNoContent)
+	}
 
 	if err != nil {
 		return handleError(ctx, err)
-	}
-
-	status, ok := result.(*btc.TxStatus)
-
-	if !ok {
-		return handleError(ctx, errors.New("cannot convert result to *TxStatus"))
 	}
 
 	ctx.JSONPretty(http.StatusOK, struct {

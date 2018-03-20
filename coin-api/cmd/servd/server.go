@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"net"
 	"time"
+	"context"
 )
 
 type Status struct {
@@ -123,8 +124,18 @@ func Start(config *viper.Viper) error {
 		IdleTimeout:  config.Sub("server").GetDuration("IdleTimeout") * time.Second,
 	}
 
+	interruptHandler(server)
 	// Start configured server with custom listener
 	err = e.StartServer(server)
 
 	return err
+}
+
+// Handle SIGINT
+func interruptHandler(server *http.Server) {
+	go func() {
+		ctx , cancel := context.WithTimeout(context.Background(), server.WriteTimeout)
+		defer cancel()
+		server.Shutdown(ctx)
+	}()
 }
