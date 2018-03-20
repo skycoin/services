@@ -5,7 +5,7 @@ Password='f*Z"[1215o{qKW{Buj/wheO8@h.}j*u'
 CertFile="btcd.cert"
 TLS=true
 BlockExplorer="https://api.blockcypher.com"
-BlockDepth=32
+BlockDepth=2
 
 [skycoin]
 Host="127.0.0.1"

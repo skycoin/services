@@ -19,8 +19,8 @@ type keyPairResponse struct {
 }
 
 type balanceResponse struct {
-	Balance int64  `json:"balance"`
-	Address string `json:"address"`
+	Balance float64 `json:"balance"`
+	Address string  `json:"address"`
 }
 
 type addressRequest struct {
@@ -186,7 +186,7 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
 
-	resultChan := make(chan int64)
+	resultChan := make(chan float64)
 	errChan := make(chan error)
 
 	go func() {
@@ -197,18 +197,31 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 			return
 		}
 
-		balance, ok := result.(int64)
+		var (
+			balanceInt   int64
+			balanceFloat float64
+			ok           bool
+		)
+
+		balanceInt, ok = result.(int64)
+
+		if ok {
+			balanceFloat = float64(balanceInt)
+			resultChan <- balanceFloat
+		}
+
+		balanceFloat, ok = result.(float64)
 
 		if !ok {
 			errChan <- errors.New("cannot convert result to type float64")
 			return
 		}
 
-		resultChan <- balance
+		resultChan <- balanceFloat
 	}()
 
 	var (
-		balance int64
+		balance float64
 		err     error
 		done    bool
 	)

@@ -1,6 +1,8 @@
 package btc
 
 import (
+	"context"
+	"errors"
 	"log"
 	"time"
 )
@@ -13,19 +15,21 @@ type CircuitBreaker struct {
 	success  func(string) (interface{}, error)
 	fallback func(string) (interface{}, error)
 
-	isOpen      uint32
-	openTimeout time.Duration
-	retryCount  uint
+	isOpen        uint32
+	actionTimeout time.Duration
+	openTimeout   time.Duration
+	retryCount    uint
 }
 
-func NewCircuitBreaker(success, fallback func(string) (interface{}, error), openTimeout time.Duration, retryCount uint) *CircuitBreaker {
+func NewCircuitBreaker(success, fallback func(string) (interface{}, error), openTimeout, actionTimeout time.Duration, retryCount uint) *CircuitBreaker {
 	return &CircuitBreaker{
 		success:  success,
 		fallback: fallback,
 
-		isOpen:      0,
-		openTimeout: openTimeout,
-		retryCount:  retryCount,
+		isOpen:        0,
+		actionTimeout: actionTimeout,
+		openTimeout:   openTimeout,
+		retryCount:    retryCount,
 	}
 }
 
@@ -43,7 +47,8 @@ func (c *CircuitBreaker) Do(arg string) (interface{}, error) {
 
 	var i uint = 0
 
-	result, err := c.success(arg)
+	result, err := c.doAction(arg)
+
 	if err != nil {
 		log.Printf("Get result from node returned error %s", err.Error())
 	}
@@ -53,7 +58,7 @@ func (c *CircuitBreaker) Do(arg string) (interface{}, error) {
 			log.Printf("Get result from node returned error %s", err.Error())
 		}
 
-		result, err = c.success(arg)
+		result, err = c.doAction(arg)
 
 		if err != nil {
 			time.Sleep(time.Millisecond * time.Duration(1<<i) * 100)
@@ -77,6 +82,48 @@ func (c *CircuitBreaker) Do(arg string) (interface{}, error) {
 		}
 
 		return result, nil
+	}
+
+	return result, nil
+}
+
+func (c *CircuitBreaker) doAction(arg string) (interface{}, error) {
+	var (
+		result interface{}
+		err    error
+		done   bool
+	)
+
+	resultChan := make(chan interface{})
+	errChan := make(chan error)
+
+	go func() {
+		result, err := c.success(arg)
+
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		resultChan <- result
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), c.actionTimeout)
+	defer cancel()
+
+	select {
+	case result = <-resultChan:
+	case err = <-errChan:
+	case <-ctx.Done():
+		done = true
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if done {
+		return nil, errors.New("circuit breaker action timeout")
 	}
 
 	return result, nil
