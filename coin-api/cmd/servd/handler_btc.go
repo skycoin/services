@@ -159,6 +159,7 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 	case err = <-errChan:
 	case <-ctx.Request().Context().Done():
 		done = true
+		log.Println("Request is canceled")
 	}
 
 	if done {
@@ -217,6 +218,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	case err = <-errChan:
 	case <-ctx.Request().Context().Done():
 		done = true
+		log.Println("Request is canceled")
 	}
 
 	if done {

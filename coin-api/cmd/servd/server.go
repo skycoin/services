@@ -7,13 +7,14 @@ import (
 	"os"
 	"sync"
 
+	"context"
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/spf13/viper"
 	"net"
+	"os/signal"
 	"time"
-	"context"
 )
 
 type Status struct {
@@ -133,9 +134,14 @@ func Start(config *viper.Viper) error {
 
 // Handle SIGINT
 func interruptHandler(server *http.Server) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
 	go func() {
-		ctx , cancel := context.WithTimeout(context.Background(), server.WriteTimeout)
+		<-c
+		ctx, cancel := context.WithTimeout(context.Background(), server.WriteTimeout)
 		defer cancel()
+		log.Printf("Handle SIGINT, shutdown server gracefully with timeout %f seconds", server.WriteTimeout.Seconds())
 		server.Shutdown(ctx)
 	}()
 }
