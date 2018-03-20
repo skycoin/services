@@ -29,5 +29,5 @@ func main() {
 	cfg.AddConfigPath(".")
 	cfg.ReadConfig(f)
 
-	servd.Start(cfg)
+	log.Fatal(servd.Start(cfg))
 }

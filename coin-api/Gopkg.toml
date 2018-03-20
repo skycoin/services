@@ -34,28 +34,32 @@
   name = "github.com/btcsuite/btcd"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/btcsuite/btcutil"
+  name = "github.com/coreos/go-systemd"
+  version = "16.0.0"
 
 [[constraint]]
   name = "github.com/labstack/echo"
-  version = "3.2.6"
+  version = "3.3.4"
 
 [[constraint]]
   name = "github.com/pkg/errors"
   version = "0.8.0"
 
 [[constraint]]
-  name = "github.com/shopspring/decimal"
-  version = "1.0.1"
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.5"
 
 [[constraint]]
-  name = "github.com/sirupsen/logrus"
-  version = "1.0.4"
+  branch = "master"
+  name = "github.com/skycoin/services"
 
 [[constraint]]
   name = "github.com/skycoin/skycoin"
-  version = "0.21.1"
+  version = "0.20.4"
+
+[[constraint]]
+  name = "github.com/spf13/viper"
+  version = "1.0.2"
 
 [[constraint]]
   name = "github.com/stretchr/testify"

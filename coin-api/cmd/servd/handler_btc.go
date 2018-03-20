@@ -19,8 +19,8 @@ type keyPairResponse struct {
 }
 
 type balanceResponse struct {
-	Balance int64  `json:"balance"`
-	Address string `json:"address"`
+	Balance float64 `json:"balance"`
+	Address string  `json:"address"`
 }
 
 type addressRequest struct {
@@ -128,16 +128,46 @@ func (h *handlerBTC) generateAddress(ctx echo.Context) error {
 
 func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 	txId := ctx.Param("transid")
-	result, err := h.checker.CheckTxStatus(txId)
+
+	resultChan := make(chan *btc.TxStatus)
+	errChan := make(chan error)
+
+	go func() {
+		result, err := h.checker.CheckTxStatus(txId)
+		status, ok := result.(*btc.TxStatus)
+
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		if !ok {
+			errChan <- errors.New("cannot convert result to *TxStatus")
+			return
+		}
+
+		resultChan <- status
+	}()
+
+	var (
+		status *btc.TxStatus
+		err    error
+		done   bool
+	)
+	select {
+	case status = <-resultChan:
+	case err = <-errChan:
+	case <-ctx.Request().Context().Done():
+		done = true
+		log.Println("Request is canceled")
+	}
+
+	if done {
+		return ctx.NoContent(http.StatusNoContent)
+	}
 
 	if err != nil {
 		return handleError(ctx, err)
-	}
-
-	status, ok := result.(*btc.TxStatus)
-
-	if !ok {
-		return handleError(ctx, errors.New("cannot convert result to *TxStatus"))
 	}
 
 	ctx.JSONPretty(http.StatusOK, struct {
@@ -155,16 +185,61 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
-	result, err := h.checker.CheckBalance(address)
+
+	resultChan := make(chan float64)
+	errChan := make(chan error)
+
+	go func() {
+		result, err := h.checker.CheckBalance(address)
+
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		var (
+			balanceInt   int64
+			balanceFloat float64
+			ok           bool
+		)
+
+		balanceInt, ok = result.(int64)
+
+		if ok {
+			balanceFloat = float64(balanceInt)
+			resultChan <- balanceFloat
+		}
+
+		balanceFloat, ok = result.(float64)
+
+		if !ok {
+			errChan <- errors.New("cannot convert result to type float64")
+			return
+		}
+
+		resultChan <- balanceFloat
+	}()
+
+	var (
+		balance float64
+		err     error
+		done    bool
+	)
+
+	select {
+	case balance = <-resultChan:
+	case err = <-errChan:
+	case <-ctx.Request().Context().Done():
+		done = true
+		log.Println("Request is canceled")
+	}
+
+	if done {
+		return ctx.NoContent(http.StatusNoContent)
+	}
 
 	if err != nil {
 		return handleError(ctx, err)
-	}
-
-	balance, ok := result.(int64)
-
-	if !ok {
-		return handleError(ctx, errors.New("cannot convert result to type float64"))
 	}
 
 	resp := struct {

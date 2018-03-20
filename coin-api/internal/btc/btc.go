@@ -10,11 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	"log"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
 	"github.com/skycoin/skycoin/src/cipher"
-	"log"
 )
 
 const (
@@ -137,8 +138,17 @@ func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool,
 		blockDepth:    blockDepth,
 	}
 
-	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode, service.getBalanceFromExplorer, time.Second*10, 3)
-	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode, service.getTxStatusFromExplorer, time.Second*10, 3)
+	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode,
+		service.getBalanceFromExplorer,
+		time.Second*10,
+		time.Second*3,
+		3)
+
+	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode,
+		service.getTxStatusFromExplorer,
+		time.Second*10,
+		time.Second*3,
+		3)
 
 	service.balanceCircuitBreaker = balanceCircuitBreaker
 	service.txStatusCircuitBreaker = txStatusCircuitBreaker
@@ -241,19 +251,20 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
 }
 
 func (s *ServiceBtc) getBalanceFromNode(address string) (interface{}, error) {
-	var balance int64 = 0
-	var resultChan = make(chan int64)
-	var errorChan = make(chan error)
+	var (
+		balance    int64 = 0
+		resultChan       = make(chan int64)
+		errorChan        = make(chan error)
+	)
 
 	log.Printf("Analyze blocks to depth of %d for address %s", s.blockDepth, address)
-
 	height, err := s.client.GetBlockCount()
 
 	if err != nil {
 		return nil, err
 	}
 
-	for i := height - s.blockDepth; i <= height; i++ {
+	for i := height - s.blockDepth; i < height; i++ {
 		go func(blockHeight int64) {
 			log.Printf("Scan block with height %d", blockHeight)
 			deposits, err := scan.ScanBlock(s.client, blockHeight)
@@ -268,10 +279,12 @@ func (s *ServiceBtc) getBalanceFromNode(address string) (interface{}, error) {
 					balance += deposit.Tx.SatoshiAmount
 				}
 			}
+
+			resultChan <- balance
 		}(i)
 	}
 
-	for i := height - s.blockDepth; i <= height; i++ {
+	for i := height - s.blockDepth; i < height; i++ {
 		select {
 		case amount := <-resultChan:
 			balance += amount
