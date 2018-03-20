@@ -151,14 +151,14 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 
 	var (
 		status *btc.TxStatus
-		err  error
-		done bool
+		err    error
+		done   bool
 	)
-	select{
-		case status = <- resultChan:
-			case err = <- errChan:
-				case <- ctx.Request().Context().Done():
-					done = true
+	select {
+	case status = <-resultChan:
+	case err = <-errChan:
+	case <-ctx.Request().Context().Done():
+		done = true
 	}
 
 	if done {
@@ -184,16 +184,35 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
-	result, err := h.checker.CheckBalance(address)
+
+	resultChan := make(chan int64)
+	errChan := make(chan error)
+
+	go func() {
+		result, err := h.checker.CheckBalance(address)
+
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		balance, ok := result.(int64)
+
+		if !ok {
+			errChan <- errors.New("cannot convert result to type float64")
+			return
+		}
+
+		resultChan <- balance
+	}()
+
+	var (
+		balance int64
+		err     error
+	)
 
 	if err != nil {
 		return handleError(ctx, err)
-	}
-
-	balance, ok := result.(int64)
-
-	if !ok {
-		return handleError(ctx, errors.New("cannot convert result to type float64"))
 	}
 
 	resp := struct {
