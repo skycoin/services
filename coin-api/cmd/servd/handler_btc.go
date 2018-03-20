@@ -209,7 +209,19 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	var (
 		balance int64
 		err     error
+		done    bool
 	)
+
+	select {
+	case balance = <-resultChan:
+	case err = <-errChan:
+	case <-ctx.Request().Context().Done():
+		done = true
+	}
+
+	if done {
+		return ctx.NoContent(http.StatusNoContent)
+	}
 
 	if err != nil {
 		return handleError(ctx, err)
