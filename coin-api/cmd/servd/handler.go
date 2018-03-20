@@ -8,10 +8,11 @@ import (
 	"github.com/labstack/echo"
 	"github.com/skycoin/skycoin/src/visor"
 
+	"github.com/skycoin/services/errhandler"
+
 	"github.com/skycoin/services/coin-api/internal/locator"
 	"github.com/skycoin/services/coin-api/internal/model"
 	"github.com/skycoin/services/coin-api/internal/multi"
-	"github.com/skycoin/services/errhandler"
 )
 
 type handlerMulti struct {

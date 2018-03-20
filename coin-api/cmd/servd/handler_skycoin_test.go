@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/labstack/echo"
+
 	"github.com/skycoin/services/coin-api/internal/model"
 )
 

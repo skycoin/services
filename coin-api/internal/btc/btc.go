@@ -10,11 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	"log"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
 	"github.com/skycoin/skycoin/src/cipher"
-	"log"
 )
 
 const (

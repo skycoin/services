@@ -8,13 +8,14 @@ import (
 	"sync"
 
 	"context"
+	"net"
+	"os/signal"
+	"time"
+
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/spf13/viper"
-	"net"
-	"os/signal"
-	"time"
 )
 
 type Status struct {
