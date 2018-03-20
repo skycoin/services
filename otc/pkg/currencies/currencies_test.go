@@ -8,6 +8,10 @@ import (
 
 type MockConnection struct{}
 
+func (c *MockConnection) Used() ([]string, error) {
+	return nil, nil
+}
+
 func (c *MockConnection) Balance(addr string) (uint64, error) {
 	return 0, nil
 }

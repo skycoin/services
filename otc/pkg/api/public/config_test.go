@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/skycoin/services/otc/pkg/currencies"
+	"github.com/skycoin/services/otc/pkg/model"
 	"github.com/skycoin/services/otc/pkg/otc"
 )
 
@@ -50,7 +51,9 @@ func TestConfig(t *testing.T) {
 		req := httptest.NewRequest("GET", "http:///", nil)
 		res := httptest.NewRecorder()
 
-		Config(curs, nil)(res, req)
+		Config(curs, &model.Model{
+			Running: true,
+		})(res, req)
 
 		out, err := ioutil.ReadAll(res.Body)
 		if err != nil {

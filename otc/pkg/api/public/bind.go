@@ -15,6 +15,7 @@ func Bind(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var (
 			data struct {
+				Affiliate    string `json:"affiliate"`
 				Address      string `json:"address"`
 				DropCurrency string `json:"drop_currency"`
 			}
@@ -44,15 +45,17 @@ func Bind(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 			if err == currencies.ErrConnMissing {
 				http.Error(w, "not supported", http.StatusBadRequest)
 			} else {
+				println(err.Error())
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}
 			return
 		}
 
 		req := &otc.Request{
-			Address: addr.String(),
-			Status:  otc.NEW,
-			TxId:    "",
+			Affiliate: data.Affiliate,
+			Address:   addr.String(),
+			Status:    otc.NEW,
+			TxId:      "",
 			Times: &otc.Times{
 				CreatedAt: time.Now().UTC().Unix(),
 			},
@@ -65,6 +68,7 @@ func Bind(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 
 		price, err := curs.Price(curr)
 		if err != nil {
+			println(err.Error())
 			http.Error(w, "server error", http.StatusInternalServerError)
 			return
 		}

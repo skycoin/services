@@ -3,16 +3,14 @@ import PropTypes from 'prop-types';
 import { Switch, Route } from 'react-router-dom';
 
 import AdminPanel from '../AdminPanel';
+import Transactions from '../Transactions';
 
-const Routes = ({ match }) => {
-  const prefix = match.path === '/' ? '/' : '/:locale/';
-
-  return (
-    <Switch>
-      <Route path={`${prefix}`} component={AdminPanel} />
-    </Switch>
+const Routes = () => (
+  <Switch>
+    <Route path="/transactions" component={Transactions} />
+    <Route path="/" component={AdminPanel} />
+  </Switch>
   );
-};
 
 Routes.propTypes = {
   match: PropTypes.shape({
