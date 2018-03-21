@@ -1,6 +1,6 @@
 CC       ?= gcc
 
-OPTFLAGS ?= -O3 -g
+OPTFLAGS ?= -O3 -g -fPIC
 
 CFLAGS   += $(OPTFLAGS) \
             -std=gnu99 \
@@ -34,15 +34,19 @@ OBJS   = $(SRCS:.c=.o)
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-TESTLIBS = -L/usr/local/lib/ -lm -lrt -L$(CHECK_PATH)/src -lcheck  -L$(TREZOR_CRYPTO_PATH) -lTrezorCrypto
+TESTLIBS = -L/usr/local/lib/ -lm -lrt -L$(CHECK_PATH)/src -lcheck  
+CRYPTOLIBS = -L$(TREZOR_CRYPTO_PATH) -ltrezor-crypto
 
 all: test_skycoin_crypto
 
+skycoin-crypto: skycoin_crypto.o $(OBJS)
+	$(CC) -rdynamic -shared $(CFLAGS) $(OBJS) $(CRYPTOLIBS) -o libskycoin-crypto.so
 
-test_skycoin_crypto: test_skycoin_crypto.o skycoin_crypto.o $(OBJS)
-	$(CC) test_skycoin_crypto.o $(OBJS) $(TESTLIBS) -o test_skycoin_crypto
+test_skycoin_crypto: test_skycoin_crypto.o skycoin-crypto
+	$(CC) test_skycoin_crypto.o $(OBJS) -L. -lskycoin-crypto  $(TESTLIBS) $(CRYPTOLIBS) -o test_skycoin_crypto
 
 
 
 clean:
 	rm -f *.o test_skycoin_crypto
+	rm -f *.so
