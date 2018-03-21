@@ -13,7 +13,7 @@ Right now the only dependency is to have `btcwallet` running. Then you can start
               -rpc_user="username"       \
               -rpc_pass="password"       \
               -wallet_account="account"  \
-              -wallet_pass="password"    \
+              -wallet_pass="password"
 ```
 
 * `rpc_node` is the `btcwallet` rpc server listening address
