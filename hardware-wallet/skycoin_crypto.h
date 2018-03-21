@@ -15,5 +15,5 @@ void generate_base58_address_from_pubkey(const uint8_t* pubkey, char* address, s
 void generate_bitcoin_address_from_pubkey(const uint8_t* pubkey, char* address, size_t *size_address);
 void generate_bitcoin_private_address_from_pubkey(const uint8_t* pubkey, char* address, size_t *size_address);
 int recover_pubkey_from_signed_message(char* message, const uint8_t* signature, uint8_t* pubkey);
-
+void tohex(char * str, const uint8_t* buffer, int bufferLength);
 #endif
