@@ -148,6 +148,7 @@ func interruptHandler(server *http.Server) {
 	}()
 }
 
+// TODO(stgleb): Do more active checks on service like http request etc.
 func watchDog() {
 	go func() {
 		interval, err := daemon.SdWatchdogEnabled(false)
