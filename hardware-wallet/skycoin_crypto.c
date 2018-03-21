@@ -1,17 +1,17 @@
 #include "skycoin_crypto.h"
 
 #include <string.h>
+#include <stdio.h> //sprintf
 
 #include "sha2.h"
 #include "bip32.h"
 #include "curves.h"
 #include "ripemd160.h"
 #include "base58.h"
-
 #include "ecdsa.h"
 
 extern void bn_print(const bignum256 *a);
-void create_node(const char* seed_str, HDNode* node);
+static void create_node(const char* seed_str, HDNode* node);
 
 void create_node(const char* seed_str, HDNode* node)
 {
@@ -19,6 +19,16 @@ void create_node(const char* seed_str, HDNode* node)
     hdnode_from_seed((const uint8_t *)seed_str, strlen(seed_str), curve_name, node);
     hdnode_fill_public_key(node);
 }
+
+void tohex(char * str, const uint8_t* buffer, int bufferLength)
+{
+    int i;
+    for (i = 0; i < bufferLength; ++i)
+    {
+        sprintf(&str[2*i], "%02x", buffer[i]);
+    }
+}
+
 
 void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
 {

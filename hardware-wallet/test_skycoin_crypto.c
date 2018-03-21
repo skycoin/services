@@ -8,15 +8,6 @@
 
 #define FROMHEX_MAXLEN 512
 
-void tohex(char * str, const uint8_t* buffer, int bufferLength)
-{
-    int i;
-    for (i = 0; i < bufferLength; ++i)
-    {
-        sprintf(&str[2*i], "%02x", buffer[i]);
-    }
-}
-
 const uint8_t *fromhex(const char *str)
 {
     static uint8_t buf[FROMHEX_MAXLEN];
