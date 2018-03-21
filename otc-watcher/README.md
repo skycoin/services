@@ -9,16 +9,18 @@ Watches addresses on blockchain and stores output information.
 Right now the only dependency is to have `btcwallet` running. Then you can start `otc-watcher` with the following command (assuming you ran `go build`):
 
 ```
-./otc-watcher -wallet_node="localhost:8332" \
-              -wallet_user="username"       \
-              -wallet_pass="password"       \
-              -wallet_account="account"
+./otc-watcher -rpc_node="localhost:8332" \
+              -rpc_user="username"       \
+              -rpc_pass="password"       \
+              -wallet_account="account"  \
+              -wallet_pass="password"    \
 ```
 
-* `wallet_node` is the location where the `btcwallet` rpc server is listening
-* `wallet_user` is the `btcwallet` rpc username
-* `wallet_pass` is the `btcwallet` password
+* `rpc_node` is the `btcwallet` rpc server listening address
+* `rpc_user` is the `btcwallet` rpc username
+* `rpc_pass` is the `btcwallet` rpc password
 * `wallet_account` is the `btcwallet` account name (will be created if missing)
+* `wallet_pass` is the `btcwallet` passphrase used when creating the wallet
 
 ## http api
 
@@ -74,3 +76,5 @@ Gets the outputs for an address that was previously registered.
 	}
 }
 ```
+
+The transaction hash and output index can then be used to create unique "deposit" ids for use throughout OTC.

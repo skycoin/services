@@ -14,28 +14,34 @@ import (
 )
 
 var (
-	WALLET_NODE = flag.String(
-		"wallet_node",
+	RPC_NODE = flag.String(
+		"rpc_node",
 		"localhost:8332",
 		"btcwallet rpc server",
 	)
 
-	WALLET_USER = flag.String(
-		"wallet_user",
+	RPC_USER = flag.String(
+		"rpc_user",
 		"otc",
 		"btcwallet rpc username",
 	)
 
-	WALLET_PASS = flag.String(
-		"wallet_pass",
+	RPC_PASS = flag.String(
+		"rpc_pass",
 		"otc",
-		"btcwallet password",
+		"btcwallet rpc password",
 	)
 
 	WALLET_ACCOUNT = flag.String(
 		"wallet_account",
 		"otc",
 		"btcwallet account name",
+	)
+
+	WALLET_PASS = flag.String(
+		"wallet_pass",
+		"otc",
+		"btcwallet wallet password",
 	)
 
 	PORT = flag.String("port", ":8080", "http api port")
@@ -48,7 +54,7 @@ func init() {
 
 	// get btc connection
 	b, err := btc.New(
-		*WALLET_NODE, *WALLET_ACCOUNT, *WALLET_USER, *WALLET_PASS,
+		*WALLET_ACCOUNT, *WALLET_PASS, *RPC_NODE, *RPC_USER, *RPC_PASS,
 	)
 	if err != nil {
 		panic(err)

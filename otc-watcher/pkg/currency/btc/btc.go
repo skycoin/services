@@ -17,7 +17,7 @@ type Connection struct {
 	stop    chan struct{}
 }
 
-func New(node, account, user, pass string) (*Connection, error) {
+func New(account, pass, rNode, rUser, rPass string) (*Connection, error) {
 	certs, err := ioutil.ReadFile(filepath.Join(
 		btcutil.AppDataDir("btcwallet", false), "rpc.cert"))
 	if err != nil {
@@ -27,10 +27,11 @@ func New(node, account, user, pass string) (*Connection, error) {
 	// connect to btc node
 	client, err := rpcclient.New(
 		&rpcclient.ConnConfig{
-			Host:         node,
+			// TODO: figure out why websockets hang
 			HTTPPostMode: true,
-			User:         user,
-			Pass:         pass,
+			Host:         rNode,
+			User:         rUser,
+			Pass:         rPass,
 			Certificates: certs,
 		},
 		nil,
@@ -52,7 +53,7 @@ func New(node, account, user, pass string) (*Connection, error) {
 	}
 
 	if !found {
-		if err = client.WalletPassphrase("otc", 1); err != nil {
+		if err = client.WalletPassphrase(pass, 1); err != nil {
 			return nil, err
 		}
 		if err = client.CreateNewAccount(account); err != nil {
