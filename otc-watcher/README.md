@@ -69,7 +69,7 @@ Gets the outputs for an address that was previously registered.
 			// satoshi amount
 			"amount": 684830048,
 			// number of confirmations (always > 1)
-			"confirmations":2,
+			"confirmations": 2,
 			// block height of this output
 			"height": 514553
 		}
