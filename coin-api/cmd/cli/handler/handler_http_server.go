@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/urfave/cli"
 
-	"github.com/skycoin/services/coin-api/cmd/servd"
+	"github.com/skycoin/services/coin-api/servd"
 )
 
 // ServerHTTP is a CLI handler of an HTTP server

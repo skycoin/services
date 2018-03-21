@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/skycoin/services/coin-api/cmd/servd"
+	"github.com/skycoin/services/coin-api/servd"
 )
 
 var configFile string
