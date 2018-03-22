@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/urfave/cli"
 
-	"github.com/skycoin/services/coin-api/cmd/servd"
+	"github.com/skycoin/services/coin-api/internal/server"
 )
 
 // ServerHTTP is a CLI handler of an HTTP server
@@ -26,14 +26,14 @@ func NewServerHTTP() *ServerHTTP {
 func (s ServerHTTP) Start(c *cli.Context) error {
 	cfgFile := c.Args().First()
 
-	var config = &servd.Config{}
+	var config = &server.Config{}
 	_, err := toml.DecodeFile(cfgFile, config)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	srv, err := servd.Start(config)
+	srv, err := server.Start(config)
 	if err != nil {
 		return err
 	}
