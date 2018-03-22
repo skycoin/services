@@ -13,7 +13,8 @@ Right now the only dependency is to have `btcwallet` running. Then you can start
               -rpc_user="username"       \
               -rpc_pass="password"       \
               -wallet_account="account"  \
-              -wallet_pass="password"
+              -wallet_pass="password"    \
+              -port=":8080"
 ```
 
 * `rpc_node` is the `btcwallet` rpc server listening address
@@ -21,6 +22,7 @@ Right now the only dependency is to have `btcwallet` running. Then you can start
 * `rpc_pass` is the `btcwallet` rpc password
 * `wallet_account` is the `btcwallet` account name (will be created if missing)
 * `wallet_pass` is the `btcwallet` passphrase used when creating the wallet
+* `port` is the http port to listen on
 
 ## http api
 
