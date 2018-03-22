@@ -140,15 +140,15 @@ START_TEST(test_bitcoin_private_address_from_pubkey)
     char address[256] = {0};
     size_t size_address = sizeof(address);
     memcpy(seckey, fromhex("001aa9e416aff5f3a3c7f9ae0811757cf54f393d50df861f5c33747954341aa7"), 32);
-    generate_bitcoin_private_address_from_pubkey(seckey, address, &size_address);
+    generate_bitcoin_private_address_from_seckey(seckey, address, &size_address);
     ck_assert_str_eq(address, "KwDuvkABDqb4WQiwc92DpXtBBiEywuKv46ZUvz5Gi5Xyn9gbcTJt");
 
     memcpy(seckey, fromhex("ff671860c58aad3f765d8add25046412dabf641186472e1553435e6e3c4a6fb0"), 32);
-    generate_bitcoin_private_address_from_pubkey(seckey, address, &size_address);
+    generate_bitcoin_private_address_from_seckey(seckey, address, &size_address);
     ck_assert_str_eq(address, "L5nBR59QkW6kyXFvyqNbncWo2jPMoBXSH9fGUkh3n2RQn5Mj3vfY");
 
     memcpy(seckey, fromhex("84fdc649964bf299a787cb78cd975910e197dbddd7db776ece544f41c44b3056"), 32);
-    generate_bitcoin_private_address_from_pubkey(seckey, address, &size_address);
+    generate_bitcoin_private_address_from_seckey(seckey, address, &size_address);
     ck_assert_str_eq(address, "L1gEDGuLTpMjybHnsJ24bUHhueocDrrKVdM3rj1rqXFHfyM2WtwD");
 }
 END_TEST
