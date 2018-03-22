@@ -1,4 +1,4 @@
-package servd
+package server
 
 import (
 	"net/http"

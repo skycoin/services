@@ -1,3 +1,10 @@
+# Coin-Api server
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/skycoin/services)](https://goreportcard.com/report/github.com/skycoin/services)
+
+Server that responsible for managing keys, addresses, deposits of multiple
+cryptocurrencies.
+
 
 ## Install
 

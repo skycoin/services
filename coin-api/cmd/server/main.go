@@ -7,13 +7,13 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/skycoin/services/coin-api/servd"
+	"github.com/skycoin/services/coin-api/internal/server"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "config.toml", "config file path")
+	flag.StringVar(&configFile, "init", "init.toml", "init file path")
 	flag.Parse()
 }
 
@@ -29,5 +29,5 @@ func main() {
 	cfg.AddConfigPath(".")
 	cfg.ReadConfig(f)
 
-	log.Fatal(servd.Start(cfg))
+	log.Fatal(server.Start(cfg))
 }
