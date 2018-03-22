@@ -134,7 +134,7 @@ START_TEST(test_bitcoin_address_from_pubkey)
 END_TEST
 
 
-START_TEST(test_bitcoin_private_address_from_pubkey)
+START_TEST(test_bitcoin_private_address_from_seckey)
 {
     uint8_t seckey[32] = {0};
     char address[256] = {0};
@@ -310,7 +310,7 @@ Suite *test_suite(void)
     tcase_add_test(tc, test_generate_deterministic_key_pair_iterator);
     tcase_add_test(tc, test_base58_address_from_pubkey);
     tcase_add_test(tc, test_bitcoin_address_from_pubkey);
-    tcase_add_test(tc, test_bitcoin_private_address_from_pubkey);
+    tcase_add_test(tc, test_bitcoin_private_address_from_seckey);
     tcase_add_test(tc, test_compute_sha256sum);
     tcase_add_test(tc, test_compute_ecdh);
     tcase_add_test(tc, test_recover_pubkey_from_signed_message);
