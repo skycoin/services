@@ -142,7 +142,7 @@ void generate_bitcoin_address_from_pubkey(const uint8_t* pubkey, char* address, 
 }
 
 
-void generate_bitcoin_private_address_from_pubkey(const uint8_t* seckey, char* address, size_t *size_address)
+void generate_bitcoin_private_address_from_seckey(const uint8_t* seckey, char* address, size_t *size_address)
 {
     uint8_t b2[38] = {0};
     uint8_t h1[SHA256_DIGEST_LENGTH] = {0};
