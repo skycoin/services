@@ -70,7 +70,7 @@ func New(account, pass, rNode, rUser, rPass string) (*Connection, error) {
 
 func (c *Connection) Scan(from uint64) (chan *otc.Block, error) {
 	blocks := make(chan *otc.Block, 0)
-	height := int64(from)
+	height := from
 
 	go func() {
 		for {
@@ -78,7 +78,7 @@ func (c *Connection) Scan(from uint64) (chan *otc.Block, error) {
 			case <-c.stop:
 				return
 			default:
-				block, err := c.Get(uint64(height))
+				block, err := c.Get(height)
 				if err != nil {
 					// TODO: use variable from btc* package rather than str
 					if err.Error() == "-1: Block number out of range" {
