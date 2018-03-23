@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/skycoin/skycoin/src/cipher"
 	"net/http"
+
+	"github.com/skycoin/skycoin/src/cipher"
 )
 
 func TestCheckBalanceOpen(t *testing.T) {

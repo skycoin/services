@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bytes"
+
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
