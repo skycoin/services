@@ -1,7 +1,6 @@
 package server
 
 import (
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -35,30 +34,9 @@ func Start(config *viper.Viper) error {
 	hMulti := newHandlerMulti(config.Sub("skycoin").GetString("Host"),
 		config.Sub("skycoin").GetInt("Port"))
 
-	var cert []byte
-
-	if config.Sub("bitcoin").GetBool("TLS") {
-		f, err := os.Open(config.Sub("bitcoin").GetString("CertFile"))
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		cert, err = ioutil.ReadAll(f)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	hBTC, err := newHandlerBTC(
-		config.Sub("bitcoin").GetString("NodeAddress"),
-		config.Sub("bitcoin").GetString("User"),
-		config.Sub("bitcoin").GetString("Password"),
-		!config.Sub("bitcoin").GetBool("TLS"),
-		cert,
 		config.Sub("bitcoin").GetString("BlockExplorer"),
-		config.Sub("bitcoin").GetInt64("BlockDepth"))
+		config.Sub("bitcoin").GetString("WatcherUrl"))
 
 	apiGroupV1 := e.Group("/api/v1")
 	skyGroup := apiGroupV1.Group("/sky")

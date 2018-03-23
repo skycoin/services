@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,7 +14,7 @@ import (
 )
 
 type checker struct {
-	expected float64
+	expected int64
 	txStatus *btc.TxStatus
 }
 
@@ -106,7 +105,7 @@ func TestGenerateAddress(t *testing.T) {
 
 func TestCheckBalance(t *testing.T) {
 	e := echo.New()
-	expected := 42.0
+	expected := int64(42)
 
 	checker := checker{
 		expected: expected,
@@ -146,7 +145,7 @@ func TestCheckBalance(t *testing.T) {
 		return
 	}
 
-	if math.Abs(resp.Result.Balance-expected) > 0.0001 {
+	if resp.Result.Balance != expected {
 		t.Errorf("Wrong account balance expected %f actual %f", expected, resp.Result.Balance)
 	}
 }
