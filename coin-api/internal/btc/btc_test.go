@@ -5,33 +5,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/skycoin/skycoin/src/cipher"
+	"net/http"
 )
 
-func TestCheckBalance(t *testing.T) {
-	client, err := rpcclient.New(&rpcclient.ConnConfig{
-		HTTPPostMode: true,
-		DisableTLS:   true,
-		Host:         "0.0.0.0",
-		User:         "",
-		Pass:         "",
-	}, nil)
-
-	if err != nil {
-		t.Error(err)
-	}
-
+func TestCheckBalanceOpen(t *testing.T) {
 	service := ServiceBtc{
-		nodeAddress:   "0.0.0.0",
-		client:        client,
+		watcherUrl:    "http://localhost:8080",
+		httpClient:    http.DefaultClient,
 		blockExplorer: "https://api.blockcypher.com",
 	}
 
 	// Create circuit breaker for btc service
-	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode,
+	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromWatcher,
 		service.getBalanceFromExplorer,
 		time.Second*10,
+		time.Second*3,
 		3)
 	service.balanceCircuitBreaker = balanceCircuitBreaker
 
@@ -42,29 +31,76 @@ func TestCheckBalance(t *testing.T) {
 	}
 }
 
-func TestServiceBtcCheckTxStatus(t *testing.T) {
-	client, err := rpcclient.New(&rpcclient.ConnConfig{
-		HTTPPostMode: true,
-		DisableTLS:   true,
-		Host:         "0.0.0.0",
-		User:         "",
-		Pass:         "",
-	}, nil)
+func TestCheckBalanceClosed(t *testing.T) {
+	service := ServiceBtc{
+		watcherUrl:    "http://localhost:8080",
+		httpClient:    http.DefaultClient,
+		blockExplorer: "https://api.blockcypher.com",
+	}
+	expectedBalance := int64(5)
+
+	success := func(add string) (interface{}, error) {
+		return &balanceResponse{
+			Deposits: []deposit{
+				{
+					Amount:        2,
+					Confirmations: 8,
+					Height:        9,
+				},
+				{
+					Amount:        3,
+					Confirmations: 7,
+					Height:        10,
+				},
+			},
+		}, nil
+	}
+
+	fallback := func(add string) (interface{}, error) {
+		return nil, nil
+	}
+
+	// Create circuit breaker for btc service
+	balanceCircuitBreaker := NewCircuitBreaker(
+		success,
+		fallback,
+		time.Second*10,
+		time.Second*3,
+		3)
+	service.balanceCircuitBreaker = balanceCircuitBreaker
+
+	resp, err := service.CheckBalance("02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc")
+
+	if service.balanceCircuitBreaker.IsOpen() {
+		t.Error("Expected curcuit breaker to be closed, actual open")
+	}
 
 	if err != nil {
 		t.Error(err)
-		return
 	}
 
+	balance, ok := resp.(int64)
+
+	if !ok {
+		t.Errorf("Wrong type conversion expected int64 actual %T", resp)
+	}
+
+	if expectedBalance != balance {
+		t.Errorf("Wrong balance  expected %d actual %d", expectedBalance, balance)
+	}
+}
+
+func TestServiceBtcCheckTxStatus(t *testing.T) {
 	service := ServiceBtc{
-		nodeAddress:   "0.0.0.0",
-		client:        client,
+		watcherUrl:    "http://localhost:8080",
+		httpClient:    http.DefaultClient,
 		blockExplorer: "https://api.blockcypher.com",
 	}
 
 	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode,
 		service.getTxStatusFromExplorer,
 		time.Second*10,
+		time.Second*3,
 		3)
 	service.txStatusCircuitBreaker = txStatusCircuitBreaker
 

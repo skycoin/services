@@ -3,18 +3,13 @@ package btc
 import (
 	"crypto/rand"
 	"errors"
-	"fmt"
 
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"time"
 
-	"log"
-
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/skycoin/services/bitcoin-scanning-wallet/scan"
+	"bytes"
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
@@ -45,8 +40,8 @@ ig==
 
 // ServiceBtc encapsulates operations with bitcoin
 type ServiceBtc struct {
-	nodeAddress string
-	client      *rpcclient.Client
+	watcherUrl string
+	httpClient *http.Client
 
 	// Circuit breaker related fields
 	balanceCircuitBreaker  *CircuitBreaker
@@ -72,6 +67,21 @@ type TxStatus struct {
 	Received  int64  `json:"received"`
 }
 
+type balanceRequest struct {
+	Address  string `json:"address"`
+	Currency string `json:"currency"`
+}
+
+type deposit struct {
+	Amount        int `json:"amount"`
+	Confirmations int `json:"confirmations"`
+	Height        int `json:"height"`
+}
+
+type balanceResponse struct {
+	Deposits []deposit
+}
+
 type explorerTxStatus struct {
 	Total         float64 `json:"total"`
 	Fees          float64 `json:"fees"`
@@ -86,59 +96,31 @@ type explorerTxStatus struct {
 }
 
 type explorerAddressResponse struct {
-	Address            string  `json:"address"`
-	TotalReceived      int     `json:"total_received"`
-	TotalSent          int     `json:"total_sent"`
-	Balance            int64   `json:"balance"`
-	UnconfirmedBalance float64 `json:"unconfirmed_balance"`
-	FinalBalance       float64 `json:"final_balance"`
-	NTx                int     `json:"n_tx"`
+	Address            string `json:"address"`
+	TotalReceived      int    `json:"total_received"`
+	TotalSent          int    `json:"total_sent"`
+	Balance            int64  `json:"balance"`
+	UnconfirmedBalance int64  `json:"unconfirmed_balance"`
+	FinalBalance       int64  `json:"final_balance"`
+	NTx                int    `json:"n_tx"`
 }
 
 // NewBTCService returns ServiceBtc instance
-func NewBTCService(btcAddr, btcUser, btcPass string, disableTLS bool,
-	cert []byte, blockExplorer string, blockDepth int64) (*ServiceBtc, error) {
-	if len(btcAddr) == 0 {
-		btcAddr = defaultAddr
-	}
-
-	if len(btcUser) == 0 {
-		btcUser = defaultUser
-	}
-
-	if len(btcPass) == 0 {
-		btcPass = defaultPass
-	}
-
-	if !disableTLS && len(cert) == 0 {
-		cert = []byte(defaultCert)
-	}
-
+func NewBTCService(blockExplorer string, watcherUrl string) (*ServiceBtc, error) {
 	if len(blockExplorer) == 0 {
 		blockExplorer = defaultBlockExplorer
 	}
 
-	client, err := rpcclient.New(&rpcclient.ConnConfig{
-		HTTPPostMode: true,
-		DisableTLS:   disableTLS,
-		Host:         btcAddr,
-		User:         btcUser,
-		Pass:         btcPass,
-		Certificates: cert,
-	}, nil)
-
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error creating new btc client: %v", err))
-	}
-
 	service := &ServiceBtc{
-		nodeAddress:   btcAddr,
-		client:        client,
+		watcherUrl: watcherUrl,
+		httpClient: &http.Client{
+			Timeout:   time.Second * 10,
+			Transport: http.DefaultTransport,
+		},
 		blockExplorer: blockExplorer,
-		blockDepth:    blockDepth,
 	}
 
-	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromNode,
+	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromWatcher,
 		service.getBalanceFromExplorer,
 		time.Second*10,
 		time.Second*3,
@@ -183,33 +165,7 @@ func (s *ServiceBtc) CheckTxStatus(txId string) (interface{}, error) {
 }
 
 func (s *ServiceBtc) getTxStatusFromNode(txId string) (interface{}, error) {
-	hash := &chainhash.Hash{}
-	chainhash.Decode(hash, txId)
-
-	rawTx, err := s.client.GetTransaction(hash)
-
-	if err != nil {
-		return nil, err
-	}
-
-	txStatus := &TxStatus{
-		Amount:        rawTx.Amount,
-		Confirmations: rawTx.Confirmations,
-		Fee:           rawTx.Fee,
-
-		BlockHash:  rawTx.BlockHash,
-		BlockIndex: rawTx.BlockIndex,
-
-		Hash:      rawTx.TxID,
-		Confirmed: rawTx.Time,
-		Received:  rawTx.TimeReceived,
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return txStatus, nil
+	return nil, errors.New("not implemented")
 }
 
 func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
@@ -250,49 +206,41 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
 	return txStatus, nil
 }
 
-func (s *ServiceBtc) getBalanceFromNode(address string) (interface{}, error) {
+func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) {
 	var (
-		balance    int64 = 0
-		resultChan       = make(chan int64)
-		errorChan        = make(chan error)
+		balance float64
+		buffer  bytes.Buffer
 	)
 
-	log.Printf("Analyze blocks to depth of %d for address %s", s.blockDepth, address)
-	height, err := s.client.GetBlockCount()
+	reqBody := &balanceRequest{
+		Address:  address,
+		Currency: "BTC",
+	}
+
+	if err := json.NewEncoder(&buffer).Encode(reqBody); err != nil {
+		return nil, err
+	}
+
+	resp, err := s.httpClient.Post(s.watcherUrl+"/outputs", "application/json", &buffer)
 
 	if err != nil {
 		return nil, err
 	}
 
-	for i := height - s.blockDepth; i < height; i++ {
-		go func(blockHeight int64) {
-			log.Printf("Scan block with height %d", blockHeight)
-			deposits, err := scan.ScanBlock(s.client, blockHeight)
-
-			if err != nil {
-				errorChan <- err
-				return
-			}
-
-			for _, deposit := range deposits {
-				if deposit.Addr == address {
-					balance += deposit.Tx.SatoshiAmount
-				}
-			}
-
-			resultChan <- balance
-		}(i)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("watcher returned an error")
 	}
 
-	for i := height - s.blockDepth; i < height; i++ {
-		select {
-		case amount := <-resultChan:
-			balance += amount
-		case err := <-errorChan:
-			if err != nil {
-				return nil, err
-			}
-		}
+	balanceResp := &balanceResponse{}
+
+	json.NewDecoder(resp.Body).Decode(balanceResp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deposit := range balanceResp.Deposits {
+		balance = balance + float64(deposit.Amount)
 	}
 
 	return balance, nil
@@ -317,8 +265,8 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 	return r.FinalBalance, nil
 }
 
-func (s *ServiceBtc) GetHost() string {
-	return s.nodeAddress
+func (s *ServiceBtc) WatcherHost() string {
+	return s.watcherUrl
 }
 
 func (s *ServiceBtc) GetStatus() string {

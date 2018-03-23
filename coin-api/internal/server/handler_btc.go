@@ -19,8 +19,8 @@ type keyPairResponse struct {
 }
 
 type balanceResponse struct {
-	Balance float64 `json:"balance"`
-	Address string  `json:"address"`
+	Balance int64  `json:"balance"`
+	Address string `json:"address"`
 }
 
 type addressRequest struct {
@@ -41,9 +41,9 @@ type BtcStats struct {
 	NodeHost   string `json:"node_host"`
 }
 
-func newHandlerBTC(btcAddr, btcUser, btcPass string, disableTLS bool, cert []byte, blockExplorer string, blockDepth int64) (*handlerBTC, error) {
-	log.Printf("Start new BTC handler with host %s user %s", btcAddr, btcUser)
-	service, err := btc.NewBTCService(btcAddr, btcUser, btcPass, disableTLS, cert, blockExplorer, blockDepth)
+func newHandlerBTC(blockExplorer string, watcherUrl string) (*handlerBTC, error) {
+	log.Printf("Start new BTC handler with watcher %s explorer %s", blockExplorer, watcherUrl)
+	service, err := btc.NewBTCService(blockExplorer, watcherUrl)
 
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
 
-	resultChan := make(chan float64)
+	resultChan := make(chan int64)
 	errChan := make(chan error)
 
 	go func() {
@@ -198,30 +198,22 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		}
 
 		var (
-			balanceInt   int64
-			balanceFloat float64
-			ok           bool
+			balance int64
+			ok      bool
 		)
 
-		balanceInt, ok = result.(int64)
-
-		if ok {
-			balanceFloat = float64(balanceInt)
-			resultChan <- balanceFloat
-		}
-
-		balanceFloat, ok = result.(float64)
+		balance, ok = result.(int64)
 
 		if !ok {
 			errChan <- errors.New("cannot convert result to type float64")
 			return
 		}
 
-		resultChan <- balanceFloat
+		resultChan <- balance
 	}()
 
 	var (
-		balance float64
+		balance int64
 		err     error
 		done    bool
 	)
@@ -265,7 +257,7 @@ func (h handlerBTC) CollectStatuses(stats *Status) {
 	defer stats.Unlock()
 	stats.Stats["btc"] = &BtcStats{
 		NodeStatus: h.btcService.GetStatus(),
-		NodeHost:   h.btcService.GetHost(),
+		NodeHost:   h.btcService.WatcherHost(),
 	}
 }
 
