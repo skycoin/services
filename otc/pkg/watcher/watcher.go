@@ -70,5 +70,7 @@ func (w *Watcher) Outputs(drop *otc.Drop) (otc.Outputs, error) {
 		return fmt.Errorf("watcher returned error")
 	}
 
+	// TODO: output unmarshalling
+
 	return nil, nil
 }
