@@ -5,6 +5,7 @@
 
 #include "check.h"
 #include "sha2.h" //SHA256_DIGEST_LENGTH
+#include "base58.h"
 
 #define FROMHEX_MAXLEN 512
 
@@ -23,6 +24,26 @@ const uint8_t *fromhex(const char *str)
     }
     return buf;
 }
+
+START_TEST(test_base58_decode)
+{
+    uint8_t addrhex[25] = {0};
+    uint8_t signhex[65] = {0};
+    char address[36] = "2EVNa4CK9SKosT4j1GEn8SuuUUEAXaHAMbM";
+    char signature[90] = "GA82nXSwVEPV5soMjCiQkJb4oLEAo6FMK8CAE2n2YBTm7xjhAknUxtZrhs3RPVMfQsEoLwkJCEgvGj8a2vzthBQ1M";
+
+    size_t sz = sizeof(signhex);
+    b58tobin(signhex, &sz, signature);
+    ck_assert_int_eq(sz, 65);
+    ck_assert_mem_eq(signhex , fromhex("abc30130e2d9561fa8eb9871b75b13100689937dfc41c98d611b985ca25258c960be25c0b45874e1255f053863f6e175300d7e788d8b93d6dcfa9377120e4d3500"), sz);
+
+    sz = sizeof(addrhex);
+    b58tobin(addrhex, &sz, address);
+    ck_assert_int_eq(sz, 25);
+    ck_assert_mem_eq(addrhex , fromhex("b1aa8dd3e68d1d9b130c67ea1339ac9250b7d845002437a5a0"), sz);
+
+}
+END_TEST
 
 START_TEST(test_generate_public_key_from_seckey)
 {
@@ -314,6 +335,7 @@ Suite *test_suite(void)
     tcase_add_test(tc, test_compute_sha256sum);
     tcase_add_test(tc, test_compute_ecdh);
     tcase_add_test(tc, test_recover_pubkey_from_signed_message);
+    tcase_add_test(tc, test_base58_decode);
     suite_add_tcase(s, tc);
 
     return s;
