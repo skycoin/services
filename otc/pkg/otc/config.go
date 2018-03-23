@@ -25,7 +25,7 @@ type Config struct {
 			Listen string
 		}
 	}
-	CAPI struct {
+	Watcher struct {
 		Node string
 	}
 }
