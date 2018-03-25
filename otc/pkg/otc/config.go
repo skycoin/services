@@ -25,6 +25,9 @@ type Config struct {
 			Listen string
 		}
 	}
+	Watcher struct {
+		Node string
+	}
 }
 
 func NewConfig(path string) (*Config, error) {

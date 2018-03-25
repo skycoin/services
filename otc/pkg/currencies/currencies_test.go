@@ -2,6 +2,7 @@ package currencies
 
 import (
 	"testing"
+	"time"
 
 	"github.com/skycoin/services/otc/pkg/otc"
 )
@@ -52,6 +53,16 @@ func TestCurrenciesNew(t *testing.T) {
 	}
 }
 
+func TestCurrenciesUsed(t *testing.T) {
+	curs := New()
+	curs.Add(otc.BTC, &MockConnection{})
+
+	_, err := curs.Used(otc.BTC)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCurrenciesAdd(t *testing.T) {
 	curs := New()
 
@@ -64,6 +75,8 @@ func TestCurrenciesAdd(t *testing.T) {
 	if err != ErrConnExists {
 		t.Fatal(err)
 	}
+
+	<-time.After(time.Second)
 
 	if curs.Connections[otc.BTC] == nil {
 		t.Fatal("add connection error")

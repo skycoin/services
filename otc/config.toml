@@ -15,3 +15,6 @@ listen = ":8081"
 
 [API.Admin]
 listen = ":8080"
+
+[Watcher]
+node = "localhost:8888"
