@@ -226,7 +226,7 @@ int verify_digest_recover(const ecdsa_curve *curve, uint8_t *pub_key, const uint
 message 32 bytes, 
 pubkey 33 bytes
 returns 0 if signature matches and 5 if it does not*/
-int recover_pubkey_from_signed_message(char* message, const uint8_t* signature, uint8_t* pubkey)
+int recover_pubkey_from_signed_message(const char* message, const uint8_t* signature, uint8_t* pubkey)
 {
     int res = -1;
     HDNode dummy_node;
