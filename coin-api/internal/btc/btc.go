@@ -136,7 +136,6 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
 
 func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) {
 	var (
-		balance float64
 		buffer  bytes.Buffer
 	)
 
@@ -174,7 +173,7 @@ func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) 
 
 	balanceResp.Address = address
 
-	return balance, nil
+	return balanceResp, nil
 }
 
 func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error) {
@@ -193,7 +192,7 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 		return 0, err
 	}
 
-	balanceResp := BalanceResponse{
+	balanceResp := &BalanceResponse{
 		Address:  address,
 		Balance:  r.FinalBalance,
 		Deposits: make([]deposit, 0),

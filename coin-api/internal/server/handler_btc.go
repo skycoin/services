@@ -181,7 +181,7 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
 
-	resultChan := make(chan btc.BalanceResponse)
+	resultChan := make(chan *btc.BalanceResponse)
 	errChan := make(chan error)
 
 	go func() {
@@ -193,14 +193,14 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		}
 
 		var (
-			balance btc.BalanceResponse
+			balance *btc.BalanceResponse
 			ok      bool
 		)
 
-		balance, ok = result.(btc.BalanceResponse)
+		balance, ok = result.(*btc.BalanceResponse)
 
 		if !ok {
-			errChan <- errors.New("cannot convert result to type float64")
+			errChan <- errors.New("cannot convert result to type *btc.BalanceResponse")
 			return
 		}
 
@@ -208,7 +208,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	}()
 
 	var (
-		balance btc.BalanceResponse
+		balance *btc.BalanceResponse
 		err     error
 		done    bool
 	)
@@ -232,7 +232,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	resp := struct {
 		Status string              `json:"status"`
 		Code   int                 `json:"code"`
-		Result btc.BalanceResponse `json:"result"`
+		Result *btc.BalanceResponse `json:"result"`
 	}{
 		Status: "Ok",
 		Code:   http.StatusOK,

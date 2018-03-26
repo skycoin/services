@@ -39,9 +39,13 @@ func TestCheckBalanceClosed(t *testing.T) {
 		blockExplorer: "https://api.blockcypher.com",
 	}
 	expectedBalance := int64(5)
+	expectedAddress := "02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+	expectedDepositCount := 2
 
 	success := func(add string) (interface{}, error) {
 		return &BalanceResponse{
+			Address: expectedAddress,
+			Balance: expectedBalance,
 			Deposits: []deposit{
 				{
 					Amount:        2,
@@ -69,8 +73,7 @@ func TestCheckBalanceClosed(t *testing.T) {
 		time.Second*3,
 		3)
 	service.balanceCircuitBreaker = balanceCircuitBreaker
-
-	resp, err := service.CheckBalance("02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc")
+	resp, err := service.CheckBalance(expectedAddress)
 
 	if service.balanceCircuitBreaker.IsOpen() {
 		t.Error("Expected curcuit breaker to be closed, actual open")
@@ -80,14 +83,22 @@ func TestCheckBalanceClosed(t *testing.T) {
 		t.Error(err)
 	}
 
-	balance, ok := resp.(int64)
+	balance, ok := resp.(*BalanceResponse)
 
 	if !ok {
-		t.Errorf("Wrong type conversion expected int64 actual %T", resp)
+		t.Errorf("Wrong type conversion expected *BalanceResponse actual %T", resp)
 	}
 
-	if expectedBalance != balance {
+	if expectedBalance != balance.Balance {
 		t.Errorf("Wrong balance  expected %d actual %d", expectedBalance, balance)
+	}
+
+	if expectedAddress != balance.Address {
+		t.Errorf("Wrong address expected %s actual %s", expectedAddress, balance.Address)
+	}
+
+	if expectedDepositCount != len(balance.Deposits) {
+		t.Errorf("Wrong deposit count expected %d actual %d", expectedDepositCount, len(balance.Deposits))
 	}
 }
 
