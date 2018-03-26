@@ -2,13 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
-	"log"
-
-	"github.com/skycoin/services/otc/pkg/otc"
-
 	"github.com/skycoin/services/otc-watcher/pkg/scanner"
+	"github.com/skycoin/services/otc/pkg/otc"
 )
 
 func New(scnr *scanner.Scanner) *http.ServeMux {

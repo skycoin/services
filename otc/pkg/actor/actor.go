@@ -32,7 +32,6 @@ func (a *Actor) Add(work *otc.Work) {
 
 func (a *Actor) Delete(work *otc.Work) {
 	atomic.AddInt64(&a.Reqs, -1)
-
 	a.Work.Delete(work)
 }
 
