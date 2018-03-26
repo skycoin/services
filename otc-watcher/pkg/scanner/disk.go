@@ -6,8 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/skycoin/services/otc-watcher/pkg/currency"
 	"github.com/skycoin/services/otc/pkg/otc"
+
+	"github.com/skycoin/services/otc-watcher/pkg/currency"
 )
 
 func (s *Scanner) Save(cur otc.Currency) error {

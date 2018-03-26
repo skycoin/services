@@ -2,14 +2,16 @@ package scanner
 
 import (
 	"errors"
-	"fmt"
+
+	"log"
+
+	"github.com/skycoin/services/otc/pkg/otc"
 
 	"github.com/skycoin/services/otc-watcher/pkg/currency"
-	"github.com/skycoin/services/otc/pkg/otc"
 )
 
 var (
-	ErrAddressMissing = errors.New("address not being scanned")
+	ErrAddressMissing = errors.New("address not in watch list")
 )
 
 type Scanner struct {
@@ -48,7 +50,7 @@ func (s *Scanner) Scan(cur otc.Currency, blocks chan *otc.Block) {
 		// get block from connection channel
 		block := <-blocks
 		// TODO: use logger
-		fmt.Printf("scanning block %d\n", block.Height)
+		log.Printf("scanning block %d\n", block.Height)
 
 		// update storage based on received block
 		s.Scanning[cur].Update(block)
