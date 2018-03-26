@@ -18,11 +18,6 @@ type keyPairResponse struct {
 	Private []byte `json:"private"`
 }
 
-type balanceResponse struct {
-	Balance int64  `json:"balance"`
-	Address string `json:"address"`
-}
-
 type addressRequest struct {
 	PublicKey string `json:"key"`
 }
@@ -186,7 +181,7 @@ func (h *handlerBTC) checkTransaction(ctx echo.Context) error {
 func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	address := ctx.Param("address")
 
-	resultChan := make(chan int64)
+	resultChan := make(chan btc.BalanceResponse)
 	errChan := make(chan error)
 
 	go func() {
@@ -198,11 +193,11 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 		}
 
 		var (
-			balance int64
+			balance btc.BalanceResponse
 			ok      bool
 		)
 
-		balance, ok = result.(int64)
+		balance, ok = result.(btc.BalanceResponse)
 
 		if !ok {
 			errChan <- errors.New("cannot convert result to type float64")
@@ -213,7 +208,7 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	}()
 
 	var (
-		balance int64
+		balance btc.BalanceResponse
 		err     error
 		done    bool
 	)
@@ -235,16 +230,13 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	}
 
 	resp := struct {
-		Status string          `json:"status"`
-		Code   int             `json:"code"`
-		Result balanceResponse `json:"result"`
+		Status string              `json:"status"`
+		Code   int                 `json:"code"`
+		Result btc.BalanceResponse `json:"result"`
 	}{
 		Status: "Ok",
 		Code:   http.StatusOK,
-		Result: balanceResponse{
-			Balance: balance,
-			Address: address,
-		},
+		Result: balance,
 	}
 
 	ctx.JSONPretty(http.StatusOK, resp, "\t")

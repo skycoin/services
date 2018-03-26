@@ -41,7 +41,7 @@ func TestCheckBalanceClosed(t *testing.T) {
 	expectedBalance := int64(5)
 
 	success := func(add string) (interface{}, error) {
-		return &balanceResponse{
+		return &BalanceResponse{
 			Deposits: []deposit{
 				{
 					Amount:        2,
