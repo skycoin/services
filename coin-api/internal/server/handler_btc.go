@@ -37,7 +37,7 @@ type BtcStats struct {
 }
 
 func newHandlerBTC(blockExplorer string, watcherUrl string) (*handlerBTC, error) {
-	log.Printf("Start new BTC handler with watcher %s explorer %s", blockExplorer, watcherUrl)
+	log.Printf("Start new BTC handler with watcher %s explorer %s", watcherUrl, blockExplorer)
 	service, err := btc.NewBTCService(blockExplorer, watcherUrl)
 
 	if err != nil {
@@ -230,8 +230,8 @@ func (h *handlerBTC) checkBalance(ctx echo.Context) error {
 	}
 
 	resp := struct {
-		Status string              `json:"status"`
-		Code   int                 `json:"code"`
+		Status string               `json:"status"`
+		Code   int                  `json:"code"`
 		Result *btc.BalanceResponse `json:"result"`
 	}{
 		Status: "Ok",

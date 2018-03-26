@@ -7,12 +7,6 @@ type balanceRequest struct {
 	Currency string `json:"currency"`
 }
 
-type deposit struct {
-	Amount        int `json:"amount"`
-	Confirmations int `json:"confirmations"`
-	Height        int `json:"height"`
-}
-
 type explorerTxStatus struct {
 	Total         float64 `json:"total"`
 	Fees          float64 `json:"fees"`
@@ -56,10 +50,16 @@ type explorerAddressResponse struct {
 	TxURL              string        `json:"tx_url"`
 }
 
+type Deposit struct {
+	Amount        int `json:"amount"`
+	Confirmations int `json:"confirmations"`
+	Height        int `json:"height"`
+}
+
 type BalanceResponse struct {
 	Address  string    `json:"address"`
 	Balance  int64     `json:"balance"`
-	Deposits []deposit `json:"utxo"`
+	Deposits []Deposit `json:"deposits"`
 }
 
 type TxStatus struct {

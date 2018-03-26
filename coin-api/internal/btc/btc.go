@@ -11,6 +11,7 @@ import (
 
 	"bytes"
 
+	"fmt"
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
@@ -136,7 +137,7 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
 
 func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) {
 	var (
-		buffer  bytes.Buffer
+		buffer bytes.Buffer
 	)
 
 	reqBody := &balanceRequest{
@@ -155,7 +156,7 @@ func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("watcher returned an error")
+		return nil, fmt.Errorf("watcher returned an error %d", resp.StatusCode)
 	}
 
 	balanceResp := &BalanceResponse{}
@@ -166,7 +167,7 @@ func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) 
 		return nil, err
 	}
 
-	// Summarize deposit values
+	// Summarize Deposit values
 	for _, deposit := range balanceResp.Deposits {
 		balanceResp.Balance += int64(deposit.Amount)
 	}
@@ -195,14 +196,14 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 	balanceResp := &BalanceResponse{
 		Address:  address,
 		Balance:  r.FinalBalance,
-		Deposits: make([]deposit, 0),
+		Deposits: make([]Deposit, 0),
 	}
 
 	// Collect input transactions for the address,
 	// see for detail https://blockcypher.github.io/documentation/#transactions
 	for _, tx := range r.Transactions {
 		if tx.TxInputN == -1 {
-			dep := deposit{
+			dep := Deposit{
 				tx.Value,
 				tx.Confirmations,
 				tx.BlockHeight,

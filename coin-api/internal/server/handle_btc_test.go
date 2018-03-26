@@ -129,8 +129,8 @@ func TestCheckBalance(t *testing.T) {
 	handler.checkBalance(ctx)
 
 	type response struct {
-		Status string          `json:"status"`
-		Code   int             `json:"code"`
+		Status string              `json:"status"`
+		Code   int                 `json:"code"`
 		Result btc.BalanceResponse `json:"result"`
 	}
 
