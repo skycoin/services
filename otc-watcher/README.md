@@ -26,25 +26,6 @@ Right now the only dependency is to have `btcwallet` running. Then you can start
 
 ## http api
 
-### /register
-
-Registers an address to be watched. OTC needs to watch addresses indefinitely so there's no need for an "unregister" call right now.
-
-#### request
-
-```js
-{
-	// address to be watched
-	"address": "1Hz96kJKF2HLPGY15JWLB5m9qGNxvt8tHJ",
-	// currency type of address (must be supported by otc-watcher)
-	"currency": "BTC"
-}
-```
-
-#### response
-
-`200 OK` if good, anything else and there was an error.
-
 ### /outputs
 
 Gets the outputs for an address that was previously registered.
@@ -62,6 +43,8 @@ Gets the outputs for an address that was previously registered.
 
 #### response
 
+Status 200 OK
+
 ```js
 {
 	// transaction hash
@@ -78,5 +61,12 @@ Gets the outputs for an address that was previously registered.
 	}
 }
 ```
+
+Status 404 Not found is returned in case if address is not in watch list
+address is automatically added afterwards.
+
+
+Status 500 internal server error is returned if address cannot be added
+to watch list or other error occurred.
 
 The transaction hash and output index can then be used to create unique "deposit" ids for use throughout OTC.
