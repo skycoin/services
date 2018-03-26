@@ -79,14 +79,33 @@ type explorerTxStatus struct {
 	Received  time.Time `json:"received"`
 }
 
+type Transaction struct {
+	TxHash        string    `json:"tx_hash"`
+	BlockHeight   int       `json:"block_height"`
+	TxInputN      int       `json:"tx_input_n"`
+	TxOutputN     int       `json:"tx_output_n"`
+	Value         int       `json:"value"`
+	RefBalance    int       `json:"ref_balance"`
+	Confirmations int       `json:"confirmations"`
+	Confirmed     time.Time `json:"confirmed"`
+	DoubleSpend   bool      `json:"double_spend"`
+	Spent         bool      `json:"spent,omitempty"`
+	SpentBy       string    `json:"spent_by,omitempty"`
+}
+
 type explorerAddressResponse struct {
-	Address            string `json:"address"`
-	TotalReceived      int    `json:"total_received"`
-	TotalSent          int    `json:"total_sent"`
-	Balance            int64  `json:"balance"`
-	UnconfirmedBalance int64  `json:"unconfirmed_balance"`
-	FinalBalance       int64  `json:"final_balance"`
-	NTx                int    `json:"n_tx"`
+	Address            string        `json:"address"`
+	TotalReceived      int64         `json:"total_received"`
+	TotalSent          int64         `json:"total_sent"`
+	Balance            int64         `json:"balance"`
+	UnconfirmedBalance int64         `json:"unconfirmed_balance"`
+	FinalBalance       int64         `json:"final_balance"`
+	NTx                int64         `json:"n_tx"`
+	UnconfirmedNTx     int64         `json:"unconfirmed_n_tx"`
+	FinalNTx           int64         `json:"final_n_tx"`
+	Transactions       []Transaction `json:"txrefs"`
+	HasMore            bool          `json:"hasMore"`
+	TxURL              string        `json:"tx_url"`
 }
 
 // NewBTCService returns ServiceBtc instance
@@ -249,7 +268,25 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 		return 0, err
 	}
 
-	return r.FinalBalance, nil
+	balanceResp := BalanceResponse{
+		Address:  address,
+		Balance:  r.FinalBalance,
+		Deposits: make([]deposit, 0),
+	}
+
+	// Collect input transactions for the address
+	for _, tx := range r.Transactions {
+		if tx.TxInputN == -1 {
+			dep := deposit{
+				tx.Value,
+				tx.Confirmations,
+				tx.BlockHeight,
+			}
+			balanceResp.Deposits = append(balanceResp.Deposits, dep)
+		}
+	}
+
+	return balanceResp, nil
 }
 
 func (s *ServiceBtc) WatcherHost() string {
