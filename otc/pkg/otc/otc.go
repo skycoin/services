@@ -16,7 +16,7 @@ const (
 type Drop struct {
 	Address  string   `json:"address"`
 	Currency Currency `json:"currency"`
-	Amount   uint64   `json:"amount"`
+	Amount   uint64   `json:"amount,omitempty"`
 }
 
 type Status string
@@ -81,4 +81,37 @@ type Result struct {
 
 func (w *Work) Return(err error) {
 	w.Done <- &Result{time.Now().UTC().Unix(), err}
+}
+
+type Output struct {
+	Amount    uint64   `json:"amount"`
+	Addresses []string `json:"addresses"`
+}
+
+type OutputVerbose struct {
+	Amount        uint64   `json:"amount"`
+	Confirmations uint64   `json:"confirmations"`
+	Addresses     []string `json:"addresses,omitempty"`
+	Height        uint64   `json:"height,omitempty"`
+}
+
+type Transaction struct {
+	Hash          string          `json:"hash"`
+	Confirmations uint64          `json:"confirmations"`
+	Out           map[int]*Output `json:"out"`
+}
+
+type Block struct {
+	Height       uint64                  `json:"height"`
+	Transactions map[string]*Transaction `json:"transactions"`
+}
+
+type Outputs map[string]map[int]*OutputVerbose
+
+func (o Outputs) Update(hash string, index int, output *OutputVerbose) {
+	if o[hash] == nil {
+		o[hash] = make(map[int]*OutputVerbose, 0)
+	}
+
+	o[hash][index] = output
 }
