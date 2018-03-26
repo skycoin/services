@@ -31,22 +31,6 @@ type ServiceBtc struct {
 
 	// Block explorer url
 	blockExplorer string
-
-	// How deep we will analyze blockchain for deposits on address
-	blockDepth int64
-}
-
-type TxStatus struct {
-	Amount        float64 `json:"amount"`
-	Confirmations int64   `json:"confirmations"`
-	Fee           float64 `json:"fee"`
-
-	BlockHash  string `json:"blockhash"`
-	BlockIndex int64  `json:"block_index"`
-
-	Hash      string `json:"hash"`
-	Confirmed int64  `json:"confirmed"`
-	Received  int64  `json:"received"`
 }
 
 type balanceRequest struct {
@@ -58,12 +42,6 @@ type deposit struct {
 	Amount        int `json:"amount"`
 	Confirmations int `json:"confirmations"`
 	Height        int `json:"height"`
-}
-
-type BalanceResponse struct {
-	Address  string    `json:"address"`
-	Balance  int64     `json:"balance"`
-	Deposits []deposit `json:"utxo"`
 }
 
 type explorerTxStatus struct {
@@ -79,7 +57,7 @@ type explorerTxStatus struct {
 	Received  time.Time `json:"received"`
 }
 
-type Transaction struct {
+type transaction struct {
 	TxHash        string    `json:"tx_hash"`
 	BlockHeight   int       `json:"block_height"`
 	TxInputN      int       `json:"tx_input_n"`
@@ -93,6 +71,7 @@ type Transaction struct {
 	SpentBy       string    `json:"spent_by,omitempty"`
 }
 
+// NOTE(stgleb): See https://blockcypher.github.io/documentation/#address_details
 type explorerAddressResponse struct {
 	Address            string        `json:"address"`
 	TotalReceived      int64         `json:"total_received"`
@@ -103,9 +82,28 @@ type explorerAddressResponse struct {
 	NTx                int64         `json:"n_tx"`
 	UnconfirmedNTx     int64         `json:"unconfirmed_n_tx"`
 	FinalNTx           int64         `json:"final_n_tx"`
-	Transactions       []Transaction `json:"txrefs"`
+	Transactions       []transaction `json:"txrefs"`
 	HasMore            bool          `json:"hasMore"`
 	TxURL              string        `json:"tx_url"`
+}
+
+type BalanceResponse struct {
+	Address  string    `json:"address"`
+	Balance  int64     `json:"balance"`
+	Deposits []deposit `json:"utxo"`
+}
+
+type TxStatus struct {
+	Amount        float64 `json:"amount"`
+	Confirmations int64   `json:"confirmations"`
+	Fee           float64 `json:"fee"`
+
+	BlockHash  string `json:"blockhash"`
+	BlockIndex int64  `json:"block_index"`
+
+	Hash      string `json:"hash"`
+	Confirmed int64  `json:"confirmed"`
+	Received  int64  `json:"received"`
 }
 
 // NewBTCService returns ServiceBtc instance
@@ -274,7 +272,8 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 		Deposits: make([]deposit, 0),
 	}
 
-	// Collect input transactions for the address
+	// Collect input transactions for the address,
+	// see for detail https://blockcypher.github.io/documentation/#transactions
 	for _, tx := range r.Transactions {
 		if tx.TxInputN == -1 {
 			dep := deposit{
