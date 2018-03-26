@@ -50,12 +50,12 @@ func (c *CircuitBreaker) Do(arg string) (interface{}, error) {
 	result, err := c.doAction(arg)
 
 	if err != nil {
-		log.Printf("Get result from node returned error %s", err.Error())
+		log.Printf("Get result from watcher returned error %s", err.Error())
 	}
 
 	for i < c.retryCount && err != nil {
 		if err != nil {
-			log.Printf("Get result from node returned error %s", err.Error())
+			log.Printf("Get result from watcher returned error %s", err.Error())
 		}
 
 		result, err = c.doAction(arg)

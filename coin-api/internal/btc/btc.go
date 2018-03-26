@@ -11,29 +11,11 @@ import (
 
 	"bytes"
 
+	"fmt"
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
 const (
-	defaultAddr = "23.92.24.9"
-	defaultUser = "YnWD3EmQAOw11IOrUJwWxAThAyobwLC"
-	defaultPass = `f*Z"[1215o{qKW{Buj/wheO8@h.}j*u`
-	defaultCert = `-----BEGIN CERTIFICATE-----
-MIICbTCCAc+gAwIBAgIRAKnAvGj6JobKblRUcmxOqxowCgYIKoZIzj0EAwQwNjEg
-MB4GA1UEChMXYnRjZCBhdXRvZ2VuZXJhdGVkIGNlcnQxEjAQBgNVBAMTCWxvY2Fs
-aG9zdDAeFw0xNzExMDYwNTMzNDRaFw0yNzExMDUwNTMzNDRaMDYxIDAeBgNVBAoT
-F2J0Y2QgYXV0b2dlbmVyYXRlZCBjZXJ0MRIwEAYDVQQDEwlsb2NhbGhvc3QwgZsw
-EAYHKoZIzj0CAQYFK4EEACMDgYYABAEYn5Xj5QfV6vK6jjeLnG63H5U8yrga5wYJ
-bqBhuSR+540zqVjviZQXDi9OVTcYffDk+VrP2KmD8Q8FW2yFAjo2ewA63DHQibtJ
-Jb2bSCSJnMa7MqWeYle61oIwt9wIiq+9gjVIagnlEAOVm86TBeuiCgUu5t3k1CrI
-R4XFVPAgDQXnzqN7MHkwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB/wQFMAMBAf8w
-VgYDVR0RBE8wTYIJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAAAAABhwQX
-XBgJhxAmADwBAAAAAPA8kf/+zLGFhxD+gAAAAAAAAPA8kf/+zLGFMAoGCCqGSM49
-BAMEA4GLADCBhwJCATk6kLPOcQh5V5r6SVcmcPUhOKRu54Ip/wrtagAFN5WDqm/T
-rVUFT9wbSwqLaJfVBhCe14PWx3jR7+EXJJLv8R3sAkEK79/zPd3sHJc0pIM7SDQX
-FZAzYmyXme/Ki0138hSmFvby/r7NeNmcJUZRj1+fWXMgfPv7/kZ0ScpsRqY34AP2
-ig==
------END CERTIFICATE-----`
 	defaultBlockExplorer         = "https://api.blockcypher.com"
 	walletBalanceDefaultEndpoint = "/v1/btc/main/addrs/"
 	txStatusDefaultEndpoint      = "/v1/btc/main/txs/"
@@ -50,60 +32,6 @@ type ServiceBtc struct {
 
 	// Block explorer url
 	blockExplorer string
-
-	// How deep we will analyze blockchain for deposits on address
-	blockDepth int64
-}
-
-type TxStatus struct {
-	Amount        float64 `json:"amount"`
-	Confirmations int64   `json:"confirmations"`
-	Fee           float64 `json:"fee"`
-
-	BlockHash  string `json:"blockhash"`
-	BlockIndex int64  `json:"block_index"`
-
-	Hash      string `json:"hash"`
-	Confirmed int64  `json:"confirmed"`
-	Received  int64  `json:"received"`
-}
-
-type balanceRequest struct {
-	Address  string `json:"address"`
-	Currency string `json:"currency"`
-}
-
-type deposit struct {
-	Amount        int `json:"amount"`
-	Confirmations int `json:"confirmations"`
-	Height        int `json:"height"`
-}
-
-type balanceResponse struct {
-	Deposits []deposit
-}
-
-type explorerTxStatus struct {
-	Total         float64 `json:"total"`
-	Fees          float64 `json:"fees"`
-	Confirmations int64   `json:"confirmations"`
-
-	BlockHash  string `json:"block_hash"`
-	BlockIndex int64  `json:"block_index"`
-
-	Hash      string    `json:"hash"`
-	Confirmed time.Time `json:"confirmed"`
-	Received  time.Time `json:"received"`
-}
-
-type explorerAddressResponse struct {
-	Address            string `json:"address"`
-	TotalReceived      int    `json:"total_received"`
-	TotalSent          int    `json:"total_sent"`
-	Balance            int64  `json:"balance"`
-	UnconfirmedBalance int64  `json:"unconfirmed_balance"`
-	FinalBalance       int64  `json:"final_balance"`
-	NTx                int    `json:"n_tx"`
 }
 
 // NewBTCService returns ServiceBtc instance
@@ -209,8 +137,7 @@ func (s *ServiceBtc) getTxStatusFromExplorer(txId string) (interface{}, error) {
 
 func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) {
 	var (
-		balance float64
-		buffer  bytes.Buffer
+		buffer bytes.Buffer
 	)
 
 	reqBody := &balanceRequest{
@@ -229,10 +156,10 @@ func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("watcher returned an error")
+		return nil, fmt.Errorf("watcher returned an error %d", resp.StatusCode)
 	}
 
-	balanceResp := &balanceResponse{}
+	balanceResp := &BalanceResponse{}
 
 	json.NewDecoder(resp.Body).Decode(balanceResp)
 
@@ -240,11 +167,14 @@ func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) 
 		return nil, err
 	}
 
+	// Summarize Deposit values
 	for _, deposit := range balanceResp.Deposits {
-		balance = balance + float64(deposit.Amount)
+		balanceResp.Balance += int64(deposit.Amount)
 	}
 
-	return balance, nil
+	balanceResp.Address = address
+
+	return balanceResp, nil
 }
 
 func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error) {
@@ -263,7 +193,26 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 		return 0, err
 	}
 
-	return r.FinalBalance, nil
+	balanceResp := &BalanceResponse{
+		Address:  address,
+		Balance:  r.FinalBalance,
+		Deposits: make([]Deposit, 0),
+	}
+
+	// Collect input transactions for the address,
+	// see for detail https://blockcypher.github.io/documentation/#transactions
+	for _, tx := range r.Transactions {
+		if tx.TxInputN == -1 {
+			dep := Deposit{
+				tx.Value,
+				tx.Confirmations,
+				tx.BlockHeight,
+			}
+			balanceResp.Deposits = append(balanceResp.Deposits, dep)
+		}
+	}
+
+	return balanceResp, nil
 }
 
 func (s *ServiceBtc) WatcherHost() string {

@@ -174,9 +174,6 @@ ResponseBody {
 ```
 
 #### BTC generate address based on public key
-
-
-#### BTC generate address based on public key
 ```
 POST /api/v1/btc/address
 ```
@@ -218,13 +215,24 @@ ResponseBody {
 ```
 ResponseHeader: 200
 ResponseBody {
-    "status": "ok",
-    "code": 0,
-    "result": {
-        "address": "9182b02c0004217ba9a55593f8cf0abecc30d041e094",
-        "balance": 24261746,
-    }
-}
+             	"status": "Ok",
+             	"code": 200,
+             	"result": {
+             		"address": "1M3GipkG2YyHPDMPewqTpup83jitXvBg9N",
+             		"balance": 26943184,
+             		"deposits": [
+             			{
+             				"amount": 42482,
+             				"confirmations": 278,
+             				"height": 514968
+             			},
+             			{
+             				"amount": 116000,
+             				"confirmations": 415
+             			}
+             	    ]
+             	}
+             }
 ```
 ##### Unsuccessful response:
 ```

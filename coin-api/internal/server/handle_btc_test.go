@@ -14,7 +14,7 @@ import (
 )
 
 type checker struct {
-	expected int64
+	expected *btc.BalanceResponse
 	txStatus *btc.TxStatus
 }
 
@@ -105,10 +105,13 @@ func TestGenerateAddress(t *testing.T) {
 
 func TestCheckBalance(t *testing.T) {
 	e := echo.New()
-	expected := int64(42)
+	expectedBalance := int64(42)
+	balanceResp := &btc.BalanceResponse{
+		Balance: expectedBalance,
+	}
 
 	checker := checker{
-		expected: expected,
+		expected: balanceResp,
 	}
 
 	handler := handlerBTC{
@@ -126,9 +129,9 @@ func TestCheckBalance(t *testing.T) {
 	handler.checkBalance(ctx)
 
 	type response struct {
-		Status string          `json:"status"`
-		Code   int             `json:"code"`
-		Result balanceResponse `json:"result"`
+		Status string              `json:"status"`
+		Code   int                 `json:"code"`
+		Result btc.BalanceResponse `json:"result"`
 	}
 
 	var resp response
@@ -145,8 +148,8 @@ func TestCheckBalance(t *testing.T) {
 		return
 	}
 
-	if resp.Result.Balance != expected {
-		t.Errorf("Wrong account balance expected %f actual %f", expected, resp.Result.Balance)
+	if resp.Result.Balance != expectedBalance {
+		t.Errorf("Wrong account balance expected %f actual %f", expectedBalance, resp.Result.Balance)
 	}
 }
 
@@ -157,7 +160,6 @@ func TestCheckTransaction(t *testing.T) {
 	hash := "89f04c437ee192a28c59470c010359c50239e28df903e44778286fb56b8e6e6f"
 
 	checker := checker{
-		expected: 42.0,
 		txStatus: &btc.TxStatus{
 			Hash:          hash,
 			Confirmations: expectedConfirmations,
