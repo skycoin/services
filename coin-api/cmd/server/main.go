@@ -13,7 +13,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "init", "config.toml", "init file path")
+	flag.StringVar(&configFile, "config", "config.toml", "config file path")
 	flag.Parse()
 }
 
