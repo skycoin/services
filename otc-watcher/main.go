@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/BurntSushi/toml"
 	"github.com/skycoin/services/otc-watcher/pkg/api"
 	"github.com/skycoin/services/otc-watcher/pkg/currency"
 	"github.com/skycoin/services/otc-watcher/pkg/currency/btc"
@@ -13,57 +14,48 @@ import (
 	"github.com/skycoin/services/otc/pkg/otc"
 )
 
+type Config struct {
+	RpcNode       string
+	RpcUser       string
+	RpcPass       string
+	WalletAccount string
+	WalletPass    string
+	ListenStr     string
+}
+
 var (
-	RPC_NODE = flag.String(
-		"rpc_node",
-		"localhost:8332",
-		"btcwallet rpc server",
+	configFile = flag.String(
+		"config",
+		"config.toml",
+		"config file",
 	)
 
-	RPC_USER = flag.String(
-		"rpc_user",
-		"otc",
-		"btcwallet rpc username",
-	)
-
-	RPC_PASS = flag.String(
-		"rpc_pass",
-		"otc",
-		"btcwallet rpc password",
-	)
-
-	WALLET_ACCOUNT = flag.String(
-		"wallet_account",
-		"otc",
-		"btcwallet account name",
-	)
-
-	WALLET_PASS = flag.String(
-		"wallet_pass",
-		"otc",
-		"btcwallet wallet password",
-	)
-
-	PORT = flag.String("port", ":8080", "http api port")
-
-	SCANNER *scanner.Scanner
+	scnr *scanner.Scanner
 )
 
 func init() {
 	flag.Parse()
 
-	// get btc connection
-	b, err := btc.New(
-		*WALLET_ACCOUNT, *WALLET_PASS, *RPC_NODE, *RPC_USER, *RPC_PASS,
-	)
+	config := &Config{}
+	_, err := toml.DecodeFile(*configFile, config)
+
 	if err != nil {
 		panic(err)
 	}
 
-	// get scanner using btc connection
-	SCANNER, err = scanner.New(
+	// get btc connection
+	b, err := btc.New(
+		config.WalletAccount, config.WalletPass, config.RpcNode, config.RpcUser, config.RpcPass)
+
+	if err != nil {
+		panic(err)
+	}
+
+	// get scnr using btc connection
+	scnr, err = scanner.New(
 		map[otc.Currency]currency.Connection{otc.BTC: b},
 	)
+
 	if err != nil {
 		panic(err)
 	}
@@ -71,8 +63,8 @@ func init() {
 	// start listening on http port
 	//
 	// TODO: https
-	go http.ListenAndServe(*PORT, api.New(SCANNER))
-	println("listening on" + *PORT)
+	go http.ListenAndServe(config.ListenStr, api.New(scnr))
+	println("listening on" + config.ListenStr)
 }
 
 func main() {
@@ -81,7 +73,7 @@ func main() {
 
 	<-stop
 	println("stopping")
-	if err := SCANNER.Stop(); err != nil {
+	if err := scnr.Stop(); err != nil {
 		panic(err)
 	}
 }

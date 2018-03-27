@@ -1,0 +1,6 @@
+RpcNode="localhost:8332"
+RpcUser="aaa"
+RpcPass="123"
+WalletAccount="1"
+WalletPass="1234"
+ListenStr="0.0.0.0:8081"
