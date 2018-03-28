@@ -1,7 +1,6 @@
 package otc
 
 import (
-	"sync"
 	"time"
 )
 
@@ -25,6 +24,10 @@ type Purchase struct {
 	Source string `json:"source"`
 	// price information
 	Price *Price `json:"price"`
+	// skycoin amount received
+	Amount uint64 `json:"amount"`
+	// txid of skycoin transaction to user
+	TxId string `json:"txid"`
 }
 
 type Price struct {
@@ -37,8 +40,6 @@ type Price struct {
 }
 
 type User struct {
-	sync.Mutex
-
 	// skycoin address
 	Address string `json:"address"`
 	// affiliate code used when user was created
@@ -68,13 +69,13 @@ type Drop struct {
 type Status string
 
 const (
-	NEW     Status = "new"
 	DEPOSIT Status = "waiting_deposit"
 	SEND    Status = "waiting_send"
 	CONFIRM Status = "waiting_confirm"
 	DONE    Status = "done"
 )
 
+/*
 type Request struct {
 	sync.Mutex
 
@@ -99,6 +100,7 @@ type Rate struct {
 	Value  uint64 `json:"value"`
 	Source string `json:"source"`
 }
+*/
 
 type Times struct {
 	CreatedAt   int64 `json:"created_at"`
@@ -108,12 +110,10 @@ type Times struct {
 	ConfirmedAt int64 `json:"confirmed_at,omitempty"`
 }
 
-/* TODO:
 type Work struct {
 	Order *Order
 	Done  chan *Result
 }
-*/
 
 type Result struct {
 	Finished int64 `json:"finished"`
@@ -124,10 +124,12 @@ func (w *Work) Return(err error) {
 	w.Done <- &Result{time.Now().UTC().Unix(), err}
 }
 
+/*
 type Work struct {
 	Request *Request
 	Done    chan *Result
 }
+*/
 
 type Event struct {
 	Id       string `json:"id,omitempty"`
