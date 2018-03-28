@@ -1,0 +1,16 @@
+[Unit]
+Description=Otc-Watcher service
+
+[Service]
+Type=notify
+WorkingDirectory=/home/stgleb/go/bin/
+PIDFile=/tmp/otc-watcher.service.pid
+ExecReload=/bin/pkill -1 -F /tmp/otc-watcher.service.pid
+ExecStop=/bin/pkill -2 -F /tmp/otc-watcher.service.pid
+ExecStart=/home/stgleb/go/bin/otc-watcher -config config.toml
+WatchdogSec=30s
+Restart=on-failure
+
+[Install]
+Alias=otc-watcher
+WantedBy=multi-user.target
