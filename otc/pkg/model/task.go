@@ -8,6 +8,32 @@ import (
 
 func Task(workers *Workers) func(*otc.Work) (bool, error) {
 	return func(work *otc.Work) (bool, error) {
+		select {
+		case res := <-work.Done:
+			work.Drop.Times.UpdatedAt = time.Now().UTC().Unix()
+
+			// TODO: save work (user) to disk
+
+			if res.Err != nil {
+				return true, res.Err
+			}
+
+			if work.Order.Status == otc.DONE {
+				return true, nil
+			}
+
+			workers.Route(work)
+		default:
+			break
+		}
+
+		return false, nil
+	}
+}
+
+/*
+func Task(workers *Workers) func(*otc.Work) (bool, error) {
+	return func(work *otc.Work) (bool, error) {
 		work.Request.Lock()
 		defer work.Request.Unlock()
 
@@ -35,3 +61,4 @@ func Task(workers *Workers) func(*otc.Work) (bool, error) {
 		return false, nil
 	}
 }
+*/

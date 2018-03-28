@@ -32,20 +32,15 @@ func Task(watch *watcher.Watcher) func(*otc.User) (*otc.Order, error) {
 
 				// generate new order
 				return &otc.Order{
-					Id:     id,
-					Status: otc.SEND,
-					Amount: output.Amount,
+					Id:       id,
+					Currency: user.Drop.Currency,
+					Status:   otc.SEND,
+					Amount:   output.Amount,
 					Times: &otc.Times{
 						CreatedAt:   now,
-						UpdatedAt:   now,
 						DepositedAt: now,
 					},
-					Events: []*otc.Event{
-						{
-							Status:   otc.DEPOSIT,
-							Finished: now,
-						},
-					},
+					Events: make([]*otc.Event, 0),
 				}, nil
 			}
 		}

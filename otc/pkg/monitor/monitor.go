@@ -9,17 +9,14 @@ import (
 
 func Task(curs *currencies.Currencies) func(*otc.Work) (bool, error) {
 	return func(work *otc.Work) (bool, error) {
-		work.Request.Lock()
-		defer work.Request.Unlock()
-
-		confirmed, err := curs.Confirmed(otc.SKY, work.Request.TxId)
+		confirmed, err := curs.Confirmed(otc.SKY, work.Order.Purchase.TxId)
 		if err != nil {
 			return true, err
 		}
 
 		if confirmed {
-			work.Request.Times.ConfirmedAt = time.Now().UTC().Unix()
-			work.Request.Status = otc.DONE
+			work.Order.Times.ConfirmedAt = time.Now().UTC().Unix()
+			work.Order.Status = otc.DONE
 			return true, nil
 		}
 

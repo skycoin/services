@@ -7,6 +7,12 @@ import (
 type Order struct {
 	// "transaction : output index"
 	Id string `json:"id"`
+
+	// TODO: omit json
+	Address string `json:"address"`
+	// TODO: omit json
+	Currency Currency `json:"currency"`
+
 	// order status
 	Status Status `json:"status"`
 	// bitcoin amount in satoshis
@@ -33,10 +39,12 @@ type Purchase struct {
 type Price struct {
 	// price source
 	Source string `json:"source"`
-	// price when quoted
-	Quoted uint64 `json:"quoted"`
 	// price when executed (and sent)
 	Executed uint64 `json:"executed"`
+
+	// TODO: how to get this into order ?
+	// price when quoted
+	// Quoted uint64 `json:"quoted"`
 }
 
 type User struct {
@@ -63,7 +71,6 @@ const (
 type Drop struct {
 	Address  string   `json:"address"`
 	Currency Currency `json:"currency"`
-	Amount   uint64   `json:"amount,omitempty"`
 }
 
 type Status string

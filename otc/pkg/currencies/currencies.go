@@ -95,17 +95,17 @@ func (c *Currencies) Balance(drop *otc.Drop) (uint64, error) {
 	return c.Connections[drop.Currency].Balance(drop.Address)
 }
 
-func (c *Currencies) Value(drop *otc.Drop) (uint64, string, error) {
-	if c.Prices[drop.Currency] == nil {
-		return 0, "", ErrPriceMissing
+func (c *Currencies) Value(curr otc.Currency, amount uint64) (uint64, string, uint64, error) {
+	if c.Prices[curr] == nil {
+		return 0, "", 0, ErrPriceMissing
 	}
 
-	if drop.Amount == 0 {
-		return 0, "", ErrZeroAmount
+	if amount == 0 {
+		return 0, "", 0, ErrZeroAmount
 	}
 
-	price, source, _ := c.Prices[drop.Currency].GetPrice()
-	return uint64(float64(float64(drop.Amount)/float64(price)*1e2)) * 1e4, string(source), nil
+	price, source, _ := c.Prices[curr].GetPrice()
+	return uint64(float64(float64(amount)/float64(price)*1e2)) * 1e4, string(source), price, nil
 }
 
 func (c *Currencies) Send(curr otc.Currency, addr string, amount uint64) (string, error) {
