@@ -46,7 +46,7 @@ func TestCheckBalanceClosed(t *testing.T) {
 		return &BalanceResponse{
 			Address: expectedAddress,
 			Balance: expectedBalance,
-			Deposits: []Deposit{
+			Utxo: []Deposit{
 				{
 					Amount:        2,
 					Confirmations: 8,
@@ -97,8 +97,8 @@ func TestCheckBalanceClosed(t *testing.T) {
 		t.Errorf("Wrong address expected %s actual %s", expectedAddress, balance.Address)
 	}
 
-	if expectedDepositCount != len(balance.Deposits) {
-		t.Errorf("Wrong Deposit count expected %d actual %d", expectedDepositCount, len(balance.Deposits))
+	if expectedDepositCount != len(balance.Utxo) {
+		t.Errorf("Wrong Deposit count expected %d actual %d", expectedDepositCount, len(balance.Utxo))
 	}
 }
 

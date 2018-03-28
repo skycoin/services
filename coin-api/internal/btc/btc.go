@@ -13,6 +13,7 @@ import (
 
 	"fmt"
 	"github.com/skycoin/skycoin/src/cipher"
+	"log"
 )
 
 const (
@@ -168,7 +169,7 @@ func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) 
 	}
 
 	// Summarize Deposit values
-	for _, deposit := range balanceResp.Deposits {
+	for _, deposit := range balanceResp.Utxo {
 		balanceResp.Balance += int64(deposit.Amount)
 	}
 
@@ -194,9 +195,10 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 	}
 
 	balanceResp := &BalanceResponse{
-		Address:  address,
-		Balance:  r.FinalBalance,
-		Deposits: make([]Deposit, 0),
+		Address:     address,
+		Balance:     r.FinalBalance,
+		Utxo:        make([]Deposit, 0),
+		PendingUtxo: make([]Deposit, 0),
 	}
 
 	// Collect input transactions for the address,
@@ -209,7 +211,20 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 				tx.Confirmations,
 				tx.BlockHeight,
 			}
-			balanceResp.Deposits = append(balanceResp.Deposits, dep)
+			balanceResp.Utxo = append(balanceResp.Utxo, dep)
+		}
+	}
+
+	// Collect pending incoming transactions
+	for _, tx := range r.UnconfirmedTransactions {
+		if tx.TxInputN == -1 {
+			dep := Deposit{
+				tx.Value,
+				tx.TxHash,
+				tx.Confirmations,
+				tx.BlockHeight,
+			}
+			balanceResp.PendingUtxo = append(balanceResp.PendingUtxo, dep)
 		}
 	}
 
