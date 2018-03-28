@@ -13,7 +13,6 @@ import (
 
 	"fmt"
 	"github.com/skycoin/skycoin/src/cipher"
-	"log"
 )
 
 const (
