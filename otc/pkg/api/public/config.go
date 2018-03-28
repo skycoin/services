@@ -25,7 +25,7 @@ func Config(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 
 		var status string
 
-		if modl.Paused() {
+		if modl.Controller.Paused() {
 			status = "PAUSED"
 		} else {
 			status = "WORKING"

@@ -10,14 +10,14 @@ import (
 func Task(curs *currencies.Currencies) func(*otc.Work) (bool, error) {
 	return func(work *otc.Work) (bool, error) {
 		value, source, price, err := curs.Value(
-			work.Order.Currency,
+			work.Order.User.Drop.Currency,
 			work.Order.Amount,
 		)
 		if err != nil {
 			return true, err
 		}
 
-		txid, err := curs.Send(otc.SKY, work.Order.Address, value)
+		txid, err := curs.Send(otc.SKY, work.Order.User.Address, value)
 		if err != nil {
 			return true, err
 		}

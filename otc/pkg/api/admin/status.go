@@ -25,7 +25,7 @@ func Status(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 			err error
 		)
 
-		res.Paused = modl.Paused()
+		res.Paused = modl.Controller.Paused()
 
 		// TODO: add other currency support
 		if res.Source, err = curs.Source(otc.BTC); err != nil {

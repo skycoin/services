@@ -5,14 +5,10 @@ import (
 )
 
 type Order struct {
+	// parent reference for getting drop, etc.
+	User *User `json:"-"`
 	// "transaction : output index"
 	Id string `json:"id"`
-
-	// TODO: omit json
-	Address string `json:"address"`
-	// TODO: omit json
-	Currency Currency `json:"currency"`
-
 	// order status
 	Status Status `json:"status"`
 	// bitcoin amount in satoshis
@@ -41,21 +37,19 @@ type Price struct {
 	Source string `json:"source"`
 	// price when executed (and sent)
 	Executed uint64 `json:"executed"`
-
-	// TODO: how to get this into order ?
-	// price when quoted
-	// Quoted uint64 `json:"quoted"`
 }
 
 type User struct {
+	// list of orders
+	Orders []*Order `json:"-"`
+	// skycoin address : drop currency : drop address
+	Id string
 	// skycoin address
 	Address string `json:"address"`
 	// affiliate code used when user was created
 	Affiliate string `json:"affiliate"`
 	// deposit location
 	Drop *Drop `json:"drop"`
-	// list of orders
-	Orders []*Order `json:"orders"`
 	// timestamps for user
 	Times *Times `json:"times"`
 }
@@ -82,33 +76,6 @@ const (
 	DONE    Status = "done"
 )
 
-/*
-type Request struct {
-	sync.Mutex
-
-	Affiliate string `json:"affiliate"`
-	Address   string `json:"address"`
-	Status    Status `json:"status"`
-	TxId      string `json:"txid"`
-	Rate      *Rate  `json:"rate"`
-	Drop      *Drop  `json:"drop"`
-	Times     *Times `json:"timestamps"`
-}
-
-func (r *Request) Id() string {
-	return r.Address + ":" + string(r.Drop.Currency) + ":" + r.Drop.Address
-}
-
-func (r *Request) Iden() string {
-	return string(r.Drop.Currency) + ":" + r.Drop.Address
-}
-
-type Rate struct {
-	Value  uint64 `json:"value"`
-	Source string `json:"source"`
-}
-*/
-
 type Times struct {
 	CreatedAt   int64 `json:"created_at"`
 	UpdatedAt   int64 `json:"updated_at"`
@@ -130,13 +97,6 @@ type Result struct {
 func (w *Work) Return(err error) {
 	w.Done <- &Result{time.Now().UTC().Unix(), err}
 }
-
-/*
-type Work struct {
-	Request *Request
-	Done    chan *Result
-}
-*/
 
 type Event struct {
 	Id       string `json:"id,omitempty"`

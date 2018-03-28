@@ -13,6 +13,7 @@ import (
 	"github.com/skycoin/services/otc/pkg/currencies/sky"
 	"github.com/skycoin/services/otc/pkg/model"
 	"github.com/skycoin/services/otc/pkg/otc"
+	"github.com/skycoin/services/otc/pkg/watcher"
 )
 
 var (
@@ -46,7 +47,12 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 
-	modl, err := model.New(CURRENCIES)
+	watch, err := watcher.New(CONFIG)
+	if err != nil {
+		panic(err)
+	}
+
+	modl, err := model.New(&model.Config{CURRENCIES, watch})
 	if err != nil {
 		panic(err)
 	}
@@ -61,5 +67,5 @@ func main() {
 
 	<-stop
 	println("stopping")
-	modl.Stop()
+	modl.Controller.Stop()
 }

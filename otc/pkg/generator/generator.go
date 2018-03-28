@@ -27,6 +27,10 @@ func New(logs *log.Logger, task Task, work chan *otc.Work) *Generator {
 	}
 }
 
+func (g *Generator) Log(s string) {
+	g.Logs.Println(s)
+}
+
 func (g *Generator) Count() int64 {
 	return atomic.LoadInt64(&g.UserCount)
 }

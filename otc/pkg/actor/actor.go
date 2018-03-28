@@ -21,6 +21,7 @@ func New(logs *log.Logger, task Task) *Actor {
 	return &Actor{0, &sync.Map{}, task, logs}
 }
 
+func (a *Actor) Log(s string) { a.Logs.Println(s) }
 func (a *Actor) Count() int64 { return atomic.LoadInt64(&a.Reqs) }
 func (a *Actor) Tick()        { a.Work.Range(a.Ranger(a.Task)) }
 
