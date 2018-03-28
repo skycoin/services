@@ -122,6 +122,7 @@ func (c *Connection) Get(height uint64) (*otc.Block, error) {
 
 	for _, tx := range bb.RawTx {
 		block.Transactions[tx.Hash] = &otc.Transaction{
+			BlockHash:     tx.BlockHash,
 			Hash:          tx.Hash,
 			Confirmations: tx.Confirmations,
 			Out:           make(map[int]*otc.Output, len(tx.Vout)),

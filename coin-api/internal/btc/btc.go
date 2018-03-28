@@ -205,6 +205,8 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 		if tx.TxInputN == -1 {
 			dep := Deposit{
 				tx.Value,
+				tx.TxHash,
+				tx.BlockHeight,
 				tx.Confirmations,
 				tx.BlockHeight,
 			}
