@@ -51,9 +51,14 @@ type explorerAddressResponse struct {
 	TxURL                   string        `json:"tx_url"`
 }
 
+type TxInfo struct {
+	BlockHash string `json:"block_hash"`
+}
+
 type Deposit struct {
 	Amount        int    `json:"amount"`
 	TxHash        string `json:"tx_hash"`
+	BlockHash     string `json:"block_hash"`
 	Confirmations int    `json:"confirmations"`
 	Height        int    `json:"height"`
 }

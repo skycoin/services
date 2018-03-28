@@ -18,6 +18,7 @@ import (
 const (
 	defaultBlockExplorer         = "https://api.blockcypher.com"
 	walletBalanceDefaultEndpoint = "/v1/btc/main/addrs/"
+	txDefaultEndpoint            = "/v1/btc/main/txs/"
 	txStatusDefaultEndpoint      = "/v1/btc/main/txs/"
 )
 
@@ -204,9 +205,12 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 	// see for detail https://blockcypher.github.io/documentation/#transactions
 	for _, tx := range r.Transactions {
 		if tx.TxInputN == -1 {
+			blockHash := getTxBlockHash(s.blockExplorer, tx.TxHash)
+
 			dep := Deposit{
 				tx.Value,
 				tx.TxHash,
+				blockHash,
 				tx.Confirmations,
 				tx.BlockHeight,
 			}
@@ -217,9 +221,12 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 	// Collect pending incoming transactions
 	for _, tx := range r.UnconfirmedTransactions {
 		if tx.TxInputN == -1 {
+			blockHash := getTxBlockHash(s.blockExplorer, tx.TxHash)
+
 			dep := Deposit{
 				tx.Value,
 				tx.TxHash,
+				blockHash,
 				tx.Confirmations,
 				tx.BlockHeight,
 			}
@@ -228,6 +235,17 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 	}
 
 	return balanceResp, nil
+}
+
+func getTxBlockHash(blockExplorer, txHash string) string {
+	var txInfo TxInfo
+
+	txUrl := blockExplorer + txDefaultEndpoint + txHash
+	resp, _ := http.Get(txUrl)
+
+	json.NewDecoder(resp.Body).Decode(&txInfo)
+
+	return txInfo.BlockHash
 }
 
 func (s *ServiceBtc) WatcherHost() string {
