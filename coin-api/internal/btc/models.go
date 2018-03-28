@@ -36,31 +36,38 @@ type transaction struct {
 
 // NOTE(stgleb): See https://blockcypher.github.io/documentation/#address_details
 type explorerAddressResponse struct {
-	Address            string        `json:"address"`
-	TotalReceived      int64         `json:"total_received"`
-	TotalSent          int64         `json:"total_sent"`
-	Balance            int64         `json:"balance"`
-	UnconfirmedBalance int64         `json:"unconfirmed_balance"`
-	FinalBalance       int64         `json:"final_balance"`
-	NTx                int64         `json:"n_tx"`
-	UnconfirmedNTx     int64         `json:"unconfirmed_n_tx"`
-	FinalNTx           int64         `json:"final_n_tx"`
-	Transactions       []transaction `json:"txrefs"`
-	HasMore            bool          `json:"hasMore"`
-	TxURL              string        `json:"tx_url"`
+	Address                 string        `json:"address"`
+	TotalReceived           int64         `json:"total_received"`
+	TotalSent               int64         `json:"total_sent"`
+	Balance                 int64         `json:"balance"`
+	UnconfirmedBalance      int64         `json:"unconfirmed_balance"`
+	FinalBalance            int64         `json:"final_balance"`
+	NTx                     int64         `json:"n_tx"`
+	UnconfirmedNTx          int64         `json:"unconfirmed_n_tx"`
+	FinalNTx                int64         `json:"final_n_tx"`
+	Transactions            []transaction `json:"txrefs"`
+	UnconfirmedTransactions []transaction `json:"unconfirmed_txrefs"`
+	HasMore                 bool          `json:"hasMore"`
+	TxURL                   string        `json:"tx_url"`
+}
+
+type TxInfo struct {
+	BlockHash string `json:"block_hash"`
 }
 
 type Deposit struct {
 	Amount        int    `json:"amount"`
 	TxHash        string `json:"tx_hash"`
+	BlockHash     string `json:"block_hash"`
 	Confirmations int    `json:"confirmations"`
 	Height        int    `json:"height"`
 }
 
 type BalanceResponse struct {
-	Address  string    `json:"address"`
-	Balance  int64     `json:"balance"`
-	Deposits []Deposit `json:"deposits"`
+	Address     string    `json:"address"`
+	Balance     int64     `json:"balance"`
+	Utxo        []Deposit `json:"utxo"`
+	PendingUtxo []Deposit `json:"pending_utxo"`
 }
 
 type TxStatus struct {

@@ -18,6 +18,7 @@ import (
 const (
 	defaultBlockExplorer         = "https://api.blockcypher.com"
 	walletBalanceDefaultEndpoint = "/v1/btc/main/addrs/"
+	txDefaultEndpoint            = "/v1/btc/main/txs/"
 	txStatusDefaultEndpoint      = "/v1/btc/main/txs/"
 )
 
@@ -168,7 +169,7 @@ func (s *ServiceBtc) getBalanceFromWatcher(address string) (interface{}, error) 
 	}
 
 	// Summarize Deposit values
-	for _, deposit := range balanceResp.Deposits {
+	for _, deposit := range balanceResp.Utxo {
 		balanceResp.Balance += int64(deposit.Amount)
 	}
 
@@ -194,26 +195,57 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 	}
 
 	balanceResp := &BalanceResponse{
-		Address:  address,
-		Balance:  r.FinalBalance,
-		Deposits: make([]Deposit, 0),
+		Address:     address,
+		Balance:     r.FinalBalance,
+		Utxo:        make([]Deposit, 0),
+		PendingUtxo: make([]Deposit, 0),
 	}
 
 	// Collect input transactions for the address,
 	// see for detail https://blockcypher.github.io/documentation/#transactions
 	for _, tx := range r.Transactions {
 		if tx.TxInputN == -1 {
+			blockHash := getTxBlockHash(s.blockExplorer, tx.TxHash)
+
 			dep := Deposit{
 				tx.Value,
 				tx.TxHash,
+				blockHash,
 				tx.Confirmations,
 				tx.BlockHeight,
 			}
-			balanceResp.Deposits = append(balanceResp.Deposits, dep)
+			balanceResp.Utxo = append(balanceResp.Utxo, dep)
+		}
+	}
+
+	// Collect pending incoming transactions
+	for _, tx := range r.UnconfirmedTransactions {
+		if tx.TxInputN == -1 {
+			blockHash := getTxBlockHash(s.blockExplorer, tx.TxHash)
+
+			dep := Deposit{
+				tx.Value,
+				tx.TxHash,
+				blockHash,
+				tx.Confirmations,
+				tx.BlockHeight,
+			}
+			balanceResp.PendingUtxo = append(balanceResp.PendingUtxo, dep)
 		}
 	}
 
 	return balanceResp, nil
+}
+
+func getTxBlockHash(blockExplorer, txHash string) string {
+	var txInfo TxInfo
+
+	txUrl := blockExplorer + txDefaultEndpoint + txHash
+	resp, _ := http.Get(txUrl)
+
+	json.NewDecoder(resp.Body).Decode(&txInfo)
+
+	return txInfo.BlockHash
 }
 
 func (s *ServiceBtc) WatcherHost() string {

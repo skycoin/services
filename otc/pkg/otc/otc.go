@@ -91,6 +91,7 @@ type Output struct {
 type OutputVerbose struct {
 	Amount        uint64   `json:"amount"`
 	Confirmations uint64   `json:"confirmations"`
+	BlockHash     string   `json:"block_hash"`
 	TxHash        string   `json:"tx_hash"`
 	Addresses     []string `json:"addresses,omitempty"`
 	Height        uint64   `json:"height,omitempty"`

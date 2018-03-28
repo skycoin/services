@@ -72,6 +72,7 @@ func (s *Storage) Update(block *otc.Block) {
 							&otc.OutputVerbose{
 								Amount:        out.Amount,
 								TxHash:        tx.Hash,
+								BlockHash:     tx.BlockHash,
 								Confirmations: tx.Confirmations,
 								Height:        block.Height,
 							},
