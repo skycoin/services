@@ -1,6 +1,6 @@
 [bitcoin]
 BlockExplorer="https://api.blockcypher.com"
-WatcherUrl="http://localhost:8080"
+WatcherUrl="http://localhost:8081"
 
 [skycoin]
 Host="127.0.0.1"
