@@ -212,6 +212,8 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 				tx.TxHash,
 				blockHash,
 				tx.Confirmations,
+				tx.Spent,
+				tx.SpentBy,
 				tx.BlockHeight,
 			}
 			balanceResp.Utxo = append(balanceResp.Utxo, dep)
@@ -228,6 +230,8 @@ func (s *ServiceBtc) getBalanceFromExplorer(address string) (interface{}, error)
 				tx.TxHash,
 				blockHash,
 				tx.Confirmations,
+				tx.Spent,
+				tx.SpentBy,
 				tx.BlockHeight,
 			}
 			balanceResp.PendingUtxo = append(balanceResp.PendingUtxo, dep)

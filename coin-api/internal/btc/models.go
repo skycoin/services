@@ -20,7 +20,7 @@ type explorerTxStatus struct {
 	Received  time.Time `json:"received"`
 }
 
-type transaction struct {
+type txRef struct {
 	TxHash        string    `json:"tx_hash"`
 	BlockHeight   int       `json:"block_height"`
 	TxInputN      int       `json:"tx_input_n"`
@@ -36,19 +36,19 @@ type transaction struct {
 
 // NOTE(stgleb): See https://blockcypher.github.io/documentation/#address_details
 type explorerAddressResponse struct {
-	Address                 string        `json:"address"`
-	TotalReceived           int64         `json:"total_received"`
-	TotalSent               int64         `json:"total_sent"`
-	Balance                 int64         `json:"balance"`
-	UnconfirmedBalance      int64         `json:"unconfirmed_balance"`
-	FinalBalance            int64         `json:"final_balance"`
-	NTx                     int64         `json:"n_tx"`
-	UnconfirmedNTx          int64         `json:"unconfirmed_n_tx"`
-	FinalNTx                int64         `json:"final_n_tx"`
-	Transactions            []transaction `json:"txrefs"`
-	UnconfirmedTransactions []transaction `json:"unconfirmed_txrefs"`
-	HasMore                 bool          `json:"hasMore"`
-	TxURL                   string        `json:"tx_url"`
+	Address                 string  `json:"address"`
+	TotalReceived           int64   `json:"total_received"`
+	TotalSent               int64   `json:"total_sent"`
+	Balance                 int64   `json:"balance"`
+	UnconfirmedBalance      int64   `json:"unconfirmed_balance"`
+	FinalBalance            int64   `json:"final_balance"`
+	NTx                     int64   `json:"n_tx"`
+	UnconfirmedNTx          int64   `json:"unconfirmed_n_tx"`
+	FinalNTx                int64   `json:"final_n_tx"`
+	Transactions            []txRef `json:"txrefs"`
+	UnconfirmedTransactions []txRef `json:"unconfirmed_txrefs"`
+	HasMore                 bool    `json:"hasMore"`
+	TxURL                   string  `json:"tx_url"`
 }
 
 type TxInfo struct {
@@ -60,6 +60,8 @@ type Deposit struct {
 	TxHash        string `json:"tx_hash"`
 	BlockHash     string `json:"block_hash"`
 	Confirmations int    `json:"confirmations"`
+	Spent         bool   `json:"spent"`
+	SpentBy       string `json:"spent_by,omitempty"`
 	Height        int    `json:"height"`
 }
 
