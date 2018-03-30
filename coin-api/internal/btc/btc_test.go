@@ -126,7 +126,7 @@ func TestServiceBtcCheckTxStatus(t *testing.T) {
 	status, _ := result.(*TxStatus)
 
 	if status.Confirmations == 0 {
-		t.Errorf("transaction confirmations must be greater than zero")
+		t.Errorf("txRef confirmations must be greater than zero")
 		return
 	}
 
