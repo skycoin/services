@@ -1,4 +1,4 @@
-package locator
+package multi
 
 // Node locates nodes and returns their credentials
 type Node struct {

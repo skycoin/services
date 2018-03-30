@@ -1,4 +1,4 @@
-package multi_test
+package multi
 
 import (
 	"testing"
@@ -13,9 +13,7 @@ import (
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/testutil"
 
-	"github.com/skycoin/services/coin-api/internal/locator"
-	"github.com/skycoin/services/coin-api/internal/mock"
-	"github.com/skycoin/services/coin-api/internal/multi"
+	"github.com/skycoin/services/coin-api/internal/multi/mock"
 )
 
 const (
@@ -30,11 +28,11 @@ var integration bool = false
 var rpcApiMck *mock.WebRPCAPIMock
 
 func TestGenerateKeyPair(t *testing.T) {
-	loc := locator.Node{
+	loc := Node{
 		Host: "127.0.0.1",
 		Port: 6420,
 	}
-	skyService := multi.NewSkyService(&loc)
+	skyService := NewSkyService(&loc)
 	keysResponse := skyService.GenerateKeyPair()
 	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
 		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
@@ -138,15 +136,15 @@ func TestTransaction(t *testing.T) {
 	})
 }
 
-var getTestedMockedService = func() *multi.SkyСoinService {
-	loc := locator.Node{
+var getTestedMockedService = func() *SkyСoinService {
+	loc := Node{
 		Host: "127.0.0.1",
 		Port: 6430,
 	}
 	// parametrize tested service with mocked/stubbed external services
 	// this way we mock our helpers which commit 3-d party package calls which cannot be mocked usual way because they deal with types
 	// instead of interfaces
-	getBalanceAddresses := func(client multi.WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {
+	getBalanceAddresses := func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {
 		return &cli.BalanceResult{
 			Confirmed: cli.Balance{
 				Coins: "23",
@@ -160,7 +158,7 @@ var getTestedMockedService = func() *multi.SkyСoinService {
 	}
 
 	rpcApiMck = &mock.WebRPCAPIMock{}
-	skyService := multi.NewSkyService(&loc)
+	skyService := NewSkyService(&loc)
 	// inject mocked dependencies into tested service
 	skyService.InjectRPCAPIMock(rpcApiMck)
 	skyService.InjectCheckBalanceMock(getBalanceAddresses)

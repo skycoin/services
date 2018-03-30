@@ -12,9 +12,6 @@ import (
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/visor"
-
-	"github.com/skycoin/services/coin-api/internal/locator"
-	"github.com/skycoin/services/coin-api/internal/model"
 )
 
 var getBalanceAddresses = func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {
@@ -39,7 +36,7 @@ type SkyСoinService struct {
 }
 
 // NewSkyService returns new multicoin generic service
-func NewSkyService(n *locator.Node) *SkyСoinService {
+func NewSkyService(n *Node) *SkyСoinService {
 	s := &SkyСoinService{
 		client: &webrpc.Client{
 			Addr: fmt.Sprintf("%s:%d", n.GetNodeHost(), n.GetNodePort()),
@@ -58,8 +55,8 @@ func getSeed() string {
 }
 
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
-func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *model.AddressResponse, err error) {
-	maddr = &model.AddressResponse{}
+func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *AddressResponse, err error) {
+	maddr = &AddressResponse{}
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error generating address %s", r)
@@ -73,11 +70,11 @@ func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *model.AddressRespo
 }
 
 // GenerateKeyPair generates key pairs
-func (s *SkyСoinService) GenerateKeyPair() *model.KeysResponse {
+func (s *SkyСoinService) GenerateKeyPair() *KeysResponse {
 	seed := getRand()
 	rand.Read(seed)
 	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
-	return &model.KeysResponse{
+	return &KeysResponse{
 		Private: pub.Hex(),
 		Public:  sec.Hex(),
 	}
@@ -92,7 +89,7 @@ func getBalanceAddress(br *cli.BalanceResult) string {
 }
 
 // CheckBalance check the balance (and get unspent outputs) for an address
-func (s *SkyСoinService) CheckBalance(addr string) (*model.BalanceResponse, error) {
+func (s *SkyСoinService) CheckBalance(addr string) (*BalanceResponse, error) {
 	addressesToGetBalance := make([]string, 0, 1)
 	addressesToGetBalance = append(addressesToGetBalance, addr)
 	balanceResult, err := s.checkBalance(s.client, addressesToGetBalance)
@@ -100,7 +97,7 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.BalanceResponse, err
 		return nil, err
 	}
 
-	return &model.BalanceResponse{
+	return &BalanceResponse{
 		Address: getBalanceAddress(balanceResult),
 		Hours:   balanceResult.Spendable.Hours,
 		Balance: balanceResult.Spendable.Coins,
@@ -112,8 +109,8 @@ func (s *SkyСoinService) CheckBalance(addr string) (*model.BalanceResponse, err
 }
 
 // SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *model.TransactionSign, err error) {
-	rsp = &model.TransactionSign{}
+func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *TransactionSign, err error) {
+	rsp = &TransactionSign{}
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error signing transaction %s", r)
@@ -161,7 +158,7 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 }
 
 // InjectTransaction inject transaction into network
-func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Transaction, error) {
+func (s *SkyСoinService) InjectTransaction(rawtx string) (*Transaction, error) {
 	injectedT, err := s.client.InjectTransactionString(rawtx)
 	if err != nil {
 		return nil, err
@@ -178,7 +175,7 @@ func (s *SkyСoinService) InjectTransaction(rawtx string) (*model.Transaction, e
 		tStatus = "unconfirmed"
 	}
 
-	return &model.Transaction{
+	return &Transaction{
 		Transid: injectedT,
 		Status:  tStatus,
 	}, nil

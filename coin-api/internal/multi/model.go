@@ -1,4 +1,4 @@
-package model
+package multi
 
 const (
 	// StatusOk is an ok result in multiwallet API
