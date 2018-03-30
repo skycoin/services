@@ -50,8 +50,15 @@ func getRand() []byte {
 	return cipher.RandByte(1024)
 }
 
-func getSeed() string {
-	return cipher.SumSHA256(getRand()).Hex()
+// GenerateKeyPair generates key pairs
+func (s *SkyСoinService) GenerateKeyPair() *KeysResponse {
+	seed := getRand()
+	rand.Read(seed)
+	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
+	return &KeysResponse{
+		Private: pub.Hex(),
+		Public:  sec.Hex(),
+	}
 }
 
 // GenerateAddr generates address, private keys, pubkeys from deterministic seed
@@ -67,17 +74,6 @@ func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *AddressResponse, e
 
 	maddr.Address = address.String()
 	return maddr, nil
-}
-
-// GenerateKeyPair generates key pairs
-func (s *SkyСoinService) GenerateKeyPair() *KeysResponse {
-	seed := getRand()
-	rand.Read(seed)
-	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
-	return &KeysResponse{
-		Private: pub.Hex(),
-		Public:  sec.Hex(),
-	}
 }
 
 func getBalanceAddress(br *cli.BalanceResult) string {
@@ -151,7 +147,7 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 	status, err := s.client.GetTransactionByID(txID)
 
 	if err != nil {
-		return &visor.TransactionStatus{}, err
+		return nil, err
 	}
 
 	return &status.Transaction.Status, nil

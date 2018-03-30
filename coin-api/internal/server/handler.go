@@ -10,8 +10,6 @@ import (
 
 	"github.com/skycoin/services/errhandler"
 
-	"github.com/skycoin/services/coin-api/internal/locator"
-	"github.com/skycoin/services/coin-api/internal/model"
 	"github.com/skycoin/services/coin-api/internal/multi"
 )
 
@@ -25,7 +23,7 @@ type MultiStats struct {
 }
 
 func newHandlerMulti(host string, port int) *handlerMulti {
-	service := multi.NewSkyService(locator.NewLocatorNode(host, port))
+	service := multi.NewSkyService(multi.NewLocatorNode(host, port))
 
 	return &handlerMulti{
 		service: service,
@@ -38,9 +36,9 @@ func (h *handlerMulti) generateKeys(e echo.Context) error {
 	rsp := struct {
 		Status string              `json:"status"`
 		Code   int                 `json:"code"`
-		Result *model.KeysResponse `json:"result"`
+		Result *multi.KeysResponse `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: keysResponse,
 	}
@@ -56,11 +54,11 @@ func (h *handlerMulti) generateSeed(e echo.Context) error {
 		rsp := struct {
 			Status string                 `json:"status"`
 			Code   int                    `json:"code"`
-			Result *model.AddressResponse `json:"result"`
+			Result *multi.AddressResponse `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCInvalidAddressOrKey,
-			Result: &model.AddressResponse{},
+			Result: &multi.AddressResponse{},
 		}
 
 		return e.JSONPretty(http.StatusNotFound, rsp, "\t")
@@ -69,9 +67,9 @@ func (h *handlerMulti) generateSeed(e echo.Context) error {
 	rsp := struct {
 		Status string                 `json:"status"`
 		Code   int                    `json:"code"`
-		Result *model.AddressResponse `json:"result"`
+		Result *multi.AddressResponse `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: addressResponse,
 	}
@@ -87,11 +85,11 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 		rsp := struct {
 			Status string                 `json:"status"`
 			Code   int                    `json:"code"`
-			Result *model.BalanceResponse `json:"result"`
+			Result *multi.BalanceResponse `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCInvalidAddressOrKey,
-			Result: &model.BalanceResponse{},
+			Result: &multi.BalanceResponse{},
 		}
 
 		return e.JSONPretty(http.StatusNotFound, rsp, "\t")
@@ -100,9 +98,9 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 	rsp := struct {
 		Status string                 `json:"status"`
 		Code   int                    `json:"code"`
-		Result *model.BalanceResponse `json:"result"`
+		Result *multi.BalanceResponse `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: balanceResponse,
 	}
@@ -119,11 +117,11 @@ func (h *handlerMulti) signTransaction(e echo.Context) error {
 		rsp := struct {
 			Status string                 `json:"status"`
 			Code   int                    `json:"code"`
-			Result *model.TransactionSign `json:"result"`
+			Result *multi.TransactionSign `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCTransactionError,
-			Result: &model.TransactionSign{},
+			Result: &multi.TransactionSign{},
 		}
 		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
@@ -131,9 +129,9 @@ func (h *handlerMulti) signTransaction(e echo.Context) error {
 	rsp := struct {
 		Status string                 `json:"status"`
 		Code   int                    `json:"code"`
-		Result *model.TransactionSign `json:"result"`
+		Result *multi.TransactionSign `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: transactionSign,
 	}
@@ -148,11 +146,11 @@ func (h *handlerMulti) injectTransaction(e echo.Context) error {
 		rsp := struct {
 			Status string             `json:"status"`
 			Code   int                `json:"code"`
-			Result *model.Transaction `json:"result"`
+			Result *multi.Transaction `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCTransactionRejected,
-			Result: &model.Transaction{},
+			Result: &multi.Transaction{},
 		}
 		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
@@ -160,9 +158,9 @@ func (h *handlerMulti) injectTransaction(e echo.Context) error {
 	rsp := struct {
 		Status string             `json:"status"`
 		Code   int                `json:"code"`
-		Result *model.Transaction `json:"result"`
+		Result *multi.Transaction `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: injectedTransaction,
 	}
@@ -180,7 +178,7 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 			Code   int    `json:"code"`
 			Result string `json:"result"`
 		}{
-			model.StatusOk,
+			multi.StatusOk,
 			0,
 			err.Error(),
 		}, "\t")
@@ -191,7 +189,7 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 		Code   int                     `json:"code"`
 		Result visor.TransactionStatus `json:"result"`
 	}{
-		model.StatusOk,
+		multi.StatusOk,
 		0,
 		*status,
 	}, "\t")

@@ -9,7 +9,7 @@ import (
 
 	"github.com/labstack/echo"
 
-	"github.com/skycoin/services/coin-api/internal/model"
+	"github.com/skycoin/services/coin-api/internal/multi"
 )
 
 const (
@@ -35,9 +35,9 @@ func TestHandlerMulti(t *testing.T) {
 		rsp := struct {
 			Status string              `json:"status"`
 			Code   int                 `json:"code"`
-			Result *model.KeysResponse `json:"result"`
+			Result *multi.KeysResponse `json:"result"`
 		}{
-			Result: &model.KeysResponse{},
+			Result: &multi.KeysResponse{},
 		}
 		err := json.Unmarshal(rec.Body.Bytes(), &rsp)
 		if err != nil {
@@ -59,9 +59,9 @@ func TestHandlerMulti(t *testing.T) {
 			rsp := struct {
 				Status string                 `json:"status"`
 				Code   int                    `json:"code"`
-				Result *model.AddressResponse `json:"result"`
+				Result *multi.AddressResponse `json:"result"`
 			}{
-				Result: &model.AddressResponse{},
+				Result: &multi.AddressResponse{},
 			}
 			if rec.Code != http.StatusCreated {
 				t.Fatalf("wrong status, expected %d  got %d", rec.Code, http.StatusCreated)
@@ -86,9 +86,9 @@ func TestHandlerMulti(t *testing.T) {
 				rspBalance := struct {
 					Status string                 `json:"status"`
 					Code   int                    `json:"code"`
-					Result *model.BalanceResponse `json:"result"`
+					Result *multi.BalanceResponse `json:"result"`
 				}{
-					Result: &model.BalanceResponse{},
+					Result: &multi.BalanceResponse{},
 				}
 				err := json.Unmarshal(rec.Body.Bytes(), &rspBalance)
 				if err != nil {
@@ -110,9 +110,9 @@ func TestHandlerMulti(t *testing.T) {
 		rspTrans := struct {
 			Status string                 `json:"status"`
 			Code   int                    `json:"code"`
-			Result *model.TransactionSign `json:"result"`
+			Result *multi.TransactionSign `json:"result"`
 		}{
-			Result: &model.TransactionSign{},
+			Result: &multi.TransactionSign{},
 		}
 		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
 		if err != nil {
@@ -135,9 +135,9 @@ func TestHandlerMulti(t *testing.T) {
 		rspTrans := struct {
 			Status string             `json:"status"`
 			Code   int                `json:"code"`
-			Result *model.Transaction `json:"result"`
+			Result *multi.Transaction `json:"result"`
 		}{
-			Result: &model.Transaction{},
+			Result: &multi.Transaction{},
 		}
 		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
 		if err != nil {
@@ -161,9 +161,9 @@ func TestHandlerMulti(t *testing.T) {
 		rspTrans := struct {
 			Status string                   `json:"status"`
 			Code   int                      `json:"code"`
-			Result *model.TransactionStatus `json:"result"`
+			Result *multi.TransactionStatus `json:"result"`
 		}{
-			Result: &model.TransactionStatus{},
+			Result: &multi.TransactionStatus{},
 		}
 		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
 		if err != nil {

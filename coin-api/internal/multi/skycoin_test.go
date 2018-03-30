@@ -127,9 +127,11 @@ func TestTransaction(t *testing.T) {
 		}, nil)
 
 		transStatus, err := skyService.CheckTransactionStatus(rawTxID)
+
 		if err != nil {
 			t.Fatal(err.Error())
 		}
+
 		if transStatus.BlockSeq == 0 {
 			t.Fatalf("blockSeq shouldn't be zero length")
 		}
