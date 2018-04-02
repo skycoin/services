@@ -17,7 +17,7 @@ var getBalanceAddresses = func(client ClientApi, addresses []string) (*wallet.Ba
 	return client.Balance(addresses)
 }
 
-// ClientApi describes skycoin RPC client API
+// ClientApi describes skycoin client API
 type ClientApi interface {
 	Transaction(string) (*visor.TransactionResult, error)
 	InjectTransaction(string) (string, error)
@@ -27,7 +27,6 @@ type ClientApi interface {
 // SkyСoinService provides generic access to various coins API
 type SkyСoinService struct {
 	client ClientApi
-	// client       *webrpc.Client
 	checkBalance func(client ClientApi, addresses []string) (*wallet.BalancePair, error)
 }
 
