@@ -55,8 +55,8 @@ type AddressResponse struct {
 // BalanceResponse Returns balance by given coin
 type BalanceResponse struct {
 	Address string `json:"address"`
-	Balance string `json:"balance"`
-	Hours   string `json:"hours"`
+	Balance uint64 `json:"balance"`
+	Hours   uint64 `json:"hours"`
 	Coin    Coin
 }
 

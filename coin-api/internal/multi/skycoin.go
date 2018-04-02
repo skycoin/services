@@ -5,42 +5,35 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"reflect"
 
-	"github.com/skycoin/skycoin/src/api/cli"
-	"github.com/skycoin/skycoin/src/api/webrpc"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
+	"github.com/skycoin/skycoin/src/gui"
 	"github.com/skycoin/skycoin/src/visor"
+	"github.com/skycoin/skycoin/src/wallet"
 )
 
-var getBalanceAddresses = func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error) {
-	webRPC, ok := client.(*webrpc.Client)
-	if !ok {
-		panic(fmt.Sprintf("wrong type %s *webrpc.Client expected", reflect.TypeOf(webRPC).String()))
-	}
-	return cli.GetBalanceOfAddresses(webRPC, addresses)
+var getBalanceAddresses = func(client *gui.Client, addresses []string) (*wallet.BalancePair, error) {
+	return client.Balance(addresses)
 }
 
 // WebRPCClientAPI describes skycoin RPC client API
 type WebRPCClientAPI interface {
-	GetTransactionByID(string) (*webrpc.TxnResult, error)
+	GetTransactionByID(string) (*visor.TransactionResult, error)
 	InjectTransactionString(string) (string, error)
 }
 
 // SkyСoinService provides generic access to various coins API
 type SkyСoinService struct {
-	client WebRPCClientAPI
+	client *gui.Client
 	// client       *webrpc.Client
-	checkBalance func(client WebRPCClientAPI, addresses []string) (*cli.BalanceResult, error)
+	checkBalance func(client *gui.Client, addresses []string) (*wallet.BalancePair, error)
 }
 
 // NewSkyService returns new multicoin generic service
 func NewSkyService(n *Node) *SkyСoinService {
 	s := &SkyСoinService{
-		client: &webrpc.Client{
-			Addr: fmt.Sprintf("%s:%d", n.GetNodeHost(), n.GetNodePort()),
-		},
+		client:       gui.NewClient(fmt.Sprintf("%s:%d", n.GetNodeHost(), n.GetNodePort())),
 		checkBalance: getBalanceAddresses,
 	}
 	return s
@@ -76,31 +69,20 @@ func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *AddressResponse, e
 	return maddr, nil
 }
 
-func getBalanceAddress(br *cli.BalanceResult) string {
-	if len(br.Addresses) > 0 {
-		return br.Addresses[0].Address
-	}
-
-	return ""
-}
-
 // CheckBalance check the balance (and get unspent outputs) for an address
 func (s *SkyСoinService) CheckBalance(addr string) (*BalanceResponse, error) {
 	addressesToGetBalance := make([]string, 0, 1)
 	addressesToGetBalance = append(addressesToGetBalance, addr)
 	balanceResult, err := s.checkBalance(s.client, addressesToGetBalance)
+
 	if err != nil {
 		return nil, err
 	}
 
 	return &BalanceResponse{
-		Address: getBalanceAddress(balanceResult),
-		Hours:   balanceResult.Spendable.Hours,
-		Balance: balanceResult.Spendable.Coins,
-		// balanceResult.
-		// 	Coin: model.Coin{
-		// //TODO: maybe coin info will required in the nearest future
-		// },
+		Address: addr,
+		Hours:   balanceResult.Confirmed.Hours,
+		Balance: balanceResult.Confirmed.Coins,
 	}, nil
 }
 
@@ -144,35 +126,36 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 	if err != nil {
 		return nil, errors.New("invalid txid")
 	}
-	status, err := s.client.GetTransactionByID(txID)
+	status, err := s.client.Transaction(txID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &status.Transaction.Status, nil
+	return &status.Status, nil
 }
 
 // InjectTransaction inject transaction into network
 func (s *SkyСoinService) InjectTransaction(rawtx string) (*Transaction, error) {
-	injectedT, err := s.client.InjectTransactionString(rawtx)
+	injectedTx, err := s.client.InjectTransaction(rawtx)
 	if err != nil {
 		return nil, err
 	}
-	statusT, err := s.client.GetTransactionByID(injectedT)
+	tx, err := s.client.Transaction(injectedTx)
 	if err != nil {
 		return nil, err
 	}
 
 	var tStatus string
-	if statusT.Transaction.Status.Confirmed {
+
+	if tx.Status.Confirmed {
 		tStatus = "confirmed"
 	} else {
 		tStatus = "unconfirmed"
 	}
 
 	return &Transaction{
-		Transid: injectedT,
+		Transid: injectedTx,
 		Status:  tStatus,
 	}, nil
 }
