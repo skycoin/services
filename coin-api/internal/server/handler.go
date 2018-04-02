@@ -14,6 +14,7 @@ import (
 )
 
 type handlerMulti struct {
+	// TODO(stgleb): Create an interface for abstracting service.
 	service *multi.SkyСoinService
 }
 
@@ -182,6 +183,8 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 			0,
 			err.Error(),
 		}, "\t")
+
+		return err
 	}
 
 	ctx.JSONPretty(http.StatusOK, struct {

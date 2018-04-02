@@ -48,7 +48,7 @@ func TestHandlerMulti(t *testing.T) {
 		}
 
 		t.Run("TestGenerateAddress", func(t *testing.T) {
-			req := httptest.NewRequest(echo.POST, fmt.Sprintf("/address/%s", rsp.Result.Public), nil)
+			req := httptest.NewRequest(echo.POST, fmt.Sprintf("/address?key=%s", rsp.Result.Public), nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			ctx := e.NewContext(req, rec)
@@ -64,7 +64,7 @@ func TestHandlerMulti(t *testing.T) {
 				Result: &multi.AddressResponse{},
 			}
 			if rec.Code != http.StatusCreated {
-				t.Fatalf("wrong status, expected %d  got %d", rec.Code, http.StatusCreated)
+				t.Fatalf("wrong status, expected %d  got %d", http.StatusCreated, rec.Code)
 			}
 
 			err = json.Unmarshal(rec.Body.Bytes(), &rsp)
@@ -78,11 +78,13 @@ func TestHandlerMulti(t *testing.T) {
 			}
 
 			t.Run("checkBalance", func(t *testing.T) {
-				req := httptest.NewRequest(echo.POST, fmt.Sprintf("/address/%s", rsp.Result.Address), nil)
+				req := httptest.NewRequest(echo.POST, fmt.Sprintf("/address?address=%s", rsp.Result.Address), nil)
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 				recorder := httptest.NewRecorder()
 				ctx := e.NewContext(req, recorder)
+
 				handler.checkBalance(ctx)
+
 				rspBalance := struct {
 					Status string                 `json:"status"`
 					Code   int                    `json:"code"`
@@ -102,11 +104,12 @@ func TestHandlerMulti(t *testing.T) {
 	})
 
 	t.Run("signTransaction", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, fmt.Sprintf("/transaction/sign/%s", rawTxStr), nil)
+		req := httptest.NewRequest(echo.POST, fmt.Sprintf("/transaction/sign?signid=%s&sourceTrans=%s", rawTxID, rawTxStr), nil)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
 		err := handler.signTransaction(ctx)
+
 		rspTrans := struct {
 			Status string                 `json:"status"`
 			Code   int                    `json:"code"`
@@ -149,10 +152,14 @@ func TestHandlerMulti(t *testing.T) {
 	})
 
 	t.Run("checkTransaction", func(t *testing.T) {
-		req := httptest.NewRequest(echo.GET, "/transaction/:transid", nil)
+		req := httptest.NewRequest(echo.GET, fmt.Sprintf("/transaction/%s", rawTxID), nil)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
+
+		ctx.SetParamNames("transid")
+		ctx.SetParamValues(rawTxID)
+
 		err := handler.checkTransaction(ctx)
 		if err != nil {
 			t.Fatalf("error check transaction %s", err.Error())

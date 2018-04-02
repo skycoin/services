@@ -26,7 +26,7 @@ type ClientApi interface {
 
 // SkyСoinService provides generic access to various coins API
 type SkyСoinService struct {
-	client ClientApi
+	client       ClientApi
 	checkBalance func(client ClientApi, addresses []string) (*wallet.BalancePair, error)
 }
 
@@ -49,20 +49,21 @@ func (s *SkyСoinService) GenerateKeyPair() *KeysResponse {
 	rand.Read(seed)
 	pub, sec := cipher.GenerateDeterministicKeyPair(seed)
 	return &KeysResponse{
-		Private: pub.Hex(),
-		Public:  sec.Hex(),
+		Private: sec.Hex(),
+		Public:  pub.Hex(),
 	}
 }
 
 // GenerateAddr generates rawAddress, private keys, pubkeys from deterministic seed
 func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *AddressResponse, err error) {
 	maddr = &AddressResponse{}
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("error generating rawAddress %s", r)
-		}
-	}()
-	pubKey := cipher.MustPubKeyFromHex(pubStr)
+
+	pubKey, err := cipher.PubKeyFromHex(pubStr)
+
+	if err != nil {
+		return nil, err
+	}
+
 	address := cipher.AddressFromPubKey(pubKey)
 
 	maddr.Address = address.String()
