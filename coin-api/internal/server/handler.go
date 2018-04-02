@@ -170,7 +170,7 @@ func (h *handlerMulti) injectTransaction(e echo.Context) error {
 }
 
 func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
-	txID := ctx.Param("transid")
+	txID := ctx.QueryParam("transid")
 	status, err := h.service.CheckTransactionStatus(txID)
 
 	if err != nil {

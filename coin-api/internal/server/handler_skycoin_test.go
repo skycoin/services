@@ -152,13 +152,10 @@ func TestHandlerMulti(t *testing.T) {
 	})
 
 	t.Run("checkTransaction", func(t *testing.T) {
-		req := httptest.NewRequest(echo.GET, fmt.Sprintf("/transaction/%s", rawTxID), nil)
+		req := httptest.NewRequest(echo.GET, fmt.Sprintf("/transaction?transid=%s", rawTxID), nil)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
-
-		ctx.SetParamNames("transid")
-		ctx.SetParamValues(rawTxID)
 
 		err := handler.checkTransaction(ctx)
 		if err != nil {
