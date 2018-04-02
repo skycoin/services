@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	rawTxID  = "bff13a47a98402ecf2d2eee40464959ad26e0ed6047de5709ffb0c0c9fc1fca5"
-	rawTxStr = "dc00000000a8558b814926ed0062cd720a572bd67367aa0d01c0769ea4800adcc89cdee524010000008756e4bde4ee1c725510a6a9a308c6a90d949de7785978599a87faba601d119f27e1be695cbb32a1e346e5dd88653a97006bf1a93c9673ac59cf7b5db7e07901000100000079216473e8f2c17095c6887cc9edca6c023afedfac2e0c5460e8b6f359684f8b020000000060dfa95881cdc827b45a6d49b11dbc152ecd4de640420f00000000000000000000000000006409744bcacb181bf98b1f02a11e112d7e4fa9f940f1f23a000000000000000000000000"
+	rawAddress = "2GgFvqoyk9RjwVzj8tqfcXVXB4orBwoc9qv"
+	rawTxID    = "bff13a47a98402ecf2d2eee40464959ad26e0ed6047de5709ffb0c0c9fc1fca5"
+	rawTxStr   = "dc00000000a8558b814926ed0062cd720a572bd67367aa0d01c0769ea4800adcc89cdee524010000008756e4bde4ee1c725510a6a9a308c6a90d949de7785978599a87faba601d119f27e1be695cbb32a1e346e5dd88653a97006bf1a93c9673ac59cf7b5db7e07901000100000079216473e8f2c17095c6887cc9edca6c023afedfac2e0c5460e8b6f359684f8b020000000060dfa95881cdc827b45a6d49b11dbc152ecd4de640420f00000000000000000000000000006409744bcacb181bf98b1f02a11e112d7e4fa9f940f1f23a000000000000000000000000"
 )
 
 // clientMock - its a mock of client web rpc API but be careful if you want laucnh tests in parallel, you may get race on
@@ -25,11 +26,7 @@ const (
 var clientMock *mock.GuiClientMock
 
 func TestGenerateKeyPair(t *testing.T) {
-	loc := Node{
-		Host: "127.0.0.1",
-		Port: 6420,
-	}
-	skyService := NewSkyService(&loc)
+	skyService := getTestedMockedService()
 	keysResponse := skyService.GenerateKeyPair()
 	if len(keysResponse.Private) == 0 || len(keysResponse.Public) == 0 {
 		t.Fatalf("keysResponse.Private or keysResponse.Public should not be zero length")
@@ -41,18 +38,40 @@ func TestGenerateKeyPair(t *testing.T) {
 			t.Fatal(err.Error())
 		}
 		if len(rspAdd.Address) == 0 {
-			t.Fatalf("address cannot be zero lenght")
+			t.Fatalf("rawAddress cannot be zero lenght")
 		}
 
 		t.Run("check balance", func(t *testing.T) {
 			address := rspAdd.Address
 			skyServiceIsolated := getTestedMockedService()
-			bRsp, err := skyServiceIsolated.CheckBalance(address)
-			if err != nil {
-				t.Fatal(err.Error())
+
+			var (
+				expectedCoins uint64 = 10
+				expectedHours uint64 = 1
+			)
+
+			checkBalance := func(client ClientApi, addresses []string) (*wallet.BalancePair, error) {
+				return &wallet.BalancePair{
+					Confirmed: wallet.Balance{
+						Coins: expectedCoins,
+						Hours: expectedHours,
+					},
+				}, nil
 			}
-			if bRsp.Balance != uint64(5) || bRsp.Hours != uint64(4) {
-				t.Fatalf("wrong balance")
+
+			skyServiceIsolated.checkBalance = checkBalance
+
+			balanceResponse, err := skyServiceIsolated.CheckBalance(address)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			if balanceResponse.Balance != expectedCoins {
+				t.Fatalf("Wrong balance expected %d actual %d", expectedCoins, balanceResponse.Balance)
+			}
+
+			if balanceResponse.Balance != expectedCoins {
+				t.Fatalf("Wrong hours expected %d actual %d", expectedHours, balanceResponse.Hours)
 			}
 		})
 	})
@@ -60,6 +79,25 @@ func TestGenerateKeyPair(t *testing.T) {
 
 func TestInjectTransaction(t *testing.T) {
 	skyService := getTestedMockedService()
+	var (
+		expectedCoins uint64 = 10
+		expectedHours uint64 = 1
+	)
+
+	clientMock.On("Balance", mocklib.MatchedBy(func(address string) bool {
+		if address != address {
+			return false
+		}
+		return true
+	})).Return(
+		&wallet.BalancePair{
+			wallet.Balance{
+				Coins: expectedCoins,
+				Hours: expectedHours,
+			},
+			wallet.Balance{},
+		}, nil)
+
 	t.Run("sign transaction", func(t *testing.T) {
 		_, secKey := makeUxBodyWithSecret(t)
 		secKeyHex := secKey.Hex()
@@ -80,6 +118,18 @@ func TestInjectTransaction(t *testing.T) {
 			}
 			return true
 		})).Return(rawTxID, nil)
+
+		clientMock.On("Transaction", mocklib.MatchedBy(func(txid string) bool {
+			if rawTxID != txid {
+				return false
+			}
+			return true
+		})).Return(
+			&visor.TransactionResult{
+				Status: visor.TransactionStatus{
+					Confirmed: true,
+				},
+			}, nil)
 
 		bRsp, err := skyService.InjectTransaction(rawTxStr)
 
@@ -136,32 +186,53 @@ func TestCheckTransaction(t *testing.T) {
 	}
 }
 
+func TestCheckBalance(t *testing.T) {
+	skyService := getTestedMockedService()
+
+	var (
+		expectedCoins uint64 = 10
+		expectedHours uint64 = 2
+	)
+
+	checkBalance := func(client ClientApi, addresses []string) (*wallet.BalancePair, error) {
+		return &wallet.BalancePair{
+			Confirmed: wallet.Balance{
+				Coins: expectedCoins,
+				Hours: expectedHours,
+			},
+		}, nil
+	}
+
+	skyService.checkBalance = checkBalance
+	balanceResponse, err := skyService.CheckBalance(rawAddress)
+
+	if balanceResponse.Address != rawAddress {
+		t.Errorf("Wrong rawAddress expected %s actual %s", rawAddress, balanceResponse.Address)
+	}
+
+	if balanceResponse.Hours != expectedHours {
+		t.Errorf("Wrong hours expected %d actual %d", expectedHours, balanceResponse.Hours)
+	}
+
+	if balanceResponse.Balance != expectedCoins {
+		t.Errorf("Wrong coins expected %d actual %d", expectedCoins, balanceResponse.Balance)
+	}
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 var getTestedMockedService = func() *SkyСoinService {
 	loc := Node{
 		Host: "127.0.0.1",
 		Port: 6430,
-	}
-	// parametrize tested service with mocked/stubbed external services
-	// this way we mock our helpers which commit 3-d party package calls which cannot be mocked usual way because they deal with types
-	// instead of interfaces
-	getBalanceAddresses := func(client ClientApi, addresses []string) (*wallet.BalancePair, error) {
-		return &wallet.BalancePair{
-			Confirmed: wallet.Balance{
-				Coins: uint64(5),
-				Hours: uint64(4),
-			},
-			Predicted: wallet.Balance{
-				Coins: uint64(3),
-				Hours: uint64(2),
-			},
-		}, nil
 	}
 
 	clientMock = &mock.GuiClientMock{}
 	skyService := NewSkyService(&loc)
 	// inject mocked dependencies into tested service
 	skyService.client = clientMock
-	skyService.checkBalance = getBalanceAddresses
 
 	return skyService
 }

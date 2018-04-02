@@ -21,7 +21,7 @@ func (l *Node) SetNode(node string) *Node {
 	return l
 }
 
-// GetNodeHost returns given node ip or address
+// GetNodeHost returns given node ip or rawAddress
 func (l *Node) GetNodeHost() string {
 	return l.Host
 }

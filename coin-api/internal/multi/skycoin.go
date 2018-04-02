@@ -55,12 +55,12 @@ func (s *SkyСoinService) GenerateKeyPair() *KeysResponse {
 	}
 }
 
-// GenerateAddr generates address, private keys, pubkeys from deterministic seed
+// GenerateAddr generates rawAddress, private keys, pubkeys from deterministic seed
 func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *AddressResponse, err error) {
 	maddr = &AddressResponse{}
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("error generating address %s", r)
+			err = fmt.Errorf("error generating rawAddress %s", r)
 		}
 	}()
 	pubKey := cipher.MustPubKeyFromHex(pubStr)
@@ -70,7 +70,7 @@ func (s *SkyСoinService) GenerateAddr(pubStr string) (maddr *AddressResponse, e
 	return maddr, nil
 }
 
-// CheckBalance check the balance (and get unspent outputs) for an address
+// CheckBalance check the balance (and get unspent outputs) for an rawAddress
 func (s *SkyСoinService) CheckBalance(addr string) (*BalanceResponse, error) {
 	addressesToGetBalance := make([]string, 0, 1)
 	addressesToGetBalance = append(addressesToGetBalance, addr)

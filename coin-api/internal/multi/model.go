@@ -18,7 +18,7 @@ type Coins struct {
 type Coin struct {
 	Cid      string `json:"сid"`
 	Name     string `json:"name"`
-	Address  string `json:"address"`
+	Address  string `json:"rawAddress"`
 	LastSeed string `json:"lastSeed"`
 	Tm       string `json:"tm"`
 	Type     string `json:"type"`
@@ -47,14 +47,14 @@ type KeysResponse struct {
 	Status  Status `json:"status"`
 }
 
-// AddressResponse returns address as response
+// AddressResponse returns rawAddress as response
 type AddressResponse struct {
-	Address string `json:"address"`
+	Address string `json:"rawAddress"`
 }
 
 // BalanceResponse Returns balance by given coin
 type BalanceResponse struct {
-	Address string `json:"address"`
+	Address string `json:"rawAddress"`
 	Balance uint64 `json:"balance"`
 	Hours   uint64 `json:"hours"`
 	Coin    Coin
