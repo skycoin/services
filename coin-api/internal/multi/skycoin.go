@@ -13,21 +13,22 @@ import (
 	"github.com/skycoin/skycoin/src/wallet"
 )
 
-var getBalanceAddresses = func(client *gui.Client, addresses []string) (*wallet.BalancePair, error) {
+var getBalanceAddresses = func(client ClientApi, addresses []string) (*wallet.BalancePair, error) {
 	return client.Balance(addresses)
 }
 
-// WebRPCClientAPI describes skycoin RPC client API
-type WebRPCClientAPI interface {
-	GetTransactionByID(string) (*visor.TransactionResult, error)
-	InjectTransactionString(string) (string, error)
+// ClientApi describes skycoin RPC client API
+type ClientApi interface {
+	Transaction(string) (*visor.TransactionResult, error)
+	InjectTransaction(string) (string, error)
+	Balance([]string) (*wallet.BalancePair, error)
 }
 
 // SkyСoinService provides generic access to various coins API
 type SkyСoinService struct {
-	client *gui.Client
+	client ClientApi
 	// client       *webrpc.Client
-	checkBalance func(client *gui.Client, addresses []string) (*wallet.BalancePair, error)
+	checkBalance func(client ClientApi, addresses []string) (*wallet.BalancePair, error)
 }
 
 // NewSkyService returns new multicoin generic service
