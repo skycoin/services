@@ -112,7 +112,9 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 func (h *handlerMulti) signTransaction(e echo.Context) error {
 	transid := e.QueryParam("signid")
 	srcTrans := e.QueryParam("sourceTrans")
+
 	transactionSign, err := h.service.SignTransaction(transid, srcTrans)
+
 	if err != nil {
 		log.Errorf("sign transaction error %v", err)
 		rsp := struct {
@@ -170,7 +172,7 @@ func (h *handlerMulti) injectTransaction(e echo.Context) error {
 }
 
 func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
-	txID := ctx.QueryParam("transid")
+	txID := ctx.Param("transid")
 	status, err := h.service.CheckTransactionStatus(txID)
 
 	if err != nil {

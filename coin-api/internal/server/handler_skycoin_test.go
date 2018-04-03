@@ -54,7 +54,7 @@ func TestHandlerMulti(t *testing.T) {
 			ctx := e.NewContext(req, rec)
 			err := handler.generateSeed(ctx)
 			if err != nil {
-				t.Fatal(err.Error())
+				t.Fatal(err)
 			}
 			rsp := struct {
 				Status string                 `json:"status"`
@@ -104,10 +104,14 @@ func TestHandlerMulti(t *testing.T) {
 	})
 
 	t.Run("signTransaction", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, fmt.Sprintf("/transaction/sign?signid=%s&sourceTrans=%s", rawTxID, rawTxStr), nil)
+		req := httptest.NewRequest(
+			echo.POST,
+			fmt.Sprintf("/transaction/sign?signid=%s&sourceTrans=%s", rawTxID, rawTxStr),
+			nil)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
+
 		err := handler.signTransaction(ctx)
 
 		rspTrans := struct {
@@ -132,9 +136,16 @@ func TestHandlerMulti(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
 		err := handler.injectTransaction(ctx)
+
+		ctx.SetParamNames("transid")
+		ctx.SetParamValues(rawTxID)
+		ctx.SetParamNames("netid")
+		ctx.SetParamValues("fake-net-id")
+
 		if err != nil {
 			t.Fatalf("error injectin transaction %s", err.Error())
 		}
+
 		rspTrans := struct {
 			Status string             `json:"status"`
 			Code   int                `json:"code"`
@@ -152,29 +163,29 @@ func TestHandlerMulti(t *testing.T) {
 	})
 
 	t.Run("checkTransaction", func(t *testing.T) {
-		req := httptest.NewRequest(echo.GET, fmt.Sprintf("/transaction?transid=%s", rawTxID), nil)
+		req := httptest.NewRequest(echo.GET, fmt.Sprintf("/transaction/%s", rawTxID), nil)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
 
-		err := handler.checkTransaction(ctx)
-		if err != nil {
-			t.Fatalf("error check transaction %s", err.Error())
-		}
+		// Set params directly
+		ctx.SetParamNames("transid")
+		ctx.SetParamValues(rawTxID)
 
-		rspTrans := struct {
+		err := handler.checkTransaction(ctx)
+
+		response := struct {
 			Status string                   `json:"status"`
 			Code   int                      `json:"code"`
 			Result *multi.TransactionStatus `json:"result"`
 		}{
 			Result: &multi.TransactionStatus{},
 		}
-		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
-		if err != nil {
-			t.Fatalf("error unmarshalling response: %v", err)
-		}
-		if len(rspTrans.Result.Transid) == 0 {
-			t.Fatal("rspTrans.Result.Transid can't be zero length")
+		err = json.Unmarshal(recorder.Body.Bytes(), &response)
+
+		if err == nil {
+			t.Fatalf("expected error, actual nil")
 		}
 	})
 }
