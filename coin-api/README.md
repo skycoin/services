@@ -100,6 +100,9 @@ ResponseBody {
 ```
 
 #### GET /api/v1/list
+
+List of supported currencies
+
 #### Successful response:
 ```
 ResponseHeader: 200
@@ -111,18 +114,14 @@ ResponseBody {
                 {
                     "сid": "LTC",
                     "name":"litecoin",
-                    "address": "99902999f9s99ds999s9",
-                    "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
-                    "tm": "1503458909",
+                    "timestamp": "1503458909",
                     "type": "deterministic",
                     "version": "0.1"
                 },
                 {
                     "сid": "ETH",
                     "name":"ethereum",
-                    "address": "99902999f9s99ds999s9",
-                    "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
-                    "tm": "1503458909",
+                    "timestamp": "1503458909",
                     "type": "deterministic",
                     "version": "0.1"
                 }
