@@ -38,14 +38,17 @@ func Start(config *viper.Viper) error {
 		config.Sub("bitcoin").GetString("BlockExplorer"),
 		config.Sub("bitcoin").GetString("WatcherUrl"))
 
+	generalHandler := &GeneralHandler{}
+
 	apiGroupV1 := e.Group("/api/v1")
 	skyGroup := apiGroupV1.Group("/sky")
 	btcGroup := apiGroupV1.Group("/btc")
 
 	// ping server
-	// apiGroupV1.GET("/ping", hMulti.generateSeed)
+	apiGroupV1.GET("/ping", generalHandler.Ping)
 	// show currencies and api's list
-	// apiGroupV1.GET("/list", hMulti.generateSeed)
+	apiGroupV1.GET("/list", generalHandler.List)
+
 	// generate keys
 	skyGroup.POST("/keys", hMulti.generateKeys)
 	// generate address
