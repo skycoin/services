@@ -349,6 +349,15 @@ ResponseBody {
 
 #### Generate address from public key
 ##### POST /api/v1/:coin/address/:key
+
+Request body
+
+```
+{
+    "key":"032417bc1f336ad55a0686a956ccc687ac6be4c0413758c1f78bf82e29c8dcf8b9"
+}
+```
+
 ##### Successful response:
 ```
 ResponseHeader: 201

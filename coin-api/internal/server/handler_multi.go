@@ -47,9 +47,19 @@ func (h *handlerMulti) generateKeys(e echo.Context) error {
 	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
-func (h *handlerMulti) generateSeed(e echo.Context) error {
-	key := e.QueryParam("key")
-	addressResponse, err := h.service.GenerateAddr(key)
+func (h *handlerMulti) generateSeed(ctx echo.Context) error {
+	var req addressRequest
+
+	if err := ctx.Bind(&req); err != nil {
+		return handleError(ctx, err)
+	}
+
+	if len(req.PublicKey) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "public key is empty")
+	}
+
+	addressResponse, err := h.service.GenerateAddr(req.PublicKey)
+
 	if err != nil {
 		log.Errorf("error encoding response %v, code", err)
 		rsp := struct {
@@ -62,7 +72,7 @@ func (h *handlerMulti) generateSeed(e echo.Context) error {
 			Result: &multi.AddressResponse{},
 		}
 
-		return e.JSONPretty(http.StatusNotFound, rsp, "\t")
+		return ctx.JSONPretty(http.StatusNotFound, rsp, "\t")
 	}
 
 	rsp := struct {
@@ -75,22 +85,23 @@ func (h *handlerMulti) generateSeed(e echo.Context) error {
 		Result: addressResponse,
 	}
 
-	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
+	return ctx.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
 func (h *handlerMulti) checkBalance(e echo.Context) error {
-	address := e.QueryParam("address")
+	address := e.Param("address")
 	balanceResponse, err := h.service.CheckBalance(address)
+
 	if err != nil {
 		log.Errorf("balance checking error %v", err)
 		rsp := struct {
-			Status string                 `json:"status"`
-			Code   int                    `json:"code"`
-			Result *multi.BalanceResponse `json:"result"`
+			Status string `json:"status"`
+			Code   int    `json:"code"`
+			Result string `json:"result"`
 		}{
 			Status: multi.StatusError,
 			Code:   errhandler.RPCInvalidAddressOrKey,
-			Result: &multi.BalanceResponse{},
+			Result: "Address not found",
 		}
 
 		return e.JSONPretty(http.StatusNotFound, rsp, "\t")

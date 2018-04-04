@@ -44,15 +44,17 @@ func Start(config *viper.Viper) error {
 	skyGroup := apiGroupV1.Group("/sky")
 	btcGroup := apiGroupV1.Group("/btc")
 
+	// General purpose handlers
 	// ping server
 	apiGroupV1.GET("/ping", generalHandler.Ping)
 	// show currencies and api's list
 	apiGroupV1.GET("/list", generalHandler.List)
 
+	// Skycoin handlers
 	// generate keys
 	skyGroup.POST("/keys", hMulti.generateKeys)
 	// generate address
-	skyGroup.POST("/address/:key", hMulti.generateSeed)
+	skyGroup.POST("/address", hMulti.generateSeed)
 	// check the balance (and get unspent outputs) for an address
 	skyGroup.GET("/address/:address", hMulti.checkBalance)
 	// sign a transaction
@@ -61,6 +63,8 @@ func Start(config *viper.Viper) error {
 	skyGroup.PUT("/transaction/:netid/:transid", hMulti.injectTransaction)
 	// check the status of a transaction (tracks transactions by transaction hash)
 	skyGroup.GET("/transaction/:transid", hMulti.checkTransaction)
+
+	// Bitcoin handlers
 	// Generate key pair
 	btcGroup.POST("/keys", hBTC.generateKeyPair)
 	// // BTC generate address based on public key
