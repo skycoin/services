@@ -15,17 +15,24 @@ import (
 
 func TestStatus(t *testing.T) {
 	modl := &model.Model{
-		Running: true,
-		Logger:  log.New(ioutil.Discard, "", 0),
-		Router:  actor.New(nil, nil),
-		Lookup: map[string]*otc.Request{
-			"currency:address": &otc.Request{
-				Status: otc.NEW,
-				Times: &otc.Times{
-					UpdatedAt: 1,
+		Controller: &model.Controller{
+			Running: true,
+		},
+		Lookup: &model.Lookup{
+			Statuses: map[string]*otc.User{
+				"currency:address": &otc.User{
+					Orders: []*otc.Order{
+						{
+							Id:     "transaction:index",
+							Status: otc.DEPOSIT,
+							Amount: 1,
+						},
+					},
 				},
 			},
 		},
+		Router: actor.New(nil, nil),
+		Logs:   log.New(ioutil.Discard, "", 0),
 	}
 
 	tests := [][]string{
@@ -35,11 +42,11 @@ func TestStatus(t *testing.T) {
 		},
 		{
 			`{"drop_address":"bad","drop_currency":"BAD"}`,
-			`request missing`,
+			`user missing`,
 		},
 		{
 			`{"drop_address":"address","drop_currency":"currency"}`,
-			`{"status":"new","updated_at":1}`,
+			`[{"id":"transaction:index","status":"waiting_deposit","amount":1}]`,
 		},
 	}
 

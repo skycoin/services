@@ -40,7 +40,11 @@ func (g *Generator) Tick() {
 }
 
 func (g *Generator) Add(user *otc.User) {
-	atomic.AddInt64(&g.UserCount, 1)
+	_, exists := g.Users.LoadOrStore(user, nil)
+	if !exists {
+		// only add to count if didn't previously exist
+		atomic.AddInt64(&g.UserCount, 1)
+	}
 }
 
 func (g *Generator) Delete(user *otc.User) {

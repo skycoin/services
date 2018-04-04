@@ -14,11 +14,11 @@ type Order struct {
 	// bitcoin amount in satoshis
 	Amount uint64 `json:"amount"`
 	// purchase information
-	Purchase *Purchase `json:"purchase"`
+	Purchase *Purchase `json:"purchase,omitempty"`
 	// timestamps for order
-	Times *Times `json:"times"`
+	Times *Times `json:"times,omitempty"`
 	// events for order
-	Events []*Event `json:"events"`
+	Events []*Event `json:"events,omitempty"`
 }
 
 type Purchase struct {
@@ -43,7 +43,7 @@ type User struct {
 	// list of orders
 	Orders []*Order `json:"-"`
 	// skycoin address : drop currency : drop address
-	Id string
+	Id string `json:"-"`
 	// skycoin address
 	Address string `json:"address"`
 	// affiliate code used when user was created

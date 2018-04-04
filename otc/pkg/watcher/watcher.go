@@ -29,9 +29,7 @@ func (w *Watcher) Outputs(drop *otc.Drop) (otc.Outputs, error) {
 	var buf bytes.Buffer
 
 	// encode json
-	if err := json.NewEncoder(&buf).Encode(drop); err != nil {
-		return nil, err
-	}
+	json.NewEncoder(&buf).Encode(drop)
 
 	// send POST request to watcher
 	resp, err := w.Client.Post(
@@ -46,7 +44,6 @@ func (w *Watcher) Outputs(drop *otc.Drop) (otc.Outputs, error) {
 		return nil, fmt.Errorf("watcher returned error")
 	}
 
-	// TODO: test
 	var outputs otc.Outputs
 	return outputs, json.NewDecoder(resp.Body).Decode(&outputs)
 }

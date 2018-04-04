@@ -12,8 +12,10 @@ import (
 
 func MockModel() *model.Model {
 	return &model.Model{
-		Logger:  log.New(ioutil.Discard, "", 0),
-		Running: false,
+		Logs: log.New(ioutil.Discard, "", 0),
+		Controller: &model.Controller{
+			Running: false,
+		},
 	}
 }
 
@@ -44,7 +46,7 @@ func TestPauseTrue(t *testing.T) {
 		t.Fatalf(`expected empty response, got "%s"`, res)
 	}
 
-	if modl.Running {
+	if !modl.Controller.Paused() {
 		t.Fatal("model should be paused")
 	}
 }
@@ -56,7 +58,7 @@ func TestPauseFalse(t *testing.T) {
 		t.Fatalf(`expected empty response, got "%s"`, res)
 	}
 
-	if !modl.Running {
+	if modl.Controller.Paused() {
 		t.Fatal("model shouldn't be paused")
 	}
 }

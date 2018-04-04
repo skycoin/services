@@ -30,7 +30,7 @@ func (c *Controller) Unpause() {
 func (c *Controller) Paused() bool {
 	c.RLock()
 	defer c.RUnlock()
-	return c.Running
+	return !c.Running
 }
 
 func (c *Controller) Stop() {

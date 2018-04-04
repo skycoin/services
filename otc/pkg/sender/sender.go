@@ -25,7 +25,6 @@ func Task(curs *currencies.Currencies) func(*otc.Work) (bool, error) {
 		work.Order.Purchase = &otc.Purchase{
 			// TODO: make source string dynamic
 			Source: "internal",
-
 			Amount: value,
 			TxId:   txid,
 			Price:  &otc.Price{source, price},

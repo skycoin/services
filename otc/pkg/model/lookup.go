@@ -19,8 +19,9 @@ type Lookup struct {
 
 func NewLookup() *Lookup {
 	return &Lookup{
-		Orders: make(map[string]*otc.Order),
-		Users:  make(map[string]*otc.User),
+		Orders:   make(map[string]*otc.Order),
+		Users:    make(map[string]*otc.User),
+		Statuses: make(map[string]*otc.User),
 	}
 }
 
