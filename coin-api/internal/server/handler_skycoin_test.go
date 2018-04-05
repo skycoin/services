@@ -171,22 +171,8 @@ func TestHandlerMulti(t *testing.T) {
 			t.Fatalf("error injectin transaction %s", err.Error())
 		}
 
-		rspTrans := struct {
-			Status string             `json:"status"`
-			Code   int                `json:"code"`
-			Result *multi.Transaction `json:"result"`
-		}{
-			Result: &multi.Transaction{},
-		}
-
-		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
-
-		if err != nil {
-			t.Fatalf("error unmarshalling response: %v", err)
-		}
-
-		if len(rspTrans.Result.Transid) > 0 {
-			t.Fatal("rspTrans.Result.Transid cannot be zero lenght")
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("Wrong response code expected %d actual %d", http.StatusOK, recorder.Code)
 		}
 	})
 
