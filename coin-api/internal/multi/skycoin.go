@@ -116,10 +116,6 @@ func (s *SkyСoinService) SignTransaction(secKey, rawTx string) (response *Trans
 	// Return raw transaction(hex of signed transaction)
 	response.Transaction = tx.TxIDHex()
 
-	if len(tx.Sigs) > 0 {
-		response.Signid = tx.Sigs[0].Hex()
-	}
-
 	return response, nil
 }
 

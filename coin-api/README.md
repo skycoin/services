@@ -412,14 +412,17 @@ ResponseBody {
 ##### Successful response:
 ```
 Request {
-    "signid":"392900939dijdked",
-    "sourceTrans":"392900939dijdked392900939dijdked",
+    "key":"392900939dijdked",
+    "transaction":"392900939dijdked392900939dijdked",
 }
 
-ResponseHeader: 201
+ResponseHeader: 200
 ResponseBody {
     "status":"ok",
     "code": 0,
+    "result": {
+        "transaction": "5f76d889bca29b21e0ef25fb19a8584c6f1c74bd35453a8d71dc54434ad45397",
+    }
 }
 ```
 ##### Unsuccessful response:
@@ -435,14 +438,14 @@ ResponseBody {
 ```
 
 #### inject transaction into network
-##### PUT /api/v1/:coin/transaction/:netid
+##### POST /api/v1/sky/transaction/inject/:transid
 ##### Successful response:
 ```
 Request {
     "transid":"392900939dijdked"
 }
 
-ResponseHeader: 201
+ResponseHeader: 20
 ResponseBody {
     "status":"ok",
     "code": 0,

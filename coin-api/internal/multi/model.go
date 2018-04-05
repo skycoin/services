@@ -69,7 +69,6 @@ type Transaction struct {
 // TransactionSignResponse represents transaction sign id
 type TransactionSignResponse struct {
 	Transaction string `json:"transaction"`
-	Signid      string `json:"signid"`
 }
 
 // StdResponseMessage represents any standard message as a response for any action which doesn't return anything
