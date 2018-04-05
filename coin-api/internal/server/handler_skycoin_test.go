@@ -115,11 +115,11 @@ func TestHandlerMulti(t *testing.T) {
 		err := handler.signTransaction(ctx)
 
 		rspTrans := struct {
-			Status string                 `json:"status"`
-			Code   int                    `json:"code"`
-			Result *multi.TransactionSign `json:"result"`
+			Status string                         `json:"status"`
+			Code   int                            `json:"code"`
+			Result *multi.TransactionSignResponse `json:"result"`
 		}{
-			Result: &multi.TransactionSign{},
+			Result: &multi.TransactionSignResponse{},
 		}
 		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
 		if err != nil {

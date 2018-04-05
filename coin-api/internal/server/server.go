@@ -60,7 +60,7 @@ func Start(config *viper.Viper) error {
 	// sign a transaction
 	skyGroup.POST("/transaction/sign/:sign", hMulti.signTransaction)
 	// inject transaction into network
-	skyGroup.PUT("/transaction/:netid/:transid", hMulti.injectTransaction)
+	skyGroup.POST("/transaction/:netid/:transid", hMulti.injectTransaction)
 	// check the status of a transaction (tracks transactions by transaction hash)
 	skyGroup.GET("/transaction/:transid", hMulti.checkTransaction)
 

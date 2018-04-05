@@ -23,6 +23,15 @@ type MultiStats struct {
 	Message string `json:"message"`
 }
 
+type signTransactionRequest struct {
+	SignKey           string `json:"key"`
+	SourceTransaction string `json:"transaction"`
+}
+
+type injectTransactionRequest struct {
+	RawTransaction string `json:"transaction"`
+}
+
 func newHandlerMulti(host string, port int) *handlerMulti {
 	service := multi.NewSkyService(multi.NewLocatorNode(host, port))
 
@@ -120,30 +129,34 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 	return e.JSONPretty(http.StatusOK, rsp, "\t")
 }
 
+// Sign transaction takes secret key and ancestor transaction, build the new on and signs it.
 func (h *handlerMulti) signTransaction(ctx echo.Context) error {
-	transid := ctx.Param("signid")
-	srcTrans := ctx.Param("sourceTrans")
+	var req signTransactionRequest
 
-	transactionSign, err := h.service.SignTransaction(transid, srcTrans)
+	if err := ctx.Bind(&req); err != nil {
+		return handleError(ctx, err)
+	}
+
+	transactionSign, err := h.service.SignTransaction(req.SignKey, req.SourceTransaction)
 
 	if err != nil {
 		log.Errorf("sign transaction error %v", err)
 		rsp := struct {
-			Status string                 `json:"status"`
-			Code   int                    `json:"code"`
-			Result *multi.TransactionSign `json:"result"`
+			Status string                         `json:"status"`
+			Code   int                            `json:"code"`
+			Result *multi.TransactionSignResponse `json:"result"`
 		}{
 			Status: multi.StatusError,
 			Code:   errhandler.RPCTransactionError,
-			Result: &multi.TransactionSign{},
+			Result: &multi.TransactionSignResponse{},
 		}
 		return ctx.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
 
 	rsp := struct {
-		Status string                 `json:"status"`
-		Code   int                    `json:"code"`
-		Result *multi.TransactionSign `json:"result"`
+		Status string                         `json:"status"`
+		Code   int                            `json:"code"`
+		Result *multi.TransactionSignResponse `json:"result"`
 	}{
 		Status: multi.StatusOk,
 		Code:   0,
@@ -152,9 +165,16 @@ func (h *handlerMulti) signTransaction(ctx echo.Context) error {
 	return ctx.JSONPretty(http.StatusOK, &rsp, "\t")
 }
 
+// Inject transaction receives hex-encoded transaction(raw transaction) to inject
 func (h *handlerMulti) injectTransaction(ctx echo.Context) error {
-	transid := ctx.Param("transid")
-	injectedTransaction, err := h.service.InjectTransaction(transid)
+	var req injectTransactionRequest
+
+	if err := ctx.Bind(&req); err != nil {
+		return handleError(ctx, err)
+	}
+
+	injectedTransaction, err := h.service.InjectTransaction(req.RawTransaction)
+
 	if err != nil {
 		log.Errorf("inject transaction error %v", err)
 		rsp := struct {

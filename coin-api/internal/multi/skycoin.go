@@ -1,11 +1,11 @@
 package multi
 
 import (
-	"bytes"
 	"crypto/rand"
 	"errors"
 	"fmt"
 
+	"encoding/hex"
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/gui"
@@ -88,36 +88,37 @@ func (s *SkyСoinService) CheckBalance(addr string) (*BalanceResponse, error) {
 }
 
 // SignTransaction sign a raw transaction with provided private key
-func (s *SkyСoinService) SignTransaction(secKey, rawTransaction string) (response *TransactionSign, err error) {
-	response = &TransactionSign{}
+func (s *SkyСoinService) SignTransaction(secKey, rawTx string) (response *TransactionSignResponse, err error) {
+	response = &TransactionSignResponse{}
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error signing transaction %s", r)
 		}
 	}()
+
+	b, err := hex.DecodeString(rawTx)
+	if err != nil {
+		fmt.Printf("invalid raw transaction: %v\n", err)
+		return nil, err
+	}
+
+	tx, err := coin.TransactionDeserialize(b)
+
 	cipherSecKey, err := cipher.SecKeyFromHex(secKey)
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	buf.WriteString(rawTransaction)
 
-	ux := &coin.UxBody{
-		SrcTransaction: cipher.SumSHA256(buf.Bytes()),
-		Address:        cipher.AddressFromSecKey(cipherSecKey),
-		// Coins TODO: maybe we have to receive coins here ?
-		// Hours TODO: maybe we have to receive hours here ?
+	keys := []cipher.SecKey{cipherSecKey}
+	tx.SignInputs(keys)
+	tx.UpdateHeader()
+
+	// Return raw transaction(hex of signed transaction)
+	response.Transaction = tx.TxIDHex()
+
+	if len(tx.Sigs) > 0 {
+		response.Signid = tx.Sigs[0].Hex()
 	}
-	secKeyTrans := []cipher.SecKey{cipherSecKey}
-	trans := &coin.Transaction{}
-	uxHash := ux.Hash()
-	trans.PushInput(uxHash)
-	trans.SignInputs(secKeyTrans)
-	//TODO: DO I need it here? -> PushOutput Adds a TransactionOutput, sending coins & hours to an Address
-	//TODO: maybe we have to show all signatures?
-	signid := trans.Sigs[0]
-	response.Signid = signid.Hex()
-	response.Transaction = trans.Serialize()
 
 	return response, nil
 }

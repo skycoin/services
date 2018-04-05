@@ -66,9 +66,9 @@ type Transaction struct {
 	Status  string `json:"status"`
 }
 
-// TransactionSign represents transaction sign id
-type TransactionSign struct {
-	Transaction []byte `json:"transaction"`
+// TransactionSignResponse represents transaction sign id
+type TransactionSignResponse struct {
+	Transaction string `json:"transaction"`
 	Signid      string `json:"signid"`
 }
 
