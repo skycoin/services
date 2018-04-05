@@ -10,12 +10,11 @@ import (
 
 	"github.com/skycoin/services/errhandler"
 
-	"github.com/skycoin/services/coin-api/internal/locator"
-	"github.com/skycoin/services/coin-api/internal/model"
 	"github.com/skycoin/services/coin-api/internal/multi"
 )
 
 type handlerMulti struct {
+	// TODO(stgleb): Create an interface for abstracting service.
 	service *multi.SkyСoinService
 }
 
@@ -24,8 +23,17 @@ type MultiStats struct {
 	Message string `json:"message"`
 }
 
+type signTransactionRequest struct {
+	SignKey           string `json:"key"`
+	SourceTransaction string `json:"transaction"`
+}
+
+type injectTransactionRequest struct {
+	RawTransaction string `json:"transaction"`
+}
+
 func newHandlerMulti(host string, port int) *handlerMulti {
-	service := multi.NewSkyService(locator.NewLocatorNode(host, port))
+	service := multi.NewSkyService(multi.NewLocatorNode(host, port))
 
 	return &handlerMulti{
 		service: service,
@@ -38,9 +46,9 @@ func (h *handlerMulti) generateKeys(e echo.Context) error {
 	rsp := struct {
 		Status string              `json:"status"`
 		Code   int                 `json:"code"`
-		Result *model.KeysResponse `json:"result"`
+		Result *multi.KeysResponse `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: keysResponse,
 	}
@@ -48,50 +56,61 @@ func (h *handlerMulti) generateKeys(e echo.Context) error {
 	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
-func (h *handlerMulti) generateSeed(e echo.Context) error {
-	key := e.QueryParam("key")
-	addressResponse, err := h.service.GenerateAddr(key)
+func (h *handlerMulti) generateSeed(ctx echo.Context) error {
+	var req addressRequest
+
+	if err := ctx.Bind(&req); err != nil {
+		return handleError(ctx, err)
+	}
+
+	if len(req.PublicKey) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "public key is empty")
+	}
+
+	addressResponse, err := h.service.GenerateAddr(req.PublicKey)
+
 	if err != nil {
 		log.Errorf("error encoding response %v, code", err)
 		rsp := struct {
 			Status string                 `json:"status"`
 			Code   int                    `json:"code"`
-			Result *model.AddressResponse `json:"result"`
+			Result *multi.AddressResponse `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCInvalidAddressOrKey,
-			Result: &model.AddressResponse{},
+			Result: &multi.AddressResponse{},
 		}
 
-		return e.JSONPretty(http.StatusNotFound, rsp, "\t")
+		return ctx.JSONPretty(http.StatusNotFound, rsp, "\t")
 	}
 
 	rsp := struct {
 		Status string                 `json:"status"`
 		Code   int                    `json:"code"`
-		Result *model.AddressResponse `json:"result"`
+		Result *multi.AddressResponse `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: addressResponse,
 	}
 
-	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
+	return ctx.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
 func (h *handlerMulti) checkBalance(e echo.Context) error {
-	address := e.QueryParam("address")
+	address := e.Param("address")
 	balanceResponse, err := h.service.CheckBalance(address)
+
 	if err != nil {
 		log.Errorf("balance checking error %v", err)
 		rsp := struct {
-			Status string                 `json:"status"`
-			Code   int                    `json:"code"`
-			Result *model.BalanceResponse `json:"result"`
+			Status string `json:"status"`
+			Code   int    `json:"code"`
+			Result string `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCInvalidAddressOrKey,
-			Result: &model.BalanceResponse{},
+			Result: "Address not found",
 		}
 
 		return e.JSONPretty(http.StatusNotFound, rsp, "\t")
@@ -100,9 +119,9 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 	rsp := struct {
 		Status string                 `json:"status"`
 		Code   int                    `json:"code"`
-		Result *model.BalanceResponse `json:"result"`
+		Result *multi.BalanceResponse `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: balanceResponse,
 	}
@@ -110,64 +129,75 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 	return e.JSONPretty(http.StatusOK, rsp, "\t")
 }
 
-func (h *handlerMulti) signTransaction(e echo.Context) error {
-	transid := e.QueryParam("signid")
-	srcTrans := e.QueryParam("sourceTrans")
-	transactionSign, err := h.service.SignTransaction(transid, srcTrans)
+// Sign transaction takes secret key and ancestor transaction, build the new on and signs it.
+func (h *handlerMulti) signTransaction(ctx echo.Context) error {
+	var req signTransactionRequest
+
+	if err := ctx.Bind(&req); err != nil {
+		return handleError(ctx, err)
+	}
+
+	transactionSign, err := h.service.SignTransaction(req.SignKey, req.SourceTransaction)
+
 	if err != nil {
 		log.Errorf("sign transaction error %v", err)
 		rsp := struct {
-			Status string                 `json:"status"`
-			Code   int                    `json:"code"`
-			Result *model.TransactionSign `json:"result"`
+			Status string                         `json:"status"`
+			Code   int                            `json:"code"`
+			Result *multi.TransactionSignResponse `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCTransactionError,
-			Result: &model.TransactionSign{},
+			Result: &multi.TransactionSignResponse{},
 		}
-		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
+		return ctx.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
 
 	rsp := struct {
-		Status string                 `json:"status"`
-		Code   int                    `json:"code"`
-		Result *model.TransactionSign `json:"result"`
+		Status string                         `json:"status"`
+		Code   int                            `json:"code"`
+		Result *multi.TransactionSignResponse `json:"result"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
 		Result: transactionSign,
 	}
-	return e.JSONPretty(http.StatusOK, &rsp, "\t")
+	return ctx.JSONPretty(http.StatusOK, &rsp, "\t")
 }
 
-func (h *handlerMulti) injectTransaction(e echo.Context) error {
-	transid := e.Param("transid")
-	injectedTransaction, err := h.service.InjectTransaction(transid)
+// Inject transaction receives hex-encoded transaction(raw transaction) to inject
+func (h *handlerMulti) injectTransaction(ctx echo.Context) error {
+	var req injectTransactionRequest
+
+	if err := ctx.Bind(&req); err != nil {
+		return handleError(ctx, err)
+	}
+
+	err := h.service.InjectTransaction(req.RawTransaction)
+
 	if err != nil {
 		log.Errorf("inject transaction error %v", err)
 		rsp := struct {
 			Status string             `json:"status"`
 			Code   int                `json:"code"`
-			Result *model.Transaction `json:"result"`
+			Result *multi.Transaction `json:"result"`
 		}{
-			Status: model.StatusError,
+			Status: multi.StatusError,
 			Code:   errhandler.RPCTransactionRejected,
-			Result: &model.Transaction{},
+			Result: &multi.Transaction{},
 		}
-		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
+		return ctx.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
 
 	rsp := struct {
-		Status string             `json:"status"`
-		Code   int                `json:"code"`
-		Result *model.Transaction `json:"result"`
+		Status string `json:"status"`
+		Code   int    `json:"code"`
 	}{
-		Status: model.StatusOk,
+		Status: multi.StatusOk,
 		Code:   0,
-		Result: injectedTransaction,
 	}
 
-	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
+	return ctx.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
 func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
@@ -180,10 +210,12 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 			Code   int    `json:"code"`
 			Result string `json:"result"`
 		}{
-			model.StatusOk,
+			multi.StatusOk,
 			0,
 			err.Error(),
 		}, "\t")
+
+		return err
 	}
 
 	ctx.JSONPretty(http.StatusOK, struct {
@@ -191,7 +223,7 @@ func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
 		Code   int                     `json:"code"`
 		Result visor.TransactionStatus `json:"result"`
 	}{
-		model.StatusOk,
+		multi.StatusOk,
 		0,
 		*status,
 	}, "\t")

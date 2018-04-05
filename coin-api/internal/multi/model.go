@@ -1,4 +1,4 @@
-package model
+package multi
 
 const (
 	// StatusOk is an ok result in multiwallet API
@@ -18,7 +18,7 @@ type Coins struct {
 type Coin struct {
 	Cid      string `json:"сid"`
 	Name     string `json:"name"`
-	Address  string `json:"address"`
+	Address  string `json:"rawAddress"`
 	LastSeed string `json:"lastSeed"`
 	Tm       string `json:"tm"`
 	Type     string `json:"type"`
@@ -47,16 +47,16 @@ type KeysResponse struct {
 	Status  Status `json:"status"`
 }
 
-// AddressResponse returns address as response
+// AddressResponse returns rawAddress as response
 type AddressResponse struct {
-	Address string `json:"address"`
+	Address string `json:"rawAddress"`
 }
 
 // BalanceResponse Returns balance by given coin
 type BalanceResponse struct {
-	Address string `json:"address"`
-	Balance string `json:"balance"`
-	Hours   string `json:"hours"`
+	Address string `json:"rawAddress"`
+	Balance uint64 `json:"balance"`
+	Hours   uint64 `json:"hours"`
 	Coin    Coin
 }
 
@@ -66,9 +66,9 @@ type Transaction struct {
 	Status  string `json:"status"`
 }
 
-// TransactionSign represents transaction sign id
-type TransactionSign struct {
-	Signid string `json:"signid"`
+// TransactionSignResponse represents transaction sign id
+type TransactionSignResponse struct {
+	Transaction string `json:"transaction"`
 }
 
 // StdResponseMessage represents any standard message as a response for any action which doesn't return anything

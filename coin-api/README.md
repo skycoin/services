@@ -100,6 +100,9 @@ ResponseBody {
 ```
 
 #### GET /api/v1/list
+
+List of supported currencies
+
 #### Successful response:
 ```
 ResponseHeader: 200
@@ -111,18 +114,14 @@ ResponseBody {
                 {
                     "сid": "LTC",
                     "name":"litecoin",
-                    "address": "99902999f9s99ds999s9",
-                    "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
-                    "tm": "1503458909",
+                    "timestamp": "1503458909",
                     "type": "deterministic",
                     "version": "0.1"
                 },
                 {
                     "сid": "ETH",
                     "name":"ethereum",
-                    "address": "99902999f9s99ds999s9",
-                    "lastSeed": "9182b02c0004217ba9a55593f8cf0abecc30d041e094b266dbb5103e1919adaf",
-                    "tm": "1503458909",
+                    "timestamp": "1503458909",
                     "type": "deterministic",
                     "version": "0.1"
                 }
@@ -350,6 +349,15 @@ ResponseBody {
 
 #### Generate address from public key
 ##### POST /api/v1/:coin/address/:key
+
+Request body
+
+```
+{
+    "key":"032417bc1f336ad55a0686a956ccc687ac6be4c0413758c1f78bf82e29c8dcf8b9"
+}
+```
+
 ##### Successful response:
 ```
 ResponseHeader: 201
@@ -404,14 +412,17 @@ ResponseBody {
 ##### Successful response:
 ```
 Request {
-    "signid":"392900939dijdked",
-    "sourceTrans":"392900939dijdked392900939dijdked",
+    "key":"392900939dijdked",
+    "transaction":"392900939dijdked392900939dijdked",
 }
 
-ResponseHeader: 201
+ResponseHeader: 200
 ResponseBody {
     "status":"ok",
     "code": 0,
+    "result": {
+        "transaction": "5f76d889bca29b21e0ef25fb19a8584c6f1c74bd35453a8d71dc54434ad45397",
+    }
 }
 ```
 ##### Unsuccessful response:
@@ -427,14 +438,14 @@ ResponseBody {
 ```
 
 #### inject transaction into network
-##### PUT /api/v1/:coin/transaction/:netid
+##### POST /api/v1/sky/transaction/inject/:transid
 ##### Successful response:
 ```
 Request {
     "transid":"392900939dijdked"
 }
 
-ResponseHeader: 201
+ResponseHeader: 20
 ResponseBody {
     "status":"ok",
     "code": 0,
