@@ -1,18 +1,29 @@
 package btc
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
 	"github.com/skycoin/services/otc/pkg/otc"
 )
 
+type Client interface {
+	GetBlockHash(int64) (*chainhash.Hash, error)
+	GetBlockVerboseTx(*chainhash.Hash) (*btcjson.GetBlockVerboseResult, error)
+	GetBlockCount() (int64, error)
+	WaitForShutdown()
+}
+
 type Connection struct {
-	Client  *rpcclient.Client
+	Logs    *log.Logger
+	Client  Client
 	Account string
 	stop    chan struct{}
 }
@@ -62,6 +73,7 @@ func New(account, pass, rNode, rUser, rPass string) (*Connection, error) {
 	}
 
 	return &Connection{
+		Logs:    log.New(os.Stdout, "", log.LstdFlags),
 		Client:  client,
 		Account: account,
 		stop:    make(chan struct{}, 0),
@@ -82,13 +94,12 @@ func (c *Connection) Scan(from uint64) (chan *otc.Block, error) {
 				if err != nil {
 					// TODO: use variable from btc* package rather than str
 					if err.Error() == "-1: Block number out of range" {
-						// TODO: log using logger
-						fmt.Printf("waiting for block: %d\n", height)
-						// wait a minute before checking for the next block
-						time.Sleep(time.Minute)
+						c.Logs.Printf("waiting for block: %d\n", height)
 					} else {
-						// TODO: log using logger
+						c.Logs.Printf("scan error: %v\n", err)
 					}
+
+					time.Sleep(time.Minute)
 				} else {
 					// send block to scanner
 					blocks <- block

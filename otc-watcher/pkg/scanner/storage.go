@@ -29,6 +29,7 @@ type Storage struct {
 func NewStorage(cur otc.Currency) *Storage {
 	return &Storage{
 		Filename:  string(cur) + ".json",
+		Updated:   &Updated{},
 		Addresses: make(map[string]*Relevant, 0),
 	}
 }
