@@ -68,7 +68,8 @@ type Transaction struct {
 
 // TransactionSign represents transaction sign id
 type TransactionSign struct {
-	Signid string `json:"signid"`
+	Transaction []byte `json:"transaction"`
+	Signid      string `json:"signid"`
 }
 
 // StdResponseMessage represents any standard message as a response for any action which doesn't return anything

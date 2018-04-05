@@ -87,20 +87,20 @@ func (s *SkyСoinService) CheckBalance(addr string) (*BalanceResponse, error) {
 	}, nil
 }
 
-// SignTransaction sign a transaction
-func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *TransactionSign, err error) {
-	rsp = &TransactionSign{}
+// SignTransaction sign a raw transaction with provided private key
+func (s *SkyСoinService) SignTransaction(secKey, rawTransaction string) (response *TransactionSign, err error) {
+	response = &TransactionSign{}
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error signing transaction %s", r)
 		}
 	}()
-	cipherSecKey, err := cipher.SecKeyFromHex(transID)
+	cipherSecKey, err := cipher.SecKeyFromHex(secKey)
 	if err != nil {
 		return nil, err
 	}
 	var buf bytes.Buffer
-	buf.WriteString(srcTrans)
+	buf.WriteString(rawTransaction)
 
 	ux := &coin.UxBody{
 		SrcTransaction: cipher.SumSHA256(buf.Bytes()),
@@ -116,8 +116,10 @@ func (s *SkyСoinService) SignTransaction(transID, srcTrans string) (rsp *Transa
 	//TODO: DO I need it here? -> PushOutput Adds a TransactionOutput, sending coins & hours to an Address
 	//TODO: maybe we have to show all signatures?
 	signid := trans.Sigs[0]
-	rsp.Signid = signid.Hex()
-	return rsp, nil
+	response.Signid = signid.Hex()
+	response.Transaction = trans.Serialize()
+
+	return response, nil
 }
 
 // CheckTransactionStatus check the status of a transaction (tracks transactions by transaction hash)
@@ -127,16 +129,17 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 	if err != nil {
 		return nil, errors.New("invalid txid")
 	}
-	status, err := s.client.Transaction(txID)
+	tx, err := s.client.Transaction(txID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &status.Status, nil
+	return &tx.Status, nil
 }
 
-// InjectTransaction inject transaction into network
+// InjectTransaction send transaction to the network to be included
+// in list of unconfirmed transactions.
 func (s *SkyСoinService) InjectTransaction(rawtx string) (*Transaction, error) {
 	injectedTx, err := s.client.InjectTransaction(rawtx)
 	if err != nil {

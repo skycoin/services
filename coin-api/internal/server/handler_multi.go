@@ -120,9 +120,9 @@ func (h *handlerMulti) checkBalance(e echo.Context) error {
 	return e.JSONPretty(http.StatusOK, rsp, "\t")
 }
 
-func (h *handlerMulti) signTransaction(e echo.Context) error {
-	transid := e.QueryParam("signid")
-	srcTrans := e.QueryParam("sourceTrans")
+func (h *handlerMulti) signTransaction(ctx echo.Context) error {
+	transid := ctx.Param("signid")
+	srcTrans := ctx.Param("sourceTrans")
 
 	transactionSign, err := h.service.SignTransaction(transid, srcTrans)
 
@@ -137,7 +137,7 @@ func (h *handlerMulti) signTransaction(e echo.Context) error {
 			Code:   errhandler.RPCTransactionError,
 			Result: &multi.TransactionSign{},
 		}
-		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
+		return ctx.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
 
 	rsp := struct {
@@ -149,11 +149,11 @@ func (h *handlerMulti) signTransaction(e echo.Context) error {
 		Code:   0,
 		Result: transactionSign,
 	}
-	return e.JSONPretty(http.StatusOK, &rsp, "\t")
+	return ctx.JSONPretty(http.StatusOK, &rsp, "\t")
 }
 
-func (h *handlerMulti) injectTransaction(e echo.Context) error {
-	transid := e.Param("transid")
+func (h *handlerMulti) injectTransaction(ctx echo.Context) error {
+	transid := ctx.Param("transid")
 	injectedTransaction, err := h.service.InjectTransaction(transid)
 	if err != nil {
 		log.Errorf("inject transaction error %v", err)
@@ -166,7 +166,7 @@ func (h *handlerMulti) injectTransaction(e echo.Context) error {
 			Code:   errhandler.RPCTransactionRejected,
 			Result: &multi.Transaction{},
 		}
-		return e.JSONPretty(http.StatusNotFound, &rsp, "\t")
+		return ctx.JSONPretty(http.StatusNotFound, &rsp, "\t")
 	}
 
 	rsp := struct {
@@ -179,7 +179,7 @@ func (h *handlerMulti) injectTransaction(e echo.Context) error {
 		Result: injectedTransaction,
 	}
 
-	return e.JSONPretty(http.StatusCreated, &rsp, "\t")
+	return ctx.JSONPretty(http.StatusCreated, &rsp, "\t")
 }
 
 func (h *handlerMulti) checkTransaction(ctx echo.Context) error {
