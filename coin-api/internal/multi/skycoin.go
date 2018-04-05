@@ -137,26 +137,12 @@ func (s *SkyСoinService) CheckTransactionStatus(txID string) (*visor.Transactio
 
 // InjectTransaction send transaction to the network to be included
 // in list of unconfirmed transactions.
-func (s *SkyСoinService) InjectTransaction(rawtx string) (*Transaction, error) {
-	injectedTx, err := s.client.InjectTransaction(rawtx)
+func (s *SkyСoinService) InjectTransaction(rawtx string) error {
+	_, err := s.client.InjectTransaction(rawtx)
+
 	if err != nil {
-		return nil, err
-	}
-	tx, err := s.client.Transaction(injectedTx)
-	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var tStatus string
-
-	if tx.Status.Confirmed {
-		tStatus = "confirmed"
-	} else {
-		tStatus = "unconfirmed"
-	}
-
-	return &Transaction{
-		Transid: injectedTx,
-		Status:  tStatus,
-	}, nil
+	return nil
 }

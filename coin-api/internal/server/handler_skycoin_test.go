@@ -9,6 +9,7 @@ import (
 
 	"github.com/labstack/echo"
 
+	"bytes"
 	"github.com/skycoin/services/coin-api/internal/multi"
 )
 
@@ -48,11 +49,24 @@ func TestHandlerMulti(t *testing.T) {
 		}
 
 		t.Run("TestGenerateAddress", func(t *testing.T) {
-			req := httptest.NewRequest(echo.POST, fmt.Sprintf("/address?key=%s", rsp.Result.Public), nil)
+			r := addressRequest{
+				rsp.Result.Public,
+			}
+
+			data, err := json.Marshal(&r)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			buf := bytes.NewReader(data)
+
+			req := httptest.NewRequest(echo.POST, "/address", buf)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			ctx := e.NewContext(req, rec)
-			err := handler.generateSeed(ctx)
+			err = handler.generateSeed(ctx)
+
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,6 +83,7 @@ func TestHandlerMulti(t *testing.T) {
 
 			err = json.Unmarshal(rec.Body.Bytes(), &rsp)
 			if err != nil {
+				t.Fatal(rec.Body.String())
 				t.Fatal(err)
 			}
 
@@ -104,15 +119,27 @@ func TestHandlerMulti(t *testing.T) {
 	})
 
 	t.Run("signTransaction", func(t *testing.T) {
+		r := signTransactionRequest{
+			SignKey:           "86313e87147576a55909935a3b96f7730943b23616107ae3c5fe1b7f30d272da",
+			SourceTransaction: rawTxStr,
+		}
+
+		data, err := json.Marshal(&r)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		b := bytes.NewReader(data)
 		req := httptest.NewRequest(
 			echo.POST,
-			fmt.Sprintf("/transaction/sign?signid=%s&sourceTrans=%s", rawTxID, rawTxStr),
-			nil)
+			"/transaction/sign",
+			b)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
 
-		err := handler.signTransaction(ctx)
+		err = handler.signTransaction(ctx)
 
 		rspTrans := struct {
 			Status string                         `json:"status"`
@@ -121,12 +148,15 @@ func TestHandlerMulti(t *testing.T) {
 		}{
 			Result: &multi.TransactionSignResponse{},
 		}
+
 		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
+
 		if err != nil {
 			t.Fatalf("error unmarshalling response: %v", err)
 		}
-		if len(rspTrans.Result.Signid) == 0 {
-			t.Fatalf("rspTrans.Result.Signid cannot be zero length")
+
+		if len(rspTrans.Result.Transaction) == 0 {
+			t.Fatalf("rspTrans.Result.Transaction cannot be zero length")
 		}
 	})
 
@@ -136,11 +166,6 @@ func TestHandlerMulti(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		ctx := e.NewContext(req, recorder)
 		err := handler.injectTransaction(ctx)
-
-		ctx.SetParamNames("transid")
-		ctx.SetParamValues(rawTxID)
-		ctx.SetParamNames("netid")
-		ctx.SetParamValues("fake-net-id")
 
 		if err != nil {
 			t.Fatalf("error injectin transaction %s", err.Error())
@@ -153,10 +178,13 @@ func TestHandlerMulti(t *testing.T) {
 		}{
 			Result: &multi.Transaction{},
 		}
+
 		err = json.Unmarshal(recorder.Body.Bytes(), &rspTrans)
+
 		if err != nil {
 			t.Fatalf("error unmarshalling response: %v", err)
 		}
+
 		if len(rspTrans.Result.Transid) > 0 {
 			t.Fatal("rspTrans.Result.Transid cannot be zero lenght")
 		}

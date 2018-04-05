@@ -173,7 +173,7 @@ func (h *handlerMulti) injectTransaction(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	injectedTransaction, err := h.service.InjectTransaction(req.RawTransaction)
+	err := h.service.InjectTransaction(req.RawTransaction)
 
 	if err != nil {
 		log.Errorf("inject transaction error %v", err)
@@ -190,13 +190,11 @@ func (h *handlerMulti) injectTransaction(ctx echo.Context) error {
 	}
 
 	rsp := struct {
-		Status string             `json:"status"`
-		Code   int                `json:"code"`
-		Result *multi.Transaction `json:"result"`
+		Status string `json:"status"`
+		Code   int    `json:"code"`
 	}{
 		Status: multi.StatusOk,
 		Code:   0,
-		Result: injectedTransaction,
 	}
 
 	return ctx.JSONPretty(http.StatusCreated, &rsp, "\t")
