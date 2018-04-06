@@ -27,7 +27,7 @@ func Bind(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 			return
 		}
 
-		if modl.Paused() {
+		if modl.Controller.Paused() {
 			http.Error(w, "paused", http.StatusInternalServerError)
 			return
 		}
@@ -51,18 +51,17 @@ func Bind(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 			return
 		}
 
-		req := &otc.Request{
-			Affiliate: data.Affiliate,
+		user := &otc.User{
+			Orders:    make([]*otc.Order, 0),
+			Id:        addr.String() + ":" + string(curr) + ":" + dropAddr,
 			Address:   addr.String(),
-			Status:    otc.NEW,
-			TxId:      "",
-			Times: &otc.Times{
-				CreatedAt: time.Now().UTC().Unix(),
-			},
+			Affiliate: data.Affiliate,
 			Drop: &otc.Drop{
 				Address:  dropAddr,
 				Currency: curr,
-				Amount:   0,
+			},
+			Times: &otc.Times{
+				CreatedAt: time.Now().UTC().Unix(),
 			},
 		}
 
@@ -73,7 +72,7 @@ func Bind(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 			return
 		}
 
-		modl.Add(req)
+		modl.Add(user)
 
 		json.NewEncoder(w).Encode(&struct {
 			DropAddress  string       `json:"drop_address"`

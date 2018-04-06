@@ -1,127 +1,101 @@
 package scanner
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
-	"github.com/skycoin/services/otc/pkg/currencies"
 	"github.com/skycoin/services/otc/pkg/otc"
+	"github.com/skycoin/services/otc/pkg/watcher"
 )
 
-type MockConnection struct{}
-
-func (c *MockConnection) Used() ([]string, error) {
-	return nil, nil
+type MockClient struct {
+	Do func(req *http.Request) (*http.Response, error)
 }
 
-func (c *MockConnection) Balance(addr string) (uint64, error) {
-	if addr == "empty" {
-		return 0, nil
-	}
-
-	if addr == "full" {
-		return 1000, nil
-	}
-
-	if addr == "error" {
-		return 0, fmt.Errorf("")
-	}
-
-	return 0, nil
+func (c *MockClient) RoundTrip(req *http.Request) (*http.Response, error) {
+	return c.Do(req)
 }
 
-func (c *MockConnection) Confirmed(txid string) (bool, error) {
-	return false, nil
-}
-
-func (c *MockConnection) Send(addr string, amount uint64) (string, error) {
-	return "txid", nil
-}
-
-func (c *MockConnection) Address() (string, error) {
-	return "mock", nil
-}
-
-func (c *MockConnection) Connected() (bool, error) {
-	return false, nil
-}
-
-func (c *MockConnection) Holding() (uint64, error) {
-	return 0, nil
-}
-
-func (c *MockConnection) Stop() error {
-	return nil
-}
-
-func TestTask(t *testing.T) {
-	curs := currencies.New()
-	curs.Add(otc.BTC, &MockConnection{})
-
-	var (
-		remove bool
-		err    error
-	)
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{
-			Times: &otc.Times{},
-			Drop: &otc.Drop{
-				Currency: otc.BTC,
-				Address:  "empty",
-			},
-		},
-	}); remove || err != nil {
-		t.Fatal("shouldn't be removed")
-	}
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{
-			Times: &otc.Times{},
-			Drop: &otc.Drop{
-				Currency: otc.BTC,
-				Address:  "full",
-			},
-		},
-	}); !remove || err != nil {
-		t.Fatal("should be removed")
-	}
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{
-			Times: &otc.Times{},
-			Drop: &otc.Drop{
-				Currency: otc.BTC,
-				Address:  "error",
-			},
-		},
-	}); err == nil {
-		t.Fatal("should be error")
-	}
-
-	work := &otc.Work{
-		Request: &otc.Request{
-			Times: &otc.Times{},
-			Drop: &otc.Drop{
-				Currency: otc.BTC,
-				Address:  "full",
+func MockWatcher(kind string) *watcher.Watcher {
+	out := map[string]map[int]*otc.OutputVerbose{
+		"transaction": {
+			1: {
+				Amount:        100000,
+				Confirmations: 1,
+				Addresses:     []string{"address"},
+				Height:        500000,
 			},
 		},
 	}
 
-	if remove, err = Task(curs)(work); err != nil {
-		t.Fatal(err)
-	}
+	return &watcher.Watcher{
+		Client: &http.Client{
+			Transport: &MockClient{
+				func(req *http.Request) (*http.Response, error) {
+					res := httptest.NewRecorder()
 
-	if work.Request.Status != otc.SEND {
-		t.Fatal("status should be SEND")
-	}
+					if kind == "error" {
+						return nil, fmt.Errorf("test error!")
+					}
 
-	if work.Request.Drop.Amount != 1000 {
-		t.Fatal("amount should be set")
-	}
+					// write mock outputs to result
+					if err := json.NewEncoder(res).Encode(out); err != nil {
+						return nil, err
+					}
 
-	if work.Request.Times.DepositedAt == 0 {
-		t.Fatal("deposited at time should be set")
+					return res.Result(), nil
+				},
+			},
+		},
+	}
+}
+
+func TestTaskGood(t *testing.T) {
+	order, err := Task(MockWatcher(""))(&otc.User{
+		Drop: &otc.Drop{
+			Address:  "address",
+			Currency: otc.BTC,
+		},
+	})
+
+	if order == nil || err != nil {
+		t.Fatal("bad scan")
+	}
+}
+
+func TestTaskBad(t *testing.T) {
+	order, err := Task(MockWatcher("error"))(&otc.User{
+		Drop: &otc.Drop{
+			Address:  "address",
+			Currency: otc.BTC,
+		},
+	})
+
+	if order != nil || err.Error() != "Post /outputs: test error!" {
+		t.Fatalf(
+			"expected 'Post /outputs: test error!', got '%s'\n",
+			err.Error(),
+		)
+	}
+}
+
+func TestTaskExists(t *testing.T) {
+	order, err := Task(MockWatcher(""))(&otc.User{
+		Drop: &otc.Drop{
+			Address:  "address",
+			Currency: otc.BTC,
+		},
+		Orders: []*otc.Order{
+			{
+				Id: "transaction:1",
+			},
+		},
+	})
+
+	if order != nil || err != nil {
+		t.Fatal("order should be empty")
 	}
 }

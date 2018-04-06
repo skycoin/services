@@ -1,29 +1,50 @@
 package scanner
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/skycoin/services/otc/pkg/currencies"
 	"github.com/skycoin/services/otc/pkg/otc"
+	"github.com/skycoin/services/otc/pkg/watcher"
 )
 
-func Task(curs *currencies.Currencies) func(*otc.Work) (bool, error) {
-	return func(work *otc.Work) (bool, error) {
-		work.Request.Lock()
-		defer work.Request.Unlock()
-
-		balance, err := curs.Balance(work.Request.Drop)
+func Task(watch *watcher.Watcher) func(*otc.User) (*otc.Order, error) {
+	return func(user *otc.User) (*otc.Order, error) {
+		// get deposits from otc-watcher
+		deposits, err := watch.Outputs(user.Drop)
 		if err != nil {
-			return true, err
+			return nil, err
 		}
 
-		if balance != 0 {
-			work.Request.Times.DepositedAt = time.Now().UTC().Unix()
-			work.Request.Drop.Amount = balance
-			work.Request.Status = otc.SEND
-			return true, nil
+		for transaction, outputs := range deposits {
+		indexing:
+			for index, output := range outputs {
+				id := fmt.Sprintf("%s:%d", transaction, index)
+
+				// check if order already exists
+				for _, order := range user.Orders {
+					if order.Id == id {
+						continue indexing
+					}
+				}
+
+				now := time.Now().UTC().Unix()
+
+				// generate new order
+				return &otc.Order{
+					User:   user,
+					Id:     id,
+					Status: otc.SEND,
+					Amount: output.Amount,
+					Times: &otc.Times{
+						CreatedAt:   now,
+						DepositedAt: now,
+					},
+					Events: make([]*otc.Event, 0),
+				}, nil
+			}
 		}
 
-		return false, nil
+		return nil, nil
 	}
 }

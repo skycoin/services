@@ -61,6 +61,11 @@ func TestCurrenciesUsed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	_, err = curs.Used(otc.SKY)
+	if err == nil {
+		t.Fatal("expected error")
+	}
 }
 
 func TestCurrenciesAdd(t *testing.T) {
@@ -127,25 +132,17 @@ func TestCurrenciesValue(t *testing.T) {
 		},
 	}
 
-	_, _, err := curs.Value(&otc.Drop{
-		Currency: otc.SKY,
-	})
+	_, _, _, err := curs.Value(otc.SKY, 1)
 	if err != ErrPriceMissing {
 		t.Fatal(err)
 	}
 
-	_, _, err = curs.Value(&otc.Drop{
-		Currency: otc.BTC,
-		Amount:   0,
-	})
+	_, _, _, err = curs.Value(otc.BTC, 0)
 	if err != ErrZeroAmount {
 		t.Fatal(err)
 	}
 
-	value, _, err := curs.Value(&otc.Drop{
-		Currency: otc.BTC,
-		Amount:   100000000,
-	})
+	value, _, _, err := curs.Value(otc.BTC, 100000000)
 	if value != (500 * 1e6) {
 		t.Fatal("bad value calculation")
 	}

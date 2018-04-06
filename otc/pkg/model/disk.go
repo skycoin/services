@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -13,128 +12,136 @@ import (
 )
 
 const (
-	PATH string = ".otc/"
-	REQS string = "reqs/"
-	LOGS string = "logs/"
+	PATH   string = ".otc/"
+	USERS  string = "users/"
+	ORDERS string = "orders/"
 )
 
-type File struct {
-	Request *otc.Request `json:"request"`
-	Events  []*otc.Event `json:"events"`
-}
-
-func Save(req *otc.Request, res *otc.Result) error {
-	file, err := os.OpenFile(PATH+REQS+req.Id()+".json", os.O_CREATE|os.O_RDWR, 0644)
-	if err != nil {
-		return err
-	}
-
-	data := new(File)
-	if err = json.NewDecoder(file).Decode(&data); err != nil && err != io.EOF {
-		return err
-	}
-
-	// create new event
-	event := &otc.Event{
-		Status:   req.Status,
-		Finished: res.Finished,
-	}
-	if res.Err != nil {
-		event.Err = res.Err.Error()
-	}
-
-	// copy updated request
-	data.Request = req
-
-	// append new event
-	data.Events = append(data.Events, event)
-
-	// empty file
-	file.Truncate(0)
-	file.Seek(0, 0)
-
-	// indent json
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", "  ")
-
-	// write json to file
-	if err = enc.Encode(data); err != nil {
-		return err
-	}
-
-	// sync to disk
-	if err = file.Sync(); err != nil {
-		return err
-	}
-
-	// close file
-	if err = file.Close(); err != nil {
-		return err
-	}
-
-	// log event to central file
-	return Log(req.Id(), event)
-}
-
-func Log(id string, event *otc.Event) error {
+func SaveUser(user *otc.User) error {
 	file, err := os.OpenFile(
-		PATH+LOGS+"log.json",
-		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
-		0644,
+		PATH+USERS+user.Id+".json",
+		os.O_CREATE|os.O_RDWR, 0644,
 	)
 	if err != nil {
 		return err
 	}
 
-	// add id to central log event
-	event.Id = id
+	// empty file if exists
+	file.Truncate(0)
+	file.Seek(0, 0)
 
-	if err = json.NewEncoder(file).Encode(&event); err != nil {
+	// format json output
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", "  ")
+
+	if err = enc.Encode(user); err != nil {
 		return err
 	}
-
 	if err = file.Sync(); err != nil {
 		return err
 	}
+	if err = file.Close(); err != nil {
+		return err
+	}
 
+	// create orders folder
+	return os.Mkdir(PATH+ORDERS+user.Id, os.ModeDir)
+}
+
+func SaveOrder(order *otc.Order, result *otc.Result) error {
+	file, err := os.OpenFile(
+		PATH+ORDERS+order.User.Id+"/"+order.Id+".json",
+		os.O_CREATE|os.O_RDWR, 0644,
+	)
+	if err != nil {
+		return err
+	}
+
+	// append to order events
+	event := &otc.Event{
+		Status:   order.Status,
+		Finished: result.Finished,
+	}
+	if result.Err != nil {
+		event.Err = result.Err.Error()
+	}
+	order.Events = append(order.Events, event)
+
+	// empty file
+	file.Truncate(0)
+	file.Seek(0, 0)
+
+	// indent json output
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", "  ")
+
+	if err = enc.Encode(order); err != nil {
+		return err
+	}
+	if err = file.Sync(); err != nil {
+		return err
+	}
 	return file.Close()
 }
 
-func Load() ([]*otc.Request, error) {
-	// get list of files in db dir
-	files, err := ioutil.ReadDir(PATH + REQS)
+func Load() ([]*otc.User, error) {
+	// get list of users
+	files, err := ioutil.ReadDir(PATH + USERS)
 	if err != nil {
 		return nil, err
 	}
 
-	reqs := make([]*otc.Request, 0)
+	// for returning later
+	users := make([]*otc.User, 0)
 
-	// for each .json file in db dir
 	for _, file := range files {
 		// ignore hidden files
 		if file.Name()[0] == '.' {
 			continue
 		}
 
-		// get struct from json
-		req, err := Read(PATH+REQS, file.Name())
+		// get user struct from disk
+		user, err := ReadUser(PATH+USERS, file.Name())
 		if err != nil {
 			return nil, err
 		}
 
-		// append to slice
-		reqs = append(reqs, req)
+		// get list of orders in user's dir
+		ofiles, err := ioutil.ReadDir(PATH + ORDERS + user.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		// for each order file associated with user
+		for _, ofile := range ofiles {
+			// ignore hidden files
+			if ofile.Name()[0] == '.' {
+				continue
+			}
+
+			// read order from disk
+			order, err := ReadOrder(PATH+ORDERS+user.Id, ofile.Name())
+			if err != nil {
+				return nil, err
+			}
+
+			// add order to user
+			user.Orders = append(user.Orders, order)
+		}
+
+		// append to list of all users
+		users = append(users, user)
 	}
 
-	return reqs, nil
+	return users, nil
 }
 
-func Read(path, filename string) (*otc.Request, error) {
+func ReadUser(path, filename string) (*otc.User, error) {
 	parts := strings.Split(filename, ":")
 
 	// check that filename is in form of x:x:x
 	if len(parts) < 3 {
-		return nil, fmt.Errorf("invalid request filename")
+		return nil, fmt.Errorf("invalid user filename")
 	}
 
 	// check that first part is valid sky address
@@ -149,10 +156,36 @@ func Read(path, filename string) (*otc.Request, error) {
 		return nil, err
 	}
 
-	data := new(File)
-	if err = json.NewDecoder(file).Decode(&data); err != nil {
+	user := new(otc.User)
+
+	// read from disk
+	if err = json.NewDecoder(file).Decode(&user); err != nil {
 		return nil, err
 	}
 
-	return data.Request, file.Close()
+	return user, file.Close()
+}
+
+func ReadOrder(path, filename string) (*otc.Order, error) {
+	parts := strings.Split(filename, ":")
+
+	// check that filename is in form of x:x
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("invalid order filename")
+	}
+
+	// open file for reading
+	file, err := os.OpenFile(path+filename, os.O_RDONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	order := new(otc.Order)
+
+	// read from disk
+	if err = json.NewDecoder(file).Decode(&order); err != nil {
+		return nil, err
+	}
+
+	return order, file.Close()
 }

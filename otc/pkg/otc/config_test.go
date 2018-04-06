@@ -15,3 +15,9 @@ func TestConfigNew(t *testing.T) {
 		t.Fatalf(`expected "test", got "%s"`, conf.SKY.Node)
 	}
 }
+
+func TestConfigNewBad(t *testing.T) {
+	if _, err := NewConfig("bad"); err == nil {
+		t.Fatal("should return error")
+	}
+}

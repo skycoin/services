@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -103,5 +104,16 @@ func TestTaskSkip(t *testing.T) {
 
 	if actor.Count() != 1 {
 		t.Fatal("task didn't skip deletion")
+	}
+}
+
+func TestLog(t *testing.T) {
+	var buf bytes.Buffer
+
+	actor := New(log.New(&buf, "", 0), nil)
+	actor.Log("testing!")
+
+	if buf.String() != "testing!\n" {
+		t.Fatalf("expected 'testing', but got '%s'\n", buf.String())
 	}
 }

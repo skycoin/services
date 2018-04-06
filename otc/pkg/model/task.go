@@ -8,25 +8,26 @@ import (
 
 func Task(workers *Workers) func(*otc.Work) (bool, error) {
 	return func(work *otc.Work) (bool, error) {
-		work.Request.Lock()
-		defer work.Request.Unlock()
-
 		select {
 		case res := <-work.Done:
-			work.Request.Times.UpdatedAt = time.Now().UTC().Unix()
+			work.Order.Times.UpdatedAt = time.Now().UTC().Unix()
 
-			if err := Save(work.Request, res); err != nil {
+			// save to disk
+			if err := SaveOrder(work.Order, res); err != nil {
 				return true, err
 			}
 
+			// check result
 			if res.Err != nil {
 				return true, res.Err
 			}
 
-			if work.Request.Status == otc.DONE {
+			// if done, stop routing
+			if work.Order.Status == otc.DONE {
 				return true, nil
 			}
 
+			// route to next step
 			workers.Route(work)
 		default:
 			break

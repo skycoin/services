@@ -5,9 +5,8 @@ import (
 
 	"log"
 
-	"github.com/skycoin/services/otc/pkg/otc"
-
 	"github.com/skycoin/services/otc-watcher/pkg/currency"
+	"github.com/skycoin/services/otc/pkg/otc"
 )
 
 var (
@@ -15,11 +14,12 @@ var (
 )
 
 type Scanner struct {
-	Scanning map[otc.Currency]*Storage
+	Connections currency.Connections
+	Scanning    map[otc.Currency]*Storage
 }
 
 func New(cons currency.Connections) (*Scanner, error) {
-	s := &Scanner{make(map[otc.Currency]*Storage, 0)}
+	s := &Scanner{cons, make(map[otc.Currency]*Storage, 0)}
 
 	// load from disk or create
 	if err := s.Load(cons); err != nil {
@@ -40,8 +40,18 @@ func New(cons currency.Connections) (*Scanner, error) {
 	return s, nil
 }
 
-// TODO: stop connections and write to disk
 func (s *Scanner) Stop() error {
+	var err error
+
+	for cur, con := range s.Connections {
+		if err = con.Stop(); err != nil {
+			return err
+		}
+		if err = s.Save(cur); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

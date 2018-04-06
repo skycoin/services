@@ -76,11 +76,14 @@ func TestBind(t *testing.T) {
 			otc.ETH: &MockConnection{Bad: true},
 		},
 	}
+
 	modl := &model.Model{
-		Running: true,
-		Lookup:  make(map[string]*otc.Request),
-		Logger:  log.New(ioutil.Discard, "", 0),
-		Router:  actor.New(nil, nil),
+		Controller: &model.Controller{
+			Running: true,
+		},
+		Lookup: model.NewLookup(),
+		Router: actor.New(nil, nil),
+		Logs:   log.New(ioutil.Discard, "", 0),
 	}
 
 	tests := [][]string{

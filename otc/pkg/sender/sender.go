@@ -9,23 +9,28 @@ import (
 
 func Task(curs *currencies.Currencies) func(*otc.Work) (bool, error) {
 	return func(work *otc.Work) (bool, error) {
-		work.Request.Lock()
-		defer work.Request.Unlock()
-
-		value, source, err := curs.Value(work.Request.Drop)
-		if err != nil {
-			return true, err
-		}
-		work.Request.Rate = &otc.Rate{Value: value, Source: source}
-
-		txid, err := curs.Send(otc.SKY, work.Request.Address, value)
+		value, source, price, err := curs.Value(
+			work.Order.User.Drop.Currency,
+			work.Order.Amount,
+		)
 		if err != nil {
 			return true, err
 		}
 
-		work.Request.Times.SentAt = time.Now().UTC().Unix()
-		work.Request.TxId = txid
-		work.Request.Status = otc.CONFIRM
+		txid, err := curs.Send(otc.SKY, work.Order.User.Address, value)
+		if err != nil {
+			return true, err
+		}
+
+		work.Order.Purchase = &otc.Purchase{
+			// TODO: make source string dynamic
+			Source: "internal",
+			Amount: value,
+			TxId:   txid,
+			Price:  &otc.Price{source, price},
+		}
+		work.Order.Times.SentAt = time.Now().UTC().Unix()
+		work.Order.Status = otc.CONFIRM
 		return true, nil
 	}
 }

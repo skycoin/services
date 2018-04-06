@@ -8,115 +8,123 @@ import (
 	"github.com/skycoin/services/otc/pkg/otc"
 )
 
-type MockConnection struct{}
-
-func (c *MockConnection) Used() ([]string, error) {
-	return nil, nil
+type Mock struct {
+	Fail bool
 }
 
-func (c *MockConnection) Balance(addr string) (uint64, error) {
-	return 0, nil
-}
+func (m *Mock) Balance(string) (uint64, error) { return 0, nil }
+func (m *Mock) Confirmed(string) (bool, error) { return false, nil }
+func (m *Mock) Address() (string, error)       { return "", nil }
+func (m *Mock) Used() ([]string, error)        { return nil, nil }
+func (m *Mock) Connected() (bool, error)       { return false, nil }
+func (m *Mock) Holding() (uint64, error)       { return 0, nil }
+func (m *Mock) Stop() error                    { return nil }
 
-func (c *MockConnection) Confirmed(txid string) (bool, error) {
-	return false, nil
-}
-
-func (c *MockConnection) Send(addr string, amount uint64) (string, error) {
-	if addr == "good" {
-		return "txid", nil
+func (m *Mock) Send(string, uint64) (string, error) {
+	if m.Fail {
+		return "", fmt.Errorf("fail!")
 	}
-
-	if addr == "bad" {
-		return "", fmt.Errorf("")
-	}
-
-	return "", nil
-}
-
-func (c *MockConnection) Address() (string, error) {
-	return "mock", nil
-}
-
-func (c *MockConnection) Connected() (bool, error) {
-	return false, nil
-}
-
-func (c *MockConnection) Holding() (uint64, error) {
-	return 0, nil
-}
-
-func (c *MockConnection) Stop() error {
-	return nil
+	return "txid", nil
 }
 
 func TestTask(t *testing.T) {
-	curs := currencies.New()
-	curs.Add(otc.SKY, &MockConnection{})
-
-	curs.Prices[otc.BTC] = &currencies.Pricer{
-		Using: currencies.INTERNAL,
-		Sources: map[currencies.Source]*currencies.Price{
-			currencies.INTERNAL: currencies.NewPrice(1000),
-		},
-	}
-
-	var (
-		remove bool
-		err    error
-	)
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{
-			Drop: &otc.Drop{
-				Address:  "",
-				Currency: otc.ETH,
-				Amount:   1000,
+	curs := &currencies.Currencies{
+		Prices: map[otc.Currency]*currencies.Pricer{
+			otc.BTC: &currencies.Pricer{
+				Using: currencies.INTERNAL,
+				Sources: map[currencies.Source]*currencies.Price{
+					currencies.INTERNAL: currencies.NewPrice(200000),
+				},
 			},
 		},
-	}); !remove || err == nil {
-		t.Fatal("should remove with error")
-	}
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{
-			Address: "bad",
-			Times:   &otc.Times{},
-			Drop: &otc.Drop{
-				Address:  "",
-				Currency: otc.BTC,
-				Amount:   1000,
-			},
+		Connections: map[otc.Currency]currencies.Connection{
+			otc.SKY: &Mock{false},
 		},
-	}); !remove || err == nil {
-		t.Fatal("should remove with error")
 	}
 
 	work := &otc.Work{
-		Request: &otc.Request{
-			Address: "good",
-			Times:   &otc.Times{},
-			Drop: &otc.Drop{
-				Address:  "",
-				Currency: otc.BTC,
-				Amount:   1000,
+		Order: &otc.Order{
+			User: &otc.User{
+				Drop: &otc.Drop{
+					Address:  "address",
+					Currency: otc.BTC,
+				},
 			},
+			Amount: 100000000,
+			Times:  &otc.Times{},
 		},
+		Done: make(chan *otc.Result, 1),
 	}
 
-	if remove, err = Task(curs)(work); err != nil {
+	if _, err := Task(curs)(work); err != nil {
 		t.Fatal(err)
 	}
 
-	if work.Request.Status != otc.CONFIRM {
-		t.Fatal("status should be CONFIRM")
+	if work.Order.Purchase.TxId != "txid" {
+		t.Fatal("didn't complete purchase")
 	}
 
-	if work.Request.TxId != "txid" {
-		t.Fatal("txid not set")
+	if work.Order.Status != otc.CONFIRM {
+		t.Fatal("didn't change order status")
+	}
+}
+
+func TestTaskBadPrice(t *testing.T) {
+	curs := &currencies.Currencies{
+		Connections: map[otc.Currency]currencies.Connection{
+			otc.SKY: &Mock{false},
+		},
 	}
 
-	if work.Request.Times.SentAt == 0 {
-		t.Fatal("sent at time not set")
+	work := &otc.Work{
+		Order: &otc.Order{
+			User: &otc.User{
+				Drop: &otc.Drop{
+					Address:  "address",
+					Currency: otc.BTC,
+				},
+			},
+			Amount: 100000000,
+			Times:  &otc.Times{},
+		},
+		Done: make(chan *otc.Result, 1),
+	}
+
+	if _, err := Task(curs)(work); err == nil {
+		t.Fatal("should've returned an error")
+	}
+}
+
+func TestTaskBadConnection(t *testing.T) {
+	curs := &currencies.Currencies{
+		Prices: map[otc.Currency]*currencies.Pricer{
+			otc.BTC: &currencies.Pricer{
+				Using: currencies.INTERNAL,
+				Sources: map[currencies.Source]*currencies.Price{
+					currencies.INTERNAL: currencies.NewPrice(200000),
+				},
+			},
+		},
+		Connections: map[otc.Currency]currencies.Connection{
+			otc.SKY: &Mock{true},
+		},
+	}
+
+	work := &otc.Work{
+		Order: &otc.Order{
+			User: &otc.User{
+				Drop: &otc.Drop{
+					Address:  "address",
+					Currency: otc.BTC,
+				},
+			},
+			Amount: 100000000,
+			Times:  &otc.Times{},
+		},
+		Done: make(chan *otc.Result, 1),
+	}
+
+	if _, err := Task(curs)(work); err == nil {
+		t.Fatal("should've returned an error")
 	}
 }

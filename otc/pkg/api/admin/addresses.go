@@ -25,7 +25,7 @@ func Addresses(curr otc.Currency, curs *currencies.Currencies, modl *model.Model
 		addrs := make([]*object, len(used), len(used))
 
 		for i := range used {
-			balance, err := curs.Balance(&otc.Drop{used[i], curr, 0})
+			balance, err := curs.Balance(&otc.Drop{used[i], curr})
 			if err != nil {
 				http.Error(w, "server error", http.StatusInternalServerError)
 				return

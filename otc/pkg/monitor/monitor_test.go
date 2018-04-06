@@ -8,95 +8,109 @@ import (
 	"github.com/skycoin/services/otc/pkg/otc"
 )
 
-type MockConnection struct{}
-
-func (c *MockConnection) Used() ([]string, error) {
-	return nil, nil
+type Mock struct {
+	Type string
 }
 
-func (c *MockConnection) Balance(addr string) (uint64, error) {
-	return 0, nil
-}
+func (m *Mock) Balance(string) (uint64, error)      { return 0, nil }
+func (m *Mock) Address() (string, error)            { return "", nil }
+func (m *Mock) Used() ([]string, error)             { return nil, nil }
+func (m *Mock) Connected() (bool, error)            { return false, nil }
+func (m *Mock) Holding() (uint64, error)            { return 0, nil }
+func (m *Mock) Stop() error                         { return nil }
+func (m *Mock) Send(string, uint64) (string, error) { return "", nil }
 
-func (c *MockConnection) Confirmed(txid string) (bool, error) {
-	if txid == "confirmed" {
+func (m *Mock) Confirmed(string) (bool, error) {
+	if m.Type == "confirmed" {
 		return true, nil
-	}
-
-	if txid == "unconfirmed" {
+	} else if m.Type == "unconfirmed" {
 		return false, nil
+	} else if m.Type == "error" {
+		return false, fmt.Errorf("error!")
 	}
-
-	if txid == "error" {
-		return false, fmt.Errorf("error")
-	}
-
 	return false, nil
-}
-
-func (c *MockConnection) Send(addr string, amount uint64) (string, error) {
-	return "txid", nil
-}
-
-func (c *MockConnection) Address() (string, error) {
-	return "mock", nil
-}
-
-func (c *MockConnection) Connected() (bool, error) {
-	return false, nil
-}
-
-func (c *MockConnection) Holding() (uint64, error) {
-	return 0, nil
-}
-
-func (c *MockConnection) Stop() error {
-	return nil
 }
 
 func TestTask(t *testing.T) {
-	curs := currencies.New()
-	curs.Add(otc.SKY, &MockConnection{})
-
-	var (
-		remove bool
-		err    error
-	)
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{TxId: "confirmed", Times: &otc.Times{}},
-	}); !remove || err != nil {
-		t.Fatal("should be removed")
-	}
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{TxId: "unconfirmed", Times: &otc.Times{}},
-	}); remove || err != nil {
-		t.Fatal("shouldn't be removed")
-	}
-
-	if remove, err = Task(curs)(&otc.Work{
-		Request: &otc.Request{TxId: "error", Times: &otc.Times{}},
-	}); err == nil {
-		t.Fatal("should be an error")
-	}
-
-	work := &otc.Work{
-		Request: &otc.Request{
-			TxId:  "confirmed",
-			Times: &otc.Times{},
+	curs := &currencies.Currencies{
+		Connections: map[otc.Currency]currencies.Connection{
+			otc.SKY: &Mock{"confirmed"},
 		},
 	}
 
-	if remove, err = Task(curs)(work); err != nil {
-		t.Fatal(err)
+	work := &otc.Work{
+		Order: &otc.Order{
+			Purchase: &otc.Purchase{
+				TxId: "txid",
+			},
+			Times: &otc.Times{},
+		},
+		Done: make(chan *otc.Result, 1),
 	}
 
-	if work.Request.Status != otc.DONE {
-		t.Fatal("monitor should set status to DONE")
+	done, err := Task(curs)(work)
+
+	if err != nil {
+		t.Fatal("shouldn't be an error")
 	}
 
-	if work.Request.Times.ConfirmedAt == 0 {
-		t.Fatal("monitor didn't set ConfirmedAt time")
+	if !done {
+		t.Fatal("should be done")
+	}
+}
+
+func TestTaskUnconfirmed(t *testing.T) {
+	curs := &currencies.Currencies{
+		Connections: map[otc.Currency]currencies.Connection{
+			otc.SKY: &Mock{"unconfirmed"},
+		},
+	}
+
+	work := &otc.Work{
+		Order: &otc.Order{
+			Purchase: &otc.Purchase{
+				TxId: "txid",
+			},
+			Times: &otc.Times{},
+		},
+		Done: make(chan *otc.Result, 1),
+	}
+
+	done, err := Task(curs)(work)
+
+	if err != nil {
+		t.Fatal("shouldn't be an error")
+	}
+
+	if done {
+		t.Fatal("shouldn't be done")
+	}
+}
+
+func TestTaskError(t *testing.T) {
+	curs := &currencies.Currencies{
+		Connections: map[otc.Currency]currencies.Connection{
+			otc.SKY: &Mock{"error"},
+		},
+	}
+
+	work := &otc.Work{
+		Order: &otc.Order{
+			Purchase: &otc.Purchase{
+				TxId: "txid",
+			},
+			Times: &otc.Times{},
+		},
+		Done: make(chan *otc.Result, 1),
+	}
+
+	done, err := Task(curs)(work)
+
+	if err == nil {
+		t.Fatal("should be an error")
+	}
+
+	if !done {
+		t.Fatal("should be done")
 	}
 }

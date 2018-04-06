@@ -2,10 +2,12 @@ package public
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/skycoin/services/otc/pkg/actor"
 	"github.com/skycoin/services/otc/pkg/currencies"
 	"github.com/skycoin/services/otc/pkg/model"
 	"github.com/skycoin/services/otc/pkg/otc"
@@ -52,7 +54,12 @@ func TestConfig(t *testing.T) {
 		res := httptest.NewRecorder()
 
 		Config(curs, &model.Model{
-			Running: true,
+			Controller: &model.Controller{
+				Running: true,
+			},
+			Lookup: model.NewLookup(),
+			Router: actor.New(nil, nil),
+			Logs:   log.New(ioutil.Discard, "", 0),
 		})(res, req)
 
 		out, err := ioutil.ReadAll(res.Body)

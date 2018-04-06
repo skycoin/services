@@ -12,7 +12,7 @@ import (
 
 func Transactions(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		all := modl.Reqs()
+		all := modl.Orders()
 
 		sort.Slice(all, func(i, j int) bool {
 			return all[i].Times.CreatedAt > all[j].Times.CreatedAt
@@ -24,12 +24,12 @@ func Transactions(curs *currencies.Currencies, modl *model.Model) http.HandlerFu
 
 func TransactionsPending(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		all := modl.Reqs()
-		pending := make([]otc.Request, 0)
+		all := modl.Orders()
+		pending := make([]otc.Order, 0)
 
-		for _, req := range all {
-			if req.Status != otc.DONE {
-				pending = append(pending, req)
+		for _, order := range all {
+			if order.Status != otc.DONE {
+				pending = append(pending, order)
 			}
 		}
 
@@ -43,12 +43,12 @@ func TransactionsPending(curs *currencies.Currencies, modl *model.Model) http.Ha
 
 func TransactionsCompleted(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		all := modl.Reqs()
-		completed := make([]otc.Request, 0)
+		all := modl.Orders()
+		completed := make([]otc.Order, 0)
 
-		for _, req := range all {
-			if req.Status == otc.DONE {
-				completed = append(completed, req)
+		for _, order := range all {
+			if order.Status == otc.DONE {
+				completed = append(completed, order)
 			}
 		}
 

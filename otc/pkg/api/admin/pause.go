@@ -23,9 +23,9 @@ func Pause(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 		}
 
 		if req.Pause {
-			modl.Pause()
+			modl.Controller.Pause()
 		} else {
-			modl.Unpause()
+			modl.Controller.Unpause()
 		}
 	}
 }

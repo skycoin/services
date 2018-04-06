@@ -6,7 +6,6 @@ import (
 
 	"github.com/skycoin/services/otc/pkg/currencies"
 	"github.com/skycoin/services/otc/pkg/model"
-	"github.com/skycoin/services/otc/pkg/otc"
 )
 
 func Status(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
@@ -24,15 +23,14 @@ func Status(curs *currencies.Currencies, modl *model.Model) http.HandlerFunc {
 			return
 		}
 
-		status, updated, err := modl.Status(data.DropCurrency + ":" + data.DropAddress)
+		user, err := modl.Lookup.GetStatus(
+			data.DropCurrency + ":" + data.DropAddress,
+		)
 		if err != nil {
-			http.Error(w, "request missing", http.StatusBadRequest)
+			http.Error(w, "user missing", http.StatusBadRequest)
 			return
 		}
 
-		json.NewEncoder(w).Encode(&struct {
-			Status    otc.Status `json:"status"`
-			UpdatedAt int64      `json:"updated_at"`
-		}{status, updated})
+		json.NewEncoder(w).Encode(user.Orders)
 	}
 }

@@ -4,34 +4,6 @@ import (
 	"testing"
 )
 
-func TestRequestId(t *testing.T) {
-	req := &Request{
-		Address: "1",
-		Drop: &Drop{
-			Currency: Currency("2"),
-			Address:  "3",
-		},
-	}
-
-	if req.Id() != "1:2:3" {
-		t.Fatalf(`expected "1:2:3", got "%s"`, req.Id())
-	}
-}
-
-func TestRequestIden(t *testing.T) {
-	req := &Request{
-		Address: "1",
-		Drop: &Drop{
-			Currency: Currency("2"),
-			Address:  "3",
-		},
-	}
-
-	if req.Iden() != "2:3" {
-		t.Fatalf(`expected "2:3", got "%s"`, req.Iden())
-	}
-}
-
 func TestWorkReturn(t *testing.T) {
 	work := &Work{
 		Done: make(chan *Result, 1),
@@ -46,5 +18,31 @@ func TestWorkReturn(t *testing.T) {
 		return
 	default:
 		t.Fatal("didn't return")
+	}
+}
+
+func TestOutputsUpdate(t *testing.T) {
+	outputs := Outputs(map[string]map[int]*OutputVerbose{
+		"transaction": {
+			1: {
+				Amount: 1,
+			},
+		},
+	})
+
+	outputs.Update("transaction", 1, &OutputVerbose{
+		Amount: 2,
+	})
+
+	outputs.Update("transaction_two", 1, &OutputVerbose{
+		Amount: 3,
+	})
+
+	if outputs["transaction"][1].Amount != 2 {
+		t.Fatal("update failed")
+	}
+
+	if outputs["transaction_two"][1].Amount != 3 {
+		t.Fatal("update failed")
 	}
 }
