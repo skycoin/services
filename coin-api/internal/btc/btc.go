@@ -12,6 +12,7 @@ import (
 	"bytes"
 
 	"fmt"
+	cb "github.com/skycoin/services/coin-api/internal/circuit_breaker"
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
@@ -28,8 +29,8 @@ type ServiceBtc struct {
 	httpClient *http.Client
 
 	// Circuit breaker related fields
-	balanceCircuitBreaker  *CircuitBreaker
-	txStatusCircuitBreaker *CircuitBreaker
+	balanceCircuitBreaker  *cb.CircuitBreaker
+	txStatusCircuitBreaker *cb.CircuitBreaker
 
 	// Block explorer url
 	blockExplorer string
@@ -50,13 +51,13 @@ func NewBTCService(blockExplorer string, watcherUrl string) (*ServiceBtc, error)
 		blockExplorer: blockExplorer,
 	}
 
-	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromWatcher,
+	balanceCircuitBreaker := cb.NewCircuitBreaker(service.getBalanceFromWatcher,
 		service.getBalanceFromExplorer,
 		time.Second*10,
 		time.Second*3,
 		3)
 
-	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode,
+	txStatusCircuitBreaker := cb.NewCircuitBreaker(service.getTxStatusFromNode,
 		service.getTxStatusFromExplorer,
 		time.Second*10,
 		time.Second*3,
