@@ -40,16 +40,17 @@ func TestCircuitBreakerDo(t *testing.T) {
 			success:  test.success,
 			fallback: test.fallback,
 
-			isOpen:      0,
-			openTimeout: time.Second * 10,
-			retryCount:  3,
+			isOpen:        0,
+			actionTimeout: time.Second * 1,
+			openTimeout:   time.Second * 10,
+			retryCount:    3,
 		}
 
 		result, err := circuitBreaker.Do("")
 
 		if test.expected {
 			if err != nil {
-				t.Errorf("Expected success got error %s", err.Error())
+				t.Errorf("Expected success got error %v", err)
 				return
 			}
 
@@ -57,14 +58,17 @@ func TestCircuitBreakerDo(t *testing.T) {
 
 			if r != success {
 				t.Errorf("Wrong result expected %s actual %s", success, r)
+				return
 			}
 
 			if circuitBreaker.IsOpen() {
 				t.Errorf("Expected circuit breaker not to be open, actual %t", circuitBreaker.IsOpen())
+				return
 			}
 		} else {
 			if !circuitBreaker.IsOpen() {
 				t.Errorf("Expected circuit breaker to be open, actual %t", circuitBreaker.IsOpen())
+				return
 			}
 		}
 	}

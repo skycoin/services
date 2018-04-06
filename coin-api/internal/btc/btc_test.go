@@ -7,6 +7,7 @@ import (
 
 	"net/http"
 
+	cb "github.com/skycoin/services/coin-api/internal/circuit_breaker"
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
@@ -18,7 +19,7 @@ func TestCheckBalanceOpen(t *testing.T) {
 	}
 
 	// Create circuit breaker for btc service
-	balanceCircuitBreaker := NewCircuitBreaker(service.getBalanceFromWatcher,
+	balanceCircuitBreaker := cb.NewCircuitBreaker(service.getBalanceFromWatcher,
 		service.getBalanceFromExplorer,
 		time.Second*10,
 		time.Second*3,
@@ -66,7 +67,7 @@ func TestCheckBalanceClosed(t *testing.T) {
 	}
 
 	// Create circuit breaker for btc service
-	balanceCircuitBreaker := NewCircuitBreaker(
+	balanceCircuitBreaker := cb.NewCircuitBreaker(
 		success,
 		fallback,
 		time.Second*10,
@@ -109,7 +110,7 @@ func TestServiceBtcCheckTxStatus(t *testing.T) {
 		blockExplorer: "https://api.blockcypher.com",
 	}
 
-	txStatusCircuitBreaker := NewCircuitBreaker(service.getTxStatusFromNode,
+	txStatusCircuitBreaker := cb.NewCircuitBreaker(service.getTxStatusFromNode,
 		service.getTxStatusFromExplorer,
 		time.Second*10,
 		time.Second*3,
