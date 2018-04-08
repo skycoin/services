@@ -6,7 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/usbhid"
+	"./usbhid"
 )
 
 const (
