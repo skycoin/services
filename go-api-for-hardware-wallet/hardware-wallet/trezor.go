@@ -7,9 +7,9 @@ import (
 	"log"
 	"time"
 
-	"./usb"
+	"../usb"
 
-	messages "./protob"
+	messages "../protob"
 )
 
 func GetTrezorDevice() (usb.Device, error) {
