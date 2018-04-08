@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/usbhid"
+	"./usbhid"
 )
 
 const (

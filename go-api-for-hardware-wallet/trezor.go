@@ -1,4 +1,4 @@
-package harwareWallet
+package hardwareWallet
 
 import (
 	"bytes"
@@ -7,9 +7,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/skycoin/skycoin/src/hardware-wallet/usb"
+	"./usb"
 
-	messages "github.com/skycoin/skycoin/protob"
+	messages "./protob"
 )
 
 func GetTrezorDevice() (usb.Device, error) {
