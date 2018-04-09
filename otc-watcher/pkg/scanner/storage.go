@@ -21,9 +21,10 @@ type Updated struct {
 type Storage struct {
 	sync.RWMutex
 
-	Filename  string               `json:"filename"`
-	Updated   *Updated             `json:"updated"`
-	Addresses map[string]*Relevant `json:"addresses"`
+	Filename     string               `json:"filename"`
+	Updated      *Updated             `json:"updated"`
+	Addresses    map[string]*Relevant `json:"addresses"`
+	Transactions map[string]*Relevant `json:"transaction"`
 }
 
 func NewStorage(cur otc.Currency) *Storage {
@@ -58,9 +59,15 @@ func (s *Storage) Update(block *otc.Block) {
 
 	// iterate all transactions in block
 	for hash, tx := range block.Transactions {
+		// Iterate over all inputs to keep track if transaction was spent or unspent.
+		for _, in := range tx.In {
+			for _, addr := range s.Addresses {
+				addr.Outputs.UpdateSpent(in.From, in.To)
+			}
+		}
+
 		// iterate all outputs in transaction
 		for index, out := range tx.Out {
-			// iterall all addresses in output
 			for _, outAddr := range out.Addresses {
 				// iterate all registered addresses
 				for addr, rel := range s.Addresses {

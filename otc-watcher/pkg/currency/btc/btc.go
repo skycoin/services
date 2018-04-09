@@ -133,9 +133,11 @@ func (c *Connection) Get(height uint64) (*otc.Block, error) {
 
 	for _, tx := range bb.RawTx {
 		block.Transactions[tx.Hash] = &otc.Transaction{
+			Id:            tx.Txid,
 			BlockHash:     tx.BlockHash,
 			Hash:          tx.Hash,
 			Confirmations: tx.Confirmations,
+			In:            make([]otc.Input, len(tx.Vin)),
 			Out:           make(map[int]*otc.Output, len(tx.Vout)),
 		}
 
@@ -149,6 +151,14 @@ func (c *Connection) Get(height uint64) (*otc.Block, error) {
 				Amount:    uint64(amount),
 				Addresses: out.ScriptPubKey.Addresses,
 			}
+		}
+
+		// Gather all tx in to keep track of whether tx was spent by something
+		for _, in := range tx.Vin {
+			block.Transactions[tx.Hash].In = append(block.Transactions[tx.Hash].In, otc.Input{
+				To:   tx.Hash,
+				From: in.Txid,
+			})
 		}
 	}
 

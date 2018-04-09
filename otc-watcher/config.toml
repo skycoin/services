@@ -1,4 +1,4 @@
-RpcNode="localhost:8332"
+RpcNode="localhost:8333"
 RpcUser="aaa"
 RpcPass="123"
 WalletAccount="1"
