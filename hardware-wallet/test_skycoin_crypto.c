@@ -6,6 +6,8 @@
 #include "check.h"
 #include "sha2.h" //SHA256_DIGEST_LENGTH
 #include "base58.h"
+#include "ecdsa.h"
+#include "secp256k1.h"
 
 #define FROMHEX_MAXLEN 512
 
@@ -318,6 +320,27 @@ START_TEST(test_recover_pubkey_from_signed_message)
 }
 END_TEST
 
+START_TEST(test_signature)
+{	
+    int res;
+	uint8_t digest[32];
+	// const ecdsa_curve *curve = &secp256k1;
+    uint8_t my_seckey[32];
+    uint8_t by = 0;
+    uint8_t signature[65];
+    memcpy(my_seckey, fromhex("597e27368656cab3c82bfcf2fb074cefd8b6101781a27709ba1b326b738d2c5a"), sizeof(my_seckey));
+	// sha2(sha2("\x18Bitcoin Signed Message:\n\x0cHello World!"))
+	memcpy(digest, fromhex("001aa9e416aff5f3a3c7f9ae0811757cf54f393d50df861f5c33747954341aa7"), 32);
+
+    res = ecdsa_skycoin_sign(my_seckey, digest, signature, &by);
+    // res = ecdsa_sign_digest(curve, my_seckey, digest, signature, &by, NULL);
+	ck_assert_int_eq(res, 0);
+    ck_assert_int_eq(by, 1);
+	ck_assert_mem_eq(signature,  fromhex("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"), 32);
+	ck_assert_mem_eq(&signature[32],  fromhex("04641a7472bb90647fa60b4d30aef8c7279e4b68226f7b2713dab712ef122f8b01"), 32);
+}
+END_TEST
+
 // define test suite and cases
 Suite *test_suite(void)
 {
@@ -336,6 +359,7 @@ Suite *test_suite(void)
     tcase_add_test(tc, test_compute_ecdh);
     tcase_add_test(tc, test_recover_pubkey_from_signed_message);
     tcase_add_test(tc, test_base58_decode);
+    tcase_add_test(tc, test_signature);
     suite_add_tcase(s, tc);
 
     return s;

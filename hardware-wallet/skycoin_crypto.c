@@ -250,3 +250,115 @@ int recover_pubkey_from_signed_message(const char* message, const uint8_t* signa
     }
     return res;
 }
+
+// uses secp256k1 curve
+// priv_key is a 32 byte big endian stored number
+// sig is 64 bytes long array for the signature
+// digest is 32 bytes of digest
+// is_canonical is an optional function that checks if the signature
+// conforms to additional coin-specific rules.
+int ecdsa_skycoin_sign(const uint8_t *priv_key, const uint8_t *digest, uint8_t *sig, uint8_t *pby)
+{
+	int i;
+	curve_point R;
+	bignum256 nonce, z, randk;
+	bignum256 *s = &R.y;
+	uint8_t by; // signature recovery byte
+
+    HDNode dummy_node;
+    char seed_str[256] = "dummy seed";
+    create_node(seed_str, &dummy_node);
+	bn_read_be(digest, &z);
+
+	for (i = 0; i < 1; i++) {
+
+
+		// generate random number nonce
+		// generate_k_random(&nonce, &dummy_node.curve->params->order);
+        bn_one(&nonce);
+		// compute nonce*G
+		scalar_multiply(dummy_node.curve->params, &nonce, &R);
+		by = R.y.val[0] & 1;
+		// r = (rx mod n)
+		if (!bn_is_less(&R.x, &dummy_node.curve->params->order)) {
+			bn_subtract(&R.x, &dummy_node.curve->params->order, &R.x);
+			by |= 2;
+		}
+		// if r is zero, we retry
+		if (bn_is_zero(&R.x)) {
+            printf("Premature exit 1");
+			continue;
+		}
+//////////////////////
+        printf("R.x: ");
+        bn_print(&R.x);
+        printf("\n");
+//////////////////////
+        printf("R.y: ");
+        bn_print(&R.y);
+        printf("\n");
+//////////////////////
+
+		// randomize operations to counter side-channel attacks
+		// generate_k_random(&randk, &dummy_node.curve->params->order);
+        // bn_one(&randk);
+		// bn_multiply(&randk, &nonce, &dummy_node.curve->params->order); // nonce*rand
+		bn_inverse(&nonce, &dummy_node.curve->params->order);         // (nonce*rand)^-1
+		bn_read_be(priv_key, s);               // priv
+//////////////////////
+        printf("s: ");
+        bn_print(s);
+        printf("\n");
+//////////////////////
+		bn_multiply(&R.x, s, &dummy_node.curve->params->order);   // R.x*priv
+//////////////////////
+        printf("s: ");
+        bn_print(s);
+        printf("\n");
+//////////////////////
+        bn_add(s, &z);                         // R.x*priv + z
+//////////////////////
+        printf("z: ");
+        bn_print(&z);
+        printf("\n");
+//////////////////////
+		// bn_multiply(&nonce, s, &dummy_node.curve->params->order);     // (nonce*rand)^-1 (R.x*priv + z)
+		// bn_multiply(&randk, s, &dummy_node.curve->params->order);  // nonce^-1 (R.x*priv + z)
+		bn_mod(s, &dummy_node.curve->params->order);
+//////////////////////
+        printf("s: ");
+        bn_print(s);
+        printf("\n");
+//////////////////////
+		// if s is zero, we retry
+		if (bn_is_zero(s)) {
+            printf("Premature exit 2");
+			continue;
+		}
+
+		// if S > order/2 => S = -S
+		if (bn_is_less(&dummy_node.curve->params->order_half, s)) {
+			bn_subtract(&dummy_node.curve->params->order, s, s);
+			by ^= 1;
+		}
+		// we are done, R.x and s is the result signature
+		bn_write_be(&R.x, sig);
+		bn_write_be(s, sig + 32);
+
+		if (pby) {
+			*pby = by;
+		}
+
+		memset(&nonce, 0, sizeof(nonce));
+		memset(&randk, 0, sizeof(randk));
+
+		return 0;
+	}
+
+	// Too many retries without a valid signature
+	// -> fail with an error
+	memset(&nonce, 0, sizeof(nonce));
+	memset(&randk, 0, sizeof(randk));
+
+	return -1;
+}
