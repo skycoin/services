@@ -322,7 +322,7 @@ int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, cons
         bn_print(&z);
         printf("\n");
 //////////////////////
-		// bn_multiply(&nonce, s, &dummy_node.curve->params->order);     // (nonce*rand)^-1 (R.x*priv + z)
+		bn_multiply(&nonce, s, &dummy_node.curve->params->order);     // (nonce*rand)^-1 (R.x*priv + z)
 		// bn_multiply(&randk, s, &dummy_node.curve->params->order);  // nonce^-1 (R.x*priv + z)
 		bn_mod(s, &dummy_node.curve->params->order);
 //////////////////////
