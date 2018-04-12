@@ -257,7 +257,7 @@ int recover_pubkey_from_signed_message(const char* message, const uint8_t* signa
 // digest is 32 bytes of digest
 // is_canonical is an optional function that checks if the signature
 // conforms to additional coin-specific rules.
-int ecdsa_skycoin_sign(const uint8_t *priv_key, const uint8_t *digest, uint8_t *sig, uint8_t *pby)
+int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, const uint8_t *digest, uint8_t *sig, uint8_t *pby)
 {
 	int i;
 	curve_point R;
@@ -275,7 +275,7 @@ int ecdsa_skycoin_sign(const uint8_t *priv_key, const uint8_t *digest, uint8_t *
 
 		// generate random number nonce
 		// generate_k_random(&nonce, &dummy_node.curve->params->order);
-        bn_one(&nonce);
+		bn_read_uint32(nonce_value, &nonce);
 		// compute nonce*G
 		scalar_multiply(dummy_node.curve->params, &nonce, &R);
 		by = R.y.val[0] & 1;
