@@ -332,7 +332,7 @@ START_TEST(test_signature)
 	// sha2(sha2("\x18Bitcoin Signed Message:\n\x0cHello World!"))
 	memcpy(digest, fromhex("001aa9e416aff5f3a3c7f9ae0811757cf54f393d50df861f5c33747954341aa7"), 32);
 
-    res = ecdsa_skycoin_sign(my_seckey, digest, signature, &by);
+    res = ecdsa_skycoin_sign(1, my_seckey, digest, signature, &by);
     // res = ecdsa_sign_digest(curve, my_seckey, digest, signature, &by, NULL);
 	ck_assert_int_eq(res, 0);
     ck_assert_int_eq(by, 1);
