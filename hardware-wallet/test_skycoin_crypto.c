@@ -337,7 +337,6 @@ START_TEST(test_signature)
     ck_assert_int_eq(by, 1);
 	ck_assert_mem_eq(signature,  fromhex("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"), 32);
 	ck_assert_mem_eq(&signature[32],  fromhex("04641a7472bb90647fa60b4d30aef8c7279e4b68226f7b2713dab712ef122f8b01"), 32);
-    signature[64] = by;
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
     ck_assert_int_eq(res, 0);
     ck_assert_mem_eq(pubkey,  fromhex("02df09821cff4874198a1dbdc462d224bd99728eeed024185879225762376132c7"), 33);
@@ -347,7 +346,6 @@ START_TEST(test_signature)
     ck_assert_int_eq(by, 1);
 	ck_assert_mem_eq(signature,  fromhex("ee38f27be5f3c4b8db875c0ffbc0232e93f622d16ede888508a4920ab51c3c99"), 32);
 	ck_assert_mem_eq(&signature[32],  fromhex("06ea7426c5e251e4bea76f06f554fa7798a49b7968b400fa981c51531a5748d801"), 32);
-    signature[64] = by;
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
     ck_assert_int_eq(res, 0);
     ck_assert_mem_eq(pubkey,  fromhex("02df09821cff4874198a1dbdc462d224bd99728eeed024185879225762376132c7"), 33);
@@ -357,7 +355,6 @@ START_TEST(test_signature)
     ck_assert_int_eq(by, 0);
 	ck_assert_mem_eq(signature,  fromhex("d4d869ad39cb3a64fa1980b47d1f19bd568430d3f929e01c00f1e5b7c6840ba8"), 32);
 	ck_assert_mem_eq(&signature[32],  fromhex("5e08d5781986ee72d1e8ebd4dd050386a64eee0256005626d2acbe3aefee9e2500"), 32);
-    signature[64] = by;
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
     ck_assert_int_eq(res, 0);
     ck_assert_mem_eq(pubkey,  fromhex("02df09821cff4874198a1dbdc462d224bd99728eeed024185879225762376132c7"), 33);
