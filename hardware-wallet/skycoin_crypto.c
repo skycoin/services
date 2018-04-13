@@ -271,8 +271,6 @@ int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, cons
 	bn_read_be(digest, &z);
 
 	for (i = 0; i < 1; i++) {
-
-
 		// generate random number nonce
 		// generate_k_random(&nonce, &dummy_node.curve->params->order);
 		bn_read_uint32(nonce_value, &nonce);
@@ -289,47 +287,13 @@ int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, cons
             printf("Premature exit 1");
 			continue;
 		}
-//////////////////////
-        printf("R.x: ");
-        bn_print(&R.x);
-        printf("\n");
-//////////////////////
-        printf("R.y: ");
-        bn_print(&R.y);
-        printf("\n");
-//////////////////////
-
-		// randomize operations to counter side-channel attacks
-		// generate_k_random(&randk, &dummy_node.curve->params->order);
-        // bn_one(&randk);
-		// bn_multiply(&randk, &nonce, &dummy_node.curve->params->order); // nonce*rand
 		bn_inverse(&nonce, &dummy_node.curve->params->order);         // (nonce*rand)^-1
 		bn_read_be(priv_key, s);               // priv
-//////////////////////
-        printf("s: ");
-        bn_print(s);
-        printf("\n");
-//////////////////////
 		bn_multiply(&R.x, s, &dummy_node.curve->params->order);   // R.x*priv
-//////////////////////
-        printf("s: ");
-        bn_print(s);
-        printf("\n");
-//////////////////////
         bn_add(s, &z);                         // R.x*priv + z
-//////////////////////
-        printf("z: ");
-        bn_print(&z);
-        printf("\n");
-//////////////////////
 		bn_multiply(&nonce, s, &dummy_node.curve->params->order);     // (nonce*rand)^-1 (R.x*priv + z)
-		// bn_multiply(&randk, s, &dummy_node.curve->params->order);  // nonce^-1 (R.x*priv + z)
 		bn_mod(s, &dummy_node.curve->params->order);
-//////////////////////
-        printf("s: ");
-        bn_print(s);
-        printf("\n");
-//////////////////////
+
 		// if s is zero, we retry
 		if (bn_is_zero(s)) {
             printf("Premature exit 2");
