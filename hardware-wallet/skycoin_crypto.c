@@ -257,7 +257,7 @@ int recover_pubkey_from_signed_message(const char* message, const uint8_t* signa
 // digest is 32 bytes of digest
 // is_canonical is an optional function that checks if the signature
 // conforms to additional coin-specific rules.
-int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, const uint8_t *digest, uint8_t *sig, uint8_t *pby)
+int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, const uint8_t *digest, uint8_t *sig)
 {
 	int i;
 	curve_point R;
@@ -345,9 +345,6 @@ int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, cons
 		bn_write_be(&R.x, sig);
 		bn_write_be(s, sig + 32);
 
-		if (pby) {
-			*pby = by;
-		}
         sig[64] = by;
 
 		memset(&nonce, 0, sizeof(nonce));

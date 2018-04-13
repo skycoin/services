@@ -325,34 +325,30 @@ START_TEST(test_signature)
     int res;
 	uint8_t digest[32];
     uint8_t my_seckey[32];
-    uint8_t by = 0;
     uint8_t signature[65];
     uint8_t pubkey[33];
     char* message = (char*)digest;
     memcpy(my_seckey, fromhex("597e27368656cab3c82bfcf2fb074cefd8b6101781a27709ba1b326b738d2c5a"), sizeof(my_seckey));
     memcpy(digest, fromhex("001aa9e416aff5f3a3c7f9ae0811757cf54f393d50df861f5c33747954341aa7"), 32);
 
-    res = ecdsa_skycoin_sign(1, my_seckey, digest, signature, &by);
+    res = ecdsa_skycoin_sign(1, my_seckey, digest, signature);
     ck_assert_int_eq(res, 0);
-    ck_assert_int_eq(by, 1);
 	ck_assert_mem_eq(signature,  fromhex("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"), 32);
 	ck_assert_mem_eq(&signature[32],  fromhex("04641a7472bb90647fa60b4d30aef8c7279e4b68226f7b2713dab712ef122f8b01"), 32);
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
     ck_assert_int_eq(res, 0);
     ck_assert_mem_eq(pubkey,  fromhex("02df09821cff4874198a1dbdc462d224bd99728eeed024185879225762376132c7"), 33);
 
-    res = ecdsa_skycoin_sign(0xfe25, my_seckey, digest, signature, &by);
+    res = ecdsa_skycoin_sign(0xfe25, my_seckey, digest, signature);
     ck_assert_int_eq(res, 0);
-    ck_assert_int_eq(by, 1);
 	ck_assert_mem_eq(signature,  fromhex("ee38f27be5f3c4b8db875c0ffbc0232e93f622d16ede888508a4920ab51c3c99"), 32);
 	ck_assert_mem_eq(&signature[32],  fromhex("06ea7426c5e251e4bea76f06f554fa7798a49b7968b400fa981c51531a5748d801"), 32);
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
     ck_assert_int_eq(res, 0);
     ck_assert_mem_eq(pubkey,  fromhex("02df09821cff4874198a1dbdc462d224bd99728eeed024185879225762376132c7"), 33);
 
-    res = ecdsa_skycoin_sign(0xfe250100, my_seckey, digest, signature, &by);
+    res = ecdsa_skycoin_sign(0xfe250100, my_seckey, digest, signature);
     ck_assert_int_eq(res, 0);
-    ck_assert_int_eq(by, 0);
 	ck_assert_mem_eq(signature,  fromhex("d4d869ad39cb3a64fa1980b47d1f19bd568430d3f929e01c00f1e5b7c6840ba8"), 32);
 	ck_assert_mem_eq(&signature[32],  fromhex("5e08d5781986ee72d1e8ebd4dd050386a64eee0256005626d2acbe3aefee9e2500"), 32);
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
@@ -362,7 +358,7 @@ START_TEST(test_signature)
     // try of another key pair
     memcpy(my_seckey, fromhex("67a331669081d22624f16512ea61e1d44cb3f26af3333973d17e0e8d03733b78"), sizeof(my_seckey));
     
-    res = ecdsa_skycoin_sign(0x1e2501ac, my_seckey, digest, signature, &by);
+    res = ecdsa_skycoin_sign(0x1e2501ac, my_seckey, digest, signature);
     ck_assert_int_eq(res, 0);
     ck_assert_mem_eq(signature, fromhex("eeee743d79b40aaa52d9eeb48791b0ae81a2f425bf99cdbc84180e8ed429300d457e8d669dbff1716b123552baf6f6f0ef67f16c1d9ccd44e6785d424002212601"), 65);
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
