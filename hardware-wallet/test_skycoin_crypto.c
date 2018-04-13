@@ -358,6 +358,16 @@ START_TEST(test_signature)
     res = recover_pubkey_from_signed_message(message, signature, pubkey);
     ck_assert_int_eq(res, 0);
     ck_assert_mem_eq(pubkey,  fromhex("02df09821cff4874198a1dbdc462d224bd99728eeed024185879225762376132c7"), 33);
+
+    // try of another key pair
+    memcpy(my_seckey, fromhex("67a331669081d22624f16512ea61e1d44cb3f26af3333973d17e0e8d03733b78"), sizeof(my_seckey));
+    
+    res = ecdsa_skycoin_sign(0x1e2501ac, my_seckey, digest, signature, &by);
+    ck_assert_int_eq(res, 0);
+    ck_assert_mem_eq(signature, fromhex("eeee743d79b40aaa52d9eeb48791b0ae81a2f425bf99cdbc84180e8ed429300d457e8d669dbff1716b123552baf6f6f0ef67f16c1d9ccd44e6785d424002212601"), 65);
+    res = recover_pubkey_from_signed_message(message, signature, pubkey);
+    ck_assert_int_eq(res, 0);
+    ck_assert_mem_eq(pubkey,  fromhex("0270b763664593c5f84dfb20d23ef79530fc317e5ee2ece0d9c50f432f62426ff9"), 33);
 }
 END_TEST
 
