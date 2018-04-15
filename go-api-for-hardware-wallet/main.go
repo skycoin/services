@@ -21,10 +21,24 @@ func MessageSkycoinAddress() [][64]byte {
     return chunks
 }
 
+
+func MessageCheckMessageSignature() [][64]byte {
+    skycoinCheckMessageSignature := &messages.SkycoinCheckMessageSignature{
+		Address:   proto.String("2EVNa4CK9SKosT4j1GEn8SuuUUEAXaHAMbM"),
+		Message:   proto.String("Hello World!"),
+		Signature: proto.String("GA82nXSwVEPV5soMjCiQkJb4oLEAo6FMK8CAE2n2YBTm7xjhAknUxtZrhs3RPVMfQsEoLwkJCEgvGj8a2vzthBQ1M"),
+	}
+
+    data, _ := proto.Marshal(skycoinCheckMessageSignature)
+
+    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinCheckMessageSignature)
+    return chunks
+}
+
 func main() {
     dev, _ := hardwareWallet.GetTrezorDevice()
 
-    chunks := MessageSkycoinAddress()
+    chunks := MessageCheckMessageSignature()
 
     for _, element := range chunks {
         _, _ = dev.Write(element[:])
