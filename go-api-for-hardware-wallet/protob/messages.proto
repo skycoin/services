@@ -101,6 +101,7 @@ enum MessageType {
 	MessageType_DebugLinkFlashErase = 113 [(wire_debug_in) = true];
 	MessageType_SkycoinAddress = 114 [(wire_in) = true];
 	MessageType_SkycoinCheckMessageSignature = 115 [(wire_in) = true];
+	MessageType_SkycoinSignMessage = 116 [(wire_in) = true];
 }
 
 ////////////////////
@@ -215,6 +216,14 @@ message SkycoinCheckMessageSignature {
 	required string signature = 3; //electronic signature of the message
 }
 
+/**
+ * Request: Sign a message digest using the given secret key.
+ * @next Success
+ */
+message SkycoinSignMessage {
+	required string secretKey = 1; //private address used to produce signature
+	required string message = 2;   //message that we want to sign
+}
 /**
  * Request: Test if the device is alive, device sends back the message in Success response
  * @next Success
