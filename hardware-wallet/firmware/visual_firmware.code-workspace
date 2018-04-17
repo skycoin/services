@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "/home/mbenthaier/my_projects/skycoin/python-trezor/trezorlib"
+		},
+		{
+			"path": "/home/mbenthaier/my_projects/skycoin/trezord-go"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"storage.h": "c",
+			"layout.h": "c",
+			"usb.h": "c"
+		}
+	}
+}

@@ -1,0 +1,4 @@
+*.o
+*.d
+test
+tests

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# script/test: Run test suite for application.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+if [ "$EMULATOR" = 1 ]; then
+    trap "kill %1" EXIT
+
+    firmware/trezor.elf &
+fi
+
+TREZOR_TRANSPORT_V1=1 "${PYTHON:-python}" -m pytest --pyarg trezorlib.tests.device_tests "$@"
