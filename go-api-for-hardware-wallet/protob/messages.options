@@ -21,6 +21,8 @@ SkycoinAddress.seed			max_size:256
 SkycoinCheckMessageSignature.address			max_size:36
 SkycoinCheckMessageSignature.message			max_size:256
 SkycoinCheckMessageSignature.signature			max_size:90
+SkycoinSignMessage.message			            max_size:256
+SkycoinSignMessage.secretKey			        max_size:45
 
 Success.message				max_size:256
 
