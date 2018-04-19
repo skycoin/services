@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/skycoin/services/coin-api/internal/eth"
 	"net/http"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type handlerEth struct {
@@ -13,6 +14,11 @@ type handlerEth struct {
 type ethKeyPairResponse struct {
 	PrivateKey string `json:"private_key"`
 	Address    string `json:"address"`
+}
+
+type ethBalanceResponse struct{
+	Address string `json:"address"`
+	Balance int64 `json:"balance"`
 }
 
 func NewHandlerEth(nodeUrl string) (*handlerEth, error) {
@@ -52,8 +58,32 @@ func (h *handlerEth) GenerateKeyPair(ctx echo.Context) error {
 	return nil
 }
 
-func (h *handlerEth) GetAddressBalance(ctx *echo.Context) {
+func (h *handlerEth) GetAddressBalance(ctx echo.Context) error {
+	addressString := ctx.Param("address")
 
+	address := common.HexToAddress(addressString)
+	balance, err := h.service.GetBalance(ctx.Request().Context(), address)
+
+	if err != nil {
+		handleError(ctx, err)
+	}
+
+	resp := ethBalanceResponse{
+		Address: addressString,
+		Balance: balance,
+	}
+
+	ctx.JSONPretty(http.StatusOK, struct {
+		Status string             `json:"status"`
+		Code   int                `json:"code"`
+		Result ethBalanceResponse `json:"result"`
+	}{
+		Status: "",
+		Code:   http.StatusOK,
+		Result: resp,
+	}, "\t")
+
+	return nil
 }
 
 func (h *handlerEth) GetTransactionStatus(ctx *echo.Context) {
