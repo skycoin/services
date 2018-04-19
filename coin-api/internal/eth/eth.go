@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/hex"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"math/big"
 )
 
 type EthService struct {
@@ -46,4 +45,16 @@ func (s *EthService) GetBalance(ctx context.Context, address common.Address) (in
 	balance, err := s.client.BalanceAt(ctx, address, nil)
 
 	return balance.Int64(), err
+}
+
+func (s *EthService) GetTxStatus(ctx context.Context, txid string) (*types.Transaction, bool, error) {
+	hash := common.HexToHash(txid)
+
+	txStatus, isPending, err := s.client.TransactionByHash(ctx, hash)
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	return txStatus, isPending, nil
 }

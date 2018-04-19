@@ -1,10 +1,11 @@
 package server
 
 import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/labstack/echo"
 	"github.com/skycoin/services/coin-api/internal/eth"
 	"net/http"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type handlerEth struct {
@@ -16,9 +17,14 @@ type ethKeyPairResponse struct {
 	Address    string `json:"address"`
 }
 
-type ethBalanceResponse struct{
+type ethBalanceResponse struct {
 	Address string `json:"address"`
-	Balance int64 `json:"balance"`
+	Balance int64  `json:"balance"`
+}
+
+type ethTxStatusResponse struct {
+	*types.Transaction
+	isPending bool
 }
 
 func NewHandlerEth(nodeUrl string) (*handlerEth, error) {
@@ -86,6 +92,29 @@ func (h *handlerEth) GetAddressBalance(ctx echo.Context) error {
 	return nil
 }
 
-func (h *handlerEth) GetTransactionStatus(ctx *echo.Context) {
+func (h *handlerEth) GetTransactionStatus(ctx echo.Context) error {
+	txHash := ctx.Param("tx")
 
+	txStatus, isPending, err := h.service.GetTxStatus(ctx.Request().Context(), txHash)
+
+	resp := ethTxStatusResponse{
+		txStatus,
+		isPending,
+	}
+
+	if err != nil {
+		handleError(ctx, err)
+	}
+
+	ctx.JSONPretty(http.StatusOK, struct {
+		Status string              `json:"status"`
+		Code   int                 `json:"code"`
+		Result ethTxStatusResponse `json:"result"`
+	}{
+		Status: "",
+		Code:   http.StatusOK,
+		Result: resp,
+	}, "\t")
+
+	return nil
 }
