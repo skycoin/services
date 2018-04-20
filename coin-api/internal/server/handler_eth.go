@@ -6,10 +6,17 @@ import (
 	"github.com/labstack/echo"
 	"github.com/skycoin/services/coin-api/internal/eth"
 	"net/http"
+	"context"
 )
 
+type EthService interface{
+	GenerateKeyPair() (string, string, error)
+	GetBalance(context.Context, common.Address) (int64, error)
+	GetTxStatus(context.Context, string) (*types.Transaction, bool, error)
+}
+
 type handlerEth struct {
-	service *eth.EthService
+	service EthService
 }
 
 type ethKeyPairResponse struct {
