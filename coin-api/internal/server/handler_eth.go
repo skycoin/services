@@ -1,21 +1,21 @@
 package server
 
 import (
+	"context"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/labstack/echo"
 	"github.com/skycoin/services/coin-api/internal/eth"
 	"net/http"
-	"context"
 )
 
-type EthService interface{
+type EthService interface {
 	GenerateKeyPair() (string, string, error)
 	GetBalance(context.Context, common.Address) (int64, error)
 	GetTxStatus(context.Context, string) (*types.Transaction, bool, error)
 }
 
-type handlerEth struct {
+type HandlerEth struct {
 	service EthService
 }
 
@@ -34,19 +34,19 @@ type ethTxStatusResponse struct {
 	isPending bool
 }
 
-func NewHandlerEth(nodeUrl string) (*handlerEth, error) {
+func NewHandlerEth(nodeUrl string) (*HandlerEth, error) {
 	service, err := eth.NewEthService(nodeUrl)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &handlerEth{
+	return &HandlerEth{
 		service: service,
 	}, nil
 }
 
-func (h *handlerEth) GenerateKeyPair(ctx echo.Context) error {
+func (h *HandlerEth) GenerateKeyPair(ctx echo.Context) error {
 	privateKey, address, err := h.service.GenerateKeyPair()
 
 	if err != nil {
@@ -71,7 +71,7 @@ func (h *handlerEth) GenerateKeyPair(ctx echo.Context) error {
 	return nil
 }
 
-func (h *handlerEth) GetAddressBalance(ctx echo.Context) error {
+func (h *HandlerEth) GetAddressBalance(ctx echo.Context) error {
 	addressString := ctx.Param("address")
 
 	address := common.HexToAddress(addressString)
@@ -99,7 +99,7 @@ func (h *handlerEth) GetAddressBalance(ctx echo.Context) error {
 	return nil
 }
 
-func (h *handlerEth) GetTransactionStatus(ctx echo.Context) error {
+func (h *HandlerEth) GetTransactionStatus(ctx echo.Context) error {
 	txHash := ctx.Param("tx")
 
 	txStatus, isPending, err := h.service.GetTxStatus(ctx.Request().Context(), txHash)
