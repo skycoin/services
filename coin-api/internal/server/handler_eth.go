@@ -51,6 +51,7 @@ func (h *HandlerEth) GenerateKeyPair(ctx echo.Context) error {
 
 	if err != nil {
 		handleError(ctx, err)
+		return nil
 	}
 
 	resp := ethKeyPairResponse{
@@ -79,6 +80,7 @@ func (h *HandlerEth) GetAddressBalance(ctx echo.Context) error {
 
 	if err != nil {
 		handleError(ctx, err)
+		return nil
 	}
 
 	resp := ethBalanceResponse{
@@ -111,6 +113,7 @@ func (h *HandlerEth) GetTransactionStatus(ctx echo.Context) error {
 
 	if err != nil {
 		handleError(ctx, err)
+		return nil
 	}
 
 	ctx.JSONPretty(http.StatusOK, struct {
