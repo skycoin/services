@@ -8,14 +8,18 @@ import (
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 	"github.com/skycoin/services/coin-api/internal/eth"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
 	ethAddrLen       = 42
 	ethPrivateKeyLen = 64
+	rawAddr          = "0x51f6d925e9acfb59dfa6d3553d99f5d06b541d0c"
 )
 
 type MockEthService struct {
@@ -79,7 +83,7 @@ func TestGenerateEthKeyPair(t *testing.T) {
 	}
 }
 
-func TestHandlerEthGetAddressBalance(t *testing.T) {
+func TestEthGetAddressBalance(t *testing.T) {
 	testData := []struct {
 		address         string
 		expectedBalance int64
@@ -169,6 +173,110 @@ func TestHandlerEthGetAddressBalance(t *testing.T) {
 		if result.Result.Balance != test.expectedBalance {
 			t.Errorf("Wrong result balance expected %d actual %d",
 				test.expectedBalance, result.Result.Balance)
+			return
+		}
+	}
+}
+
+func TestEthGetTransactionStatus(t *testing.T) {
+	nonce := uint64(777)
+	addr := common.HexToAddress(rawAddr)
+	amount := big.NewInt(100)
+	gasLimit := big.NewInt(2)
+	gasPrice := big.NewInt(1)
+	data := []byte("hello")
+
+	tx := types.NewTransaction(nonce, addr, amount, gasLimit, gasPrice, data)
+
+	chainId := big.NewInt(1)
+	senderPrivKey, _ := crypto.HexToECDSA("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	signer := types.NewEIP155Signer(chainId)
+	signedTx, _ := types.SignTx(tx, signer, senderPrivKey)
+
+	testData := []struct {
+		txStatus ethTxStatusResponse
+		error    string
+	}{
+		{
+			ethTxStatusResponse{
+				signedTx,
+				true,
+			},
+			"",
+		},
+		{
+			ethTxStatusResponse{
+				nil,
+				true,
+			},
+			"Transaction not found",
+		},
+	}
+
+	for _, test := range testData {
+		e := echo.New()
+
+		resp := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+
+		ctx := e.NewContext(req, resp)
+
+		m := MockEthService{
+			getTxStatus: func(context.Context, string) (*types.Transaction, bool, error) {
+				if len(test.error) > 0 {
+					return nil, test.txStatus.IsPending, errors.New(test.error)
+				}
+
+				return signedTx, test.txStatus.IsPending, nil
+			},
+		}
+
+		handler := HandlerEth{
+			m,
+		}
+
+		handler.GetTransactionStatus(ctx)
+
+		if len(test.error) != 0 {
+			result := &struct {
+				Status string `json:"status"`
+				Code   int    `json:"code"`
+				Result string `json:"result"`
+			}{}
+
+			err := json.NewDecoder(resp.Body).Decode(result)
+
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			if test.error != result.Result {
+				t.Errorf("Wrong error message expected %s actual %s",
+					test.error, result.Result)
+				return
+			}
+
+			return
+		}
+
+		result := &struct {
+			Status string              `json:"status"`
+			Code   int                 `json:"expectedCode"`
+			Result ethTxStatusResponse `json:"result"`
+		}{}
+
+		json.Unmarshal(resp.Body.Bytes(), &result)
+
+		if result.Result.IsPending != test.txStatus.IsPending {
+			t.Errorf("Wrong tx status expected %t actual %t ",
+				test.txStatus.IsPending, result.Result.IsPending)
+			return
+		}
+
+		if result.Result.TxBody.Value().Int64() != signedTx.Value().Int64() {
+			t.Errorf("Wrong tx value expected %d actual %d",
+				tx.Value().Int64(), result.Result.TxBody.Value().Int64())
 			return
 		}
 	}

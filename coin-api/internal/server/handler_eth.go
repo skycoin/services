@@ -30,8 +30,8 @@ type ethBalanceResponse struct {
 }
 
 type ethTxStatusResponse struct {
-	*types.Transaction
-	isPending bool
+	TxBody    *types.Transaction `json:"tx_body"`
+	IsPending bool               `json:"is_pending"`
 }
 
 func NewHandlerEth(nodeUrl string) (*HandlerEth, error) {
