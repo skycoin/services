@@ -97,23 +97,27 @@ START_TEST(test_generate_deterministic_key_pair_iterator)
     char seed[256] = "seed";
     uint8_t seckey[32] = {0};
     uint8_t pubkey[33] = {0};
-    generate_deterministic_key_pair_iterator(seed, seckey, pubkey);
+    uint8_t nextSeed[SHA256_DIGEST_LENGTH] = {0};
+    generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
     ck_assert_mem_eq(pubkey, fromhex("02e5be89fa161bf6b0bc64ec9ec7fe27311fbb78949c3ef9739d4c73a84920d6e1"), 33);
     ck_assert_mem_eq(seckey, fromhex("001aa9e416aff5f3a3c7f9ae0811757cf54f393d50df861f5c33747954341aa7"), 32);
+    ck_assert_mem_eq(nextSeed, fromhex("c79454cf362b3f55e5effce09f664311650a44b9c189b3c8eed1ae9bd696cd9e"), 32);
 
     strcpy(seed, "random_seed");
     memset(pubkey, 0, sizeof(pubkey));
     memset(seckey, 0, sizeof(seckey));
-    generate_deterministic_key_pair_iterator(seed, seckey, pubkey);
+    generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
     ck_assert_mem_eq(pubkey, fromhex("030e40dda21c27126d829b6ae57816e1440dcb2cc73e37e860af26eff1ec55ed73"), 33);
     ck_assert_mem_eq(seckey, fromhex("ff671860c58aad3f765d8add25046412dabf641186472e1553435e6e3c4a6fb0"), 32);
+    ck_assert_mem_eq(nextSeed, fromhex("5e81d46f56767496bc05ed177c5237cd4fe5013e617c726af43e1cba884f17d1"), 32);
 
     strcpy(seed, "hello seed");
     memset(pubkey, 0, sizeof(pubkey));
     memset(seckey, 0, sizeof(seckey));
-    generate_deterministic_key_pair_iterator(seed, seckey, pubkey);
+    generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
     ck_assert_mem_eq(pubkey, fromhex("035843e72258696b391cf1d898fc65f31e66876ea0c9e101f8ddc3ebb4b87dc5b0"), 33);
     ck_assert_mem_eq(seckey, fromhex("84fdc649964bf299a787cb78cd975910e197dbddd7db776ece544f41c44b3056"), 32);
+    ck_assert_mem_eq(nextSeed, fromhex("70d382540812d4abc969dcc2adc66e805db96f7e1dcbe1ae6bbf2878211cbcf6"), 32);
 }
 END_TEST
 
