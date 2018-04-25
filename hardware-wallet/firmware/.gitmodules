@@ -13,6 +13,3 @@
 [submodule "vendor/nanopb"]
 	path = vendor/nanopb
 	url = https://github.com/nanopb/nanopb.git
-[submodule "skycoin-crypto"]
-	path = vendor/skycoin-crypto
-	url = https://github.com/mpsido/skycoin-crypto.git
