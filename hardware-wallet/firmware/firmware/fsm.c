@@ -346,6 +346,25 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
     msg_write(MessageType_MessageType_Success, resp);
 }
 
+int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
+{
+    const uint8_t* mnemo = storage_getSeed(false);
+    char seed[64] = {0};
+    uint8_t nextSeed[SHA256_DIGEST_LENGTH] = {0};
+    if (mnemo == NULL)
+    {
+        return -1;
+    }
+	memcpy(seed, mnemo, sizeof(seed));
+	for (uint8_t i = 0; i < index; ++i)
+	{
+		memcpy(seed, nextSeed, 32);
+		seed[32] = 0;
+		generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
+	}
+    return 0;
+}
+
 void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 {
     uint8_t seckey[32] = {0};
@@ -380,35 +399,21 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 
 	RESP_INIT(Success);
 	// reset_entropy((const uint8_t*)msg->seed, strlen(msg->seed));
-	const uint8_t* mnemo = storage_getSeed(false);
-    char seed[64] = {0};
-    uint8_t nextSeed[SHA256_DIGEST_LENGTH] = {0};
-	if (msg->has_address_type && mnemo != NULL)
+	if (msg->has_address_type  && fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) == 0)
 	{
     	char address[256] = {0};
     	size_t size_address = sizeof(address);
-		memcpy(seed, mnemo, sizeof(seed));
-		for (uint8_t i = 0; i < msg->address_n; ++i)
-		{
-			memcpy(seed, nextSeed, 32);
-			seed[32] = 0;
-			generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
-		}
 		switch (msg->address_type)
 		{
 			case SkycoinAddressType_AddressTypeSkycoin:
 				layoutRawMessage("Skycoin address");
     			generate_base58_address_from_pubkey(pubkey, address, &size_address);
-				// memcpy(resp->message, address, size_address);
-				tohex(resp->message, nextSeed, SHA256_DIGEST_LENGTH);
-				// memcpy(resp->message, mnemo, sizeof(resp->message));
+				memcpy(resp->message, address, size_address);
 				break;
 			case SkycoinAddressType_AddressTypeBitcoin:
 				layoutRawMessage("Bitcoin address");
 				generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
-				// memcpy(resp->message, address, size_address);
-				tohex(resp->message, nextSeed, SHA256_DIGEST_LENGTH);
-				// memcpy(resp->message, mnemo, sizeof(resp->message));
+				memcpy(resp->message, address, size_address);
 				break;
 			default:
 				layoutRawMessage("Unknown address type");
@@ -416,16 +421,8 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 		}
 	}
 	else {
-		generate_deterministic_key_pair_iterator((const char*)mnemo, nextSeed, seckey, pubkey);
 		tohex(resp->message, pubkey, 33);
-		if (mnemo == NULL)
-		{
-			layoutRawMessage("Empty mnemonic");
-		}
-		else
-		{
-			layoutRawMessage(resp->message);
-		}
+		layoutRawMessage(resp->message);
 	}
 	resp->has_message = true;
 	msg_write(MessageType_MessageType_Success, resp);
