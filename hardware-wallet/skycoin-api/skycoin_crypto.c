@@ -88,7 +88,8 @@ void secp256k1Hash(const char* seed, uint8_t* secp256k1Hash_digest)
     compute_sha256sum((const char *)secp256k1Hash, secp256k1Hash_digest, sizeof(secp256k1Hash));
 }
 
-void generate_deterministic_key_pair_iterator(const char* seed, uint8_t* seckey, uint8_t* pubkey)
+// nextSeed should be 32 bytes (size of a secp256k1Hash digest)
+void generate_deterministic_key_pair_iterator(const char* seed, uint8_t* nextSeed, uint8_t* seckey, uint8_t* pubkey)
 {
     size_t seed_length = 0;
     uint8_t seed1[SHA256_DIGEST_LENGTH] = {0};
@@ -97,7 +98,8 @@ void generate_deterministic_key_pair_iterator(const char* seed, uint8_t* seckey,
     secp256k1Hash(seed, seed1);
     seed_length = strlen(seed);
     memcpy(keypair_seed, seed, seed_length);
-    memcpy(&keypair_seed[seed_length], seed1, sizeof(seed1));
+    memcpy(&keypair_seed[seed_length], seed1, SHA256_DIGEST_LENGTH);
+    memcpy(nextSeed, seed1, SHA256_DIGEST_LENGTH);
     compute_sha256sum(keypair_seed, seed2, seed_length + sizeof(seed1));
     generate_deterministic_key_pair(seed2, SHA256_DIGEST_LENGTH, seckey, pubkey);
 }
