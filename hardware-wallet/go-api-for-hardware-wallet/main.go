@@ -13,7 +13,7 @@ import (
 
 func MessageSkycoinAddress() [][64]byte {
     skycoinAddress := &messages.SkycoinAddress{
-        Seed:        proto.String("seed"),
+        AddressN:    proto.Uint32(1),
         AddressType: messages.SkycoinAddressType_AddressTypeSkycoin.Enum(),
     }
     data, _ := proto.Marshal(skycoinAddress)
@@ -64,11 +64,15 @@ func main() {
     var msg wire.Message
     var chunks [][64]byte
 
-    chunks = MessageSkycoinSignMessage()
+    chunks = MessageSkycoinAddress()
     msg = SendToDevice(dev, chunks)
     fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
-    chunks = MessageCheckMessageSignature()
-    msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    // chunks = MessageSkycoinSignMessage()
+    // msg = SendToDevice(dev, chunks)
+    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    // chunks = MessageCheckMessageSignature()
+    // msg = SendToDevice(dev, chunks)
+    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 }

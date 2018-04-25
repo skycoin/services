@@ -201,7 +201,8 @@ message ChangePin {
  * @next Success
  */
 message SkycoinAddress {
-	required string seed = 1; // seed used to generate address
+	required uint32 address_n = 1; // address iterator
+	// required string seed = 1; // seed used to generate address
 	optional SkycoinAddressType address_type = 2;
 }
 

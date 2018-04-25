@@ -379,22 +379,36 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
     uint8_t pubkey[33] = {0};
 
 	RESP_INIT(Success);
-	if (msg->has_address_type)
+	// reset_entropy((const uint8_t*)msg->seed, strlen(msg->seed));
+	const uint8_t* mnemo = storage_getSeed(false);
+    char seed[64] = {0};
+    uint8_t nextSeed[SHA256_DIGEST_LENGTH] = {0};
+	if (msg->has_address_type && mnemo != NULL)
 	{
     	char address[256] = {0};
     	size_t size_address = sizeof(address);
-		generate_deterministic_key_pair_iterator(msg->seed, seckey, pubkey);
+		memcpy(seed, mnemo, sizeof(seed));
+		for (uint8_t i = 0; i < msg->address_n; ++i)
+		{
+			memcpy(seed, nextSeed, 32);
+			seed[32] = 0;
+			generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
+		}
 		switch (msg->address_type)
 		{
 			case SkycoinAddressType_AddressTypeSkycoin:
 				layoutRawMessage("Skycoin address");
     			generate_base58_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->message, address, size_address);
+				// memcpy(resp->message, address, size_address);
+				tohex(resp->message, nextSeed, SHA256_DIGEST_LENGTH);
+				// memcpy(resp->message, mnemo, sizeof(resp->message));
 				break;
 			case SkycoinAddressType_AddressTypeBitcoin:
 				layoutRawMessage("Bitcoin address");
 				generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->message, address, size_address);
+				// memcpy(resp->message, address, size_address);
+				tohex(resp->message, nextSeed, SHA256_DIGEST_LENGTH);
+				// memcpy(resp->message, mnemo, sizeof(resp->message));
 				break;
 			default:
 				layoutRawMessage("Unknown address type");
@@ -402,9 +416,16 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 		}
 	}
 	else {
-		generate_deterministic_key_pair_iterator(msg->seed, seckey, pubkey);
+		generate_deterministic_key_pair_iterator((const char*)mnemo, nextSeed, seckey, pubkey);
 		tohex(resp->message, pubkey, 33);
-		layoutRawMessage(resp->message);
+		if (mnemo == NULL)
+		{
+			layoutRawMessage("Empty mnemonic");
+		}
+		else
+		{
+			layoutRawMessage(resp->message);
+		}
 	}
 	resp->has_message = true;
 	msg_write(MessageType_MessageType_Success, resp);
