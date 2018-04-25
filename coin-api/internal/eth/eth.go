@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+// TODO(stgleb): Add circuit breaker for ethclient.Client
 type EthService struct {
 	client *ethclient.Client
 }
