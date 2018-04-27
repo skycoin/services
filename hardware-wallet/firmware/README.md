@@ -1,9 +1,5 @@
 This repository had been copied and modified from [trezor-mcu](https://github.com/trezor/trezor-mcu). Please refer to the [README.md file](https://github.com/trezor/trezor-mcu/blob/master/README.md) on that repository for extra details about bootloader and firmware compilation.
 
-Even though this repo is pushed here it is (for now) intended to be a submodule of [trezor-mcu repository](https://github.com/trezor/trezor-mcu).
-
-Trezor-mcu contains firmware and bootloader code example for STM32 hardware.
-
 This code aims at tranforming the cipher library from [this repository](https://github.com/skycoin/skycoin/tree/develop/src/cipher) into firmware for the STM32 hardware.
 
 
@@ -73,7 +69,7 @@ If you sourced the make_firmware.sh file as recommended. You can use the alias s
 
 We are compiling a modified version of trezor original firmware. The bootloader we are using is configured to detect it and warn the user about this.
 We are still in developpement steps, this warning is acceptable. 
-The devices allows the user to skip the warning but during that time the OS of the host computer may skip the opportunity to load the driver to communicate with the device.
+The devices allows the user to skip the warning but during that time the OS of the host computer may miss the opportunity to load the driver to communicate with the device.
 
 If when you plug the device your OS is not seeing the device, skip the warning on device's screen saying that the signature is wrong and then try [this](https://askubuntu.com/questions/645/how-do-you-reset-a-usb-device-from-the-command-line).
 
