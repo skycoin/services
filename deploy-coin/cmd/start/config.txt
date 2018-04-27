@@ -1,0 +1,30 @@
+{
+    "secret": {
+        "masterPrivateKey": "e8fc88f4ac4668c509ea633137291304ffc3e565d2136884da6dd0c9e18d0f21",
+        "genesisSignature": "2e82ebed564b197249a9bd3d433126ef25319bea99509b0c205875cd06caf62a3d0b4b6a11ad8dbcf8158085b5db992e172f8559ebb8db5e4a913eea5229ccbf00"
+    },
+    "public": {
+        "masterPublicKey": "034b939e1304bd67ee4c16896e26f78c15a45e6d3acb58a5b77f052586ef7601b9",
+        "genesisBlock": {
+            "address": "wW4nCj2XC7qtsKFC1CzPbz4aXs4Cu2qcug",
+            "coins": 100,
+            "timestamp": 1522774728,
+            "bodyHash": "1a98384cd90c9e813672a3cf64fa33e12dd3fac21730961c4a153a50bc236386",
+            "headerHash": "9457815841b4a46d8d91966a2143cf55acd7ee9c5c6a673ddf5cd812126a6328"
+        },
+        "genesisWallet": {
+            "seed": "pulse mother humor gas run mango runway will wealth tiny title picture",
+            "addresses": 100,
+            "coinsPerAddress": 1
+        },
+        "coinCode": "SKY",
+        "port": 20100,
+        "rpcPort": 20200,
+        "guiPort": 20300,
+        "trustedPeers": [
+            "127.0.0.1:20000",
+            "127.0.0.1:20001",
+            "127.0.0.1:20002"
+        ]
+    }
+}
