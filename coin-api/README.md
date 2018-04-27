@@ -319,6 +319,125 @@ ResponseBody {
 }
 ```
 
+### ETH API
+#### Generate key pair
+##### POST /api/v1/eth/keys
+##### Successful response:
+
+```
+ResponseHeader: 201
+ResponseBody {
+    "status":"ok",
+    "code": 0,
+    "result": {
+        "address":"0x51f6d925e9acfb59dfa6d3553d99f5d06b541d0c",
+        "private":"99182b02c0004217ba9a55593f8cf0abec182b02c0004217ba9a55593f8cf0abec"
+    },
+}
+```
+
+##### Unsuccessful response:
+```
+ResponseHeader: 505
+ResponseBody {
+    "status": "error",
+    "code": -32603,
+    "result": {
+        "description": "Unable to generate keypair, internal server error"
+    }
+}
+```
+
+#### ETH check the balance (and get unspent outputs) for an address in satoshis
+##### GET /api/v1/eth/address/:address
+##### Successful response:
+```
+ResponseHeader: 200
+ResponseBody {
+             	"status": "Ok",
+             	"code": 200,
+             	"result": {
+             		"address": "0x51f6d925e9acfb59dfa6d3553d99f5d06b541d0c",
+             		"balance": 26943184,
+             		"deposits": [
+             			{
+             				"amount": 42482,
+             				"confirmations": 278,
+             				"height": 514968
+             			},
+             			{
+             				"amount": 116000,
+             				"confirmations": 415
+             			}
+             	    ]
+             	}
+             }
+```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "status": "error",
+    "code": -32602,
+    "result": {
+        "description": "Unable to find given address"
+    }
+}
+```
+
+#### ETH check the status of a transaction (tracks transactions by transaction hash)
+##### GET /api/v1/eth/transaction/:transid
+##### Successful response:
+```
+ResponseHeader: 200
+ResponseBody {
+    "status": "ok",
+    "code": 0,
+    "result": {
+        "transid": "7ba9a55593f8cf0abecc30d041e094",
+        "status": {
+           "ver":1,
+           "inputs":[
+              {
+                 "sequence":4294967295,
+                 "witness":"",
+                 "prev_out":{
+                    "spent":true,
+                    "tx_index":335439599,
+                    "type":0,
+                    "address":"0x51f6d925e9acfb59dfa6d3553d99f5d06b541d0c",
+                    "value":293717322,
+                    "n":1,
+                    "script":"76a914f924d0d0959f4a45e4a0b6ff390ebd38cdff726d88ac"
+                 },
+                 "script":"47304402206de55e3b9f013f337cf31399d9314a5181b9eb5f02c1a9a3618f8b812901871902202ecce58957c179b33a53229bbf4b7eb9fad65dc18cdc3a07e0881008a6c858ee01210213209d0af0becd42171eb83befdc3be1e408ec4e2953e9e1d1442eae9958fb02"
+              }
+           ],
+           "lock_time":0,
+           "size":225,
+           "double_spend":false,
+           "time":1520610698,
+           "tx_index":335447338,
+           "vin_sz":1,
+           "hash":"ac2e8c4dd81253c819824c8725f7ad359ab76a43824b3b3e9338fb1baf90b819",
+           "vout_sz":2
+        },
+    }
+}
+```
+##### Unsuccessful response:
+```
+ResponseHeader: 404
+ResponseBody {
+    "status": "error",
+    "code": -32602,
+    "result": {
+        "description": "Unable to find given transaction"
+    }
+}
+```
+
+
 ### Multicoin API
 
 #### Generate key pair
