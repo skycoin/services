@@ -1,66 +1,152 @@
-# TREZOR Firmware
+This repository had been copied and modified from [trezor-mcu](https://github.com/trezor/trezor-mcu). Please refer to the [README.md file](https://github.com/trezor/trezor-mcu/blob/master/README.md) on that repository for extra details about bootloader and firmware compilation.
 
-[![Build Status](https://travis-ci.org/trezor/trezor-mcu.svg?branch=master)](https://travis-ci.org/trezor/trezor-mcu) [![gitter](https://badges.gitter.im/trezor/community.svg)](https://gitter.im/trezor/community)
+Even though this repo is pushed here it is (for now) intended to be a submodule of [trezor-mcu repository](https://github.com/trezor/trezor-mcu).
 
-https://trezor.io/
+Trezor-mcu contains firmware and bootloader code example for STM32 hardware.
 
-## How to build TREZOR firmware?
+This code aims at tranforming the cipher library from [this repository](https://github.com/skycoin/skycoin/tree/develop/src/cipher) into firmware for the STM32 hardware.
 
-1. [Install Docker](https://docs.docker.com/engine/installation/)
-2. `git clone https://github.com/trezor/trezor-mcu.git`
-3. `cd trezor-mcu`
-4. `./build-firmware.sh TAG` (where TAG is v1.5.0 for example, if left blank the script builds latest commit in master branch)
 
-This creates file `build/trezor-TAG.bin` and prints its fingerprint and size at the end of the build log.
+# How to compile for firmware
 
-## How to build TREZOR emulator for Linux?
+## 1. Clone trezor-mcu from this github account
 
-1. [Install Docker](https://docs.docker.com/engine/installation/)
-2. `git clone https://github.com/trezor/trezor-mcu.git`
-3. `cd trezor-mcu`
-4. `./build-emulator.sh TAG` (where TAG is v1.5.0 for example, if left blank the script builds latest commit in master branch)
+    git clone https://github.com/mpsido/trezor-skycoin.git
+    cd trezor-skycoin
 
-This creates binary file `build/trezor-emulator-TAG`, which can be run and works as a trezor emulator. (Use `TREZOR_OLED_SCALE` env. variable to make screen bigger.)
+You should be on a branch called skycoin
 
-## How to build TREZOR bootloader?
+## 2. Prepare environment
 
-1. [Install Docker](https://docs.docker.com/engine/installation/)
-2. `git clone https://github.com/trezor/trezor-mcu.git`
-3. `cd trezor-mcu`
-4. `./build-bootloader.sh TAG` (where TAG is bl1.3.2 for example, if left blank the script builds latest commit in master branch)
+#### Download GNU ARM Embedded Toolchain
 
-This creates file `build/bootloader-TAG.bin` and prints its fingerprint and size at the end of the build log.
+    wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/6-2017q2/gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
 
-## How to get fingerprint of firmware signed and distributed by SatoshiLabs?
+#### Extract crosscompiler and add it to your path
 
-1. Pick version of firmware binary listed on https://wallet.trezor.io/data/firmware/releases.json
-2. Download it: `wget -O trezor.signed.bin https://wallet.trezor.io/data/firmware/trezor-1.3.6.bin`
-3. Compute fingerprint: `tail -c +257 trezor.signed.bin | sha256sum`
+    tar xjf gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
+    export PATH="gcc-arm-none-eabi-6-2017-q2-update/bin:$PATH"
 
-Step 3 should produce the same sha256 fingerprint like your local build (for the same version tag). Firmware has a special header (of length 256 bytes) holding signatures themselves, which must be avoided while calculating the fingerprint, that's why tail command has to be used.
+## 3. Compile the sources
 
-## How to install custom built firmware?
+The steps are the following, you can create a make_firmware.sh file with this content.
 
-**WARNING: This will erase the recovery seed stored on the device! You should never do this on TREZOR that contains coins!**
+    #this option is important, it prevents the bootloader from locking the firmware in case its signature is wrong
+    export MEMORY_PROTECT=0 
+    make -C vendor/libopencm3/
+    make -C vendor/nanopb/generator/proto/
+    make -C firmware/protob/
+    make -C vendor/skycoin-crypto/
+    make
+    #Merge the bootloader and the firmware into one file
+    make -C bootloader/ align
+    make -C firmware/ sign
+    cp bootloader/bootloader.bin bootloader/combine/bl.bin
+    cp firmware/trezor.bin bootloader/combine/fw.bin
+    pushd bootloader/combine/ && ./prepare.py
+    popd;
 
-1. Install python-trezor: `pip install trezor` ([more info](https://github.com/trezor/python-trezor))
-2. `trezorctl firmware_update -f build/trezor-TAG.bin`
+The output binary file is combined.bin located in bootloader/combine
 
-## Building for development
 
-If you want to build device firmware, make sure you have the
-[GNU ARM Embedded toolchain](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads) installed.
+# How to burn the firmware in the device
 
-* If you want to build the emulator instead of the firmware, run `export EMULATOR=1 TREZOR_TRANSPORT_V1=1`
-* If you want to build with the debug link, run `export DEBUG_LINK=1`. Use this if you want to run the device tests.
-* When you change these variables, use `script/setup` to clean the repository
+## 1. Install ST-LINK
 
-1. To initialize the repository, run `script/setup`
-2. To build the firmware or emulator, run `script/cibuild`
+Follow the steps [here](https://github.com/texane/stlink/blob/master/doc/compiling.md).
 
-If you are building device firmware, the firmware will be in `firmware/trezor.bin`.
+## 2. Use ST-LINK to burn the device
 
-You can launch the emulator using `firmware/trezor.elf`. To use `trezorctl` with the emulator, use
-`trezorctl -t udp` (for example, `trezorctl -t udp get_features`).
+You can check the device is seen by your ST-LINK using this command:
 
-If `trezorctl -t udp` appears to hang, make sure you have run `export TREZOR_TRANSPORT_V1=1`.
+    st-info --probe
+
+To flash the device on a microcontroller of STM32f2xx family the command is:
+
+    st-flash write combined.bin 0x08000000; 
+
+# Communicate with the device using the command line
+
+## 1. Download the python-trezor repository
+
+    cd ..
+    git clone https://github.com/mpsido/python-trezor.git
+    cd python-trezor
+
+## 2. Install dependencies 
+
+You need superuser priviledges for this step.
+
+    sudo apt-get -y install python-dev cython libusb-1.0-0-dev libudev-dev (note: required for python-trezor testing)
+
+## 3. Configure your usb module
+
+We need to tell your kernel to use the [hidraw module](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) to communicate with the hardware device. If you don't your kernel will treat the device as a mouse or a keyboard.
+
+Create a file named 99-dev-kit.rules in your /etc/udev/rules.d/ folder and write this content in that file (super user priviledges are required for this step).
+
+    # 0483:df11 STMicroelectronics STM Device in DFU Mode
+    SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="df11", MODE="0666"
+    # 0483:3748 STMicroelectronics ST-LINK/V2
+    SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3748", MODE="0666"
+    # 0483:374b STMicroelectronics ST-LINK/V2.1 (Nucleo-F103RB)
+    SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="374b", MODE="0666"
+    # 534c:0001 SatoshiLabs Bitcoin Wallet [TREZOR]
+    SUBSYSTEM=="usb", ATTR{idVendor}=="534c", ATTR{idProduct}=="0001", MODE="0666"
+    KERNEL=="hidraw*", ATTRS{idVendor}=="534c", ATTRS{idProduct}=="0001", MODE="0666"
+    # 1209:53c0 SatoshiLabs TREZOR v2 Bootloader
+    SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="53c0", MODE="0666"
+    KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="53c0", MODE="0666"
+    # 1209:53c1 SatoshiLabs TREZOR v2
+    SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="53c1", MODE="0666"
+    KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="53c1", MODE="0666"
+
+Restart your machine or force your udev kernel module to [reload the rules](https://unix.stackexchange.com/questions/39370/how-to-reload-udev-rules-without-reboot).
+
+If when you plug the device your OS is not seeing the device, skip the warning on device's screen saying that the signature is wrong and then try [this](https://askubuntu.com/questions/645/how-do-you-reset-a-usb-device-from-the-command-line).
+
+## 4. Generate a skycoin address from seed
+
+    ./trezorctl skycoin_address seed
+
+# How to compile and run tests 
+
+## Trezor-crypto
+
+This repository includes header files coming from [Trezor-crypto](https://github.com/trezor/trezor-crypto/) repository.
+
+Download the repository
+
+    git clone git@github.com:trezor/trezor-crypto.git
+
+Then setup the TREZOR_CRYPTO_PATH environment variable:
+
+    export TREZOR_CRYPTO_PATH=$PWD/trezor-crypto
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TREZOR_CRYPTO_PATH
+
+
+The dependancy libTrezorCrypto.a can be recompiled from sources.
+
+Add this line to the CFLAGS: "CFLAGS += -DUSE_BN_PRINT=1"
+
+Then run :
+
+    make 
+    ar rcs libTrezorCrypto.a $(find -name "*.o")
+
+## Check
+
+The source code necessary to compile libcheck.a can be downloaded from [this repository](https://github.com/libcheck/check)
+Download the repository
+
+    git clone git@github.com:libcheck/check.git
+
+Then setup the TREZOR_CRYPTO_PATH environment variable:
+
+    export CHECK_PATH=$PWD/check
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CHECK_PATH
+
+## Make and run !
+
+    make
+    ./test_skycoin_crypto
