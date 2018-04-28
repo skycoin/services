@@ -222,7 +222,7 @@ message SkycoinCheckMessageSignature {
  * @next Success
  */
 message SkycoinSignMessage {
-	required string secretKey = 1; //private address used to produce signature
+	required uint32 address_n = 1; //address iterator
 	required string message = 2;   //message that we want to sign
 }
 /**

@@ -39,7 +39,8 @@ func MessageCheckMessageSignature() [][64]byte {
 
 func MessageSkycoinSignMessage() [][64]byte {
     skycoinSignMessage := &messages.SkycoinSignMessage{
-        SecretKey:   proto.String("Qaj1vWfVPGUvX9dgmTWMRCzqUMcnxzT2M11K5yDMsc"),
+        AddressN:    proto.Uint32(1),
+        // SecretKey:   proto.String("Qaj1vWfVPGUvX9dgmTWMRCzqUMcnxzT2M11K5yDMsc"),
         Message:     proto.String("Hello World!"),
     }
 
@@ -68,9 +69,9 @@ func main() {
     msg = SendToDevice(dev, chunks)
     fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
-    // chunks = MessageSkycoinSignMessage()
-    // msg = SendToDevice(dev, chunks)
-    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    chunks = MessageSkycoinSignMessage()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
     // chunks = MessageCheckMessageSignature()
     // msg = SendToDevice(dev, chunks)
