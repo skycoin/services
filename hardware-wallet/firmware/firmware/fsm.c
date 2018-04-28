@@ -367,14 +367,15 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
 
 void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 {
+    uint8_t pubkey[33] = {0};
     uint8_t seckey[32] = {0};
 	uint8_t digest[32] = {0};
+    size_t size_sign;
     uint8_t signature[65];
 	char sign58[90] = {0};
 	int res = 0;
 	RESP_INIT(Success);
-    size_t size_seckey = sizeof(seckey);
-    b58tobin(seckey, &size_seckey, msg->secretKey);
+    fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey);
     compute_sha256sum(msg->message, digest, strlen(msg->message));
     res = ecdsa_skycoin_sign(1, seckey, digest, signature);
 	if (res == 0)
@@ -385,9 +386,9 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	{
 		layoutRawMessage("Signature failed");
 	}
-	size_seckey = sizeof(sign58);
-    b58enc(sign58, &size_seckey, signature, sizeof(signature));
-	memcpy(resp->message, sign58, size_seckey);
+	size_sign = sizeof(sign58);
+    b58enc(sign58, &size_sign, signature, sizeof(signature));
+	memcpy(resp->message, sign58, size_sign);
 	resp->has_message = true;
 	msg_write(MessageType_MessageType_Success, resp);
 }
