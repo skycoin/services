@@ -377,7 +377,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	RESP_INIT(Success);
     fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey);
     compute_sha256sum(msg->message, digest, strlen(msg->message));
-    res = ecdsa_skycoin_sign(1, seckey, digest, signature);
+    res = ecdsa_skycoin_sign(rand(), seckey, digest, signature);
 	if (res == 0)
 	{
 		layoutRawMessage("Signature success");
