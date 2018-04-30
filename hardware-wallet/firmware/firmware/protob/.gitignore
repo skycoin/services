@@ -1,0 +1,7 @@
+*.pb
+*_pb2.py
+*.pb.c
+*.pb.h
+*.pyc
+messages_map.h
+__pycache__/
