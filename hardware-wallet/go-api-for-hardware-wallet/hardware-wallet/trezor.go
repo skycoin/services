@@ -52,7 +52,9 @@ func MakeTrezorMessage(data []byte, msgID messages.MessageType) [][64]byte {
 	binary.Write(message, binary.BigEndian, uint16(msgID))
 	binary.Write(message, binary.BigEndian, uint32(len(data)))
 	binary.Write(message, binary.BigEndian, []byte("\n"))
-	binary.Write(message, binary.BigEndian, data[1:])
+	if (len(data) >= 1){
+		binary.Write(message, binary.BigEndian, data[1:])
+	}
 
 	messageLen := message.Len()
 	var chunks [][64]byte
