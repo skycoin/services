@@ -119,16 +119,23 @@ func SendToDevice(dev usb.Device, chunks [][64]byte) wire.Message {
     return msg
 }
 
-func WipeDevice(dev usb.Device) {
+func Initialize(dev usb.Device) {
     var msg wire.Message
     var chunks [][64]byte
-    var err error
 
     chunks = MessageInitialize()
     msg = SendToDevice(dev, chunks)
     initMsg := &messages.Initialize{}
     proto.Unmarshal(msg.Data, initMsg)
-    fmt.Printf("Success Answer is: %s\n", initMsg.State)
+    fmt.Printf("Init success Answer is: %s\n", initMsg.State)
+}
+
+func WipeDevice(dev usb.Device) {
+    var msg wire.Message
+    var chunks [][64]byte
+    var err error
+    
+    Initialize(dev)
 
     chunks = MessageWipeDevice()
     msg = SendToDevice(dev, chunks)
@@ -145,18 +152,39 @@ func WipeDevice(dev usb.Device) {
     }
     fmt.Printf("MessageButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
 
-    chunks = MessageInitialize()
+    Initialize(dev)
+}
+
+
+func LoadDevice(dev usb.Device) {
+    var msg wire.Message
+    var chunks [][64]byte
+    var err error
+
+    Initialize(dev)
+
+    chunks = MessageLoadDevice()
     msg = SendToDevice(dev, chunks)
-    initMsg = &messages.Initialize{}
-    proto.Unmarshal(msg.Data, initMsg)
-    fmt.Printf("Success Answer is: %s\n", initMsg.State)
+    fmt.Printf("LoadDevice %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    chunks = MessageButtonAck()
+    SendToDeviceNoAnswer(dev, chunks)
+
+    _, err = msg.ReadFrom(dev)
+    time.Sleep(3*time.Second)
+	if err != nil {
+        fmt.Printf(err.Error())
+		return
+    }
+    fmt.Printf("MessageButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
+
+    Initialize(dev)
 }
 
 func main() {
     dev, _ := hardwareWallet.GetTrezorDevice()
-    // var msg wire.Message
-    // var chunks [][64]byte
-    // var err error
+    var msg wire.Message
+    var chunks [][64]byte
 
     WipeDevice(dev)
 
@@ -164,37 +192,17 @@ func main() {
     // msg = SendToDevice(dev, chunks)
     // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
+    LoadDevice(dev)
 
-    // chunks = MessageInitialize()
-    // msg = SendToDevice(dev, chunks)
-    // // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    chunks = MessageSkycoinAddress()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
-    // chunks = MessageLoadDevice()
-    // msg = SendToDevice(dev, chunks)
-    // fmt.Printf("LoadDevice %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    chunks = MessageSkycoinSignMessage()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
-    // chunks = MessageButtonRequest()
-    // SendToDeviceNoAnswer(dev, chunks)
-    // _, err = msg.ReadFrom(dev)
-	// if err != nil {
-    //     fmt.Printf(err.Error())
-	// 	return
-    // }
-    // fmt.Printf("ButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
-
-    // chunks = MessageInitialize()
-    // msg = SendToDevice(dev, chunks)
-    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
-    // chunks = MessageSkycoinAddress()
-    // msg = SendToDevice(dev, chunks)
-    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
-    // chunks = MessageSkycoinSignMessage()
-    // msg = SendToDevice(dev, chunks)
-    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
-    // chunks = MessageCheckMessageSignature()
-    // msg = SendToDevice(dev, chunks)
-    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    chunks = MessageCheckMessageSignature()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 }
