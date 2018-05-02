@@ -358,9 +358,9 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
 	memcpy(seed, mnemo, sizeof(seed));
 	for (uint8_t i = 0; i < index; ++i)
 	{
+		generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
 		memcpy(seed, nextSeed, 32);
 		seed[32] = 0;
-		generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
 	}
     return 0;
 }
