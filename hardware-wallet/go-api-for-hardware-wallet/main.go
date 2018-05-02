@@ -2,7 +2,7 @@ package main
 
 import (
     "fmt"
-    // "time"
+    "time"
 
     "./hardware-wallet"
 
@@ -17,7 +17,6 @@ func MessageInitialize() [][64]byte {
     data, _ := proto.Marshal(initialize)
 
     chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_Initialize)
-    fmt.Printf("chunks: %s\n",chunks)
     return chunks
 }
 
@@ -43,17 +42,14 @@ func MessageWipeDevice() [][64]byte {
     if err != nil {
         fmt.Printf(err.Error())
     }
-    fmt.Printf("data: %x\n",data)
     chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_WipeDevice)
-
-    fmt.Printf("chunks: %s\n",chunks)
     return chunks
 }
 
-func MessageButtonAckWipeDevice() [][64]byte{
-    buttonRequest := &messages.ButtonRequest{}
-    data, _ := proto.Marshal(buttonRequest)
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ButtonRequest)
+func MessageButtonAck() [][64]byte{
+    buttonAck := &messages.ButtonAck{}
+    data, _ := proto.Marshal(buttonAck)
+    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ButtonAck)
     return chunks
 }
 
@@ -130,31 +126,37 @@ func WipeDevice(dev usb.Device) {
 
     chunks = MessageInitialize()
     msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    initMsg := &messages.Initialize{}
+    proto.Unmarshal(msg.Data, initMsg)
+    fmt.Printf("Success Answer is: %s\n", initMsg.State)
 
     chunks = MessageWipeDevice()
     msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    fmt.Printf("buttonRequest %d! Answer is: %x\n", msg.Kind, msg.Data)
 
-    chunks = MessageButtonAckWipeDevice()
+    chunks = MessageButtonAck()
     SendToDeviceNoAnswer(dev, chunks)
 
     _, err = msg.ReadFrom(dev)
+    time.Sleep(3*time.Second)
 	if err != nil {
         fmt.Printf(err.Error())
 		return
     }
-    fmt.Printf("WipeDevice Answer is: %d / %s\n", msg.Kind, msg.Data)
+    fmt.Printf("MessageButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
 
     chunks = MessageInitialize()
     msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    initMsg = &messages.Initialize{}
+    proto.Unmarshal(msg.Data, initMsg)
+    fmt.Printf("Success Answer is: %s\n", initMsg.State)
 }
 
 func main() {
     dev, _ := hardwareWallet.GetTrezorDevice()
-    var msg wire.Message
-    var chunks [][64]byte
+    // var msg wire.Message
+    // var chunks [][64]byte
+    // var err error
 
     WipeDevice(dev)
 
@@ -162,7 +164,25 @@ func main() {
     // msg = SendToDevice(dev, chunks)
     // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
+
+    // chunks = MessageInitialize()
+    // msg = SendToDevice(dev, chunks)
+    // // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
     // chunks = MessageLoadDevice()
+    // msg = SendToDevice(dev, chunks)
+    // fmt.Printf("LoadDevice %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    // chunks = MessageButtonRequest()
+    // SendToDeviceNoAnswer(dev, chunks)
+    // _, err = msg.ReadFrom(dev)
+	// if err != nil {
+    //     fmt.Printf(err.Error())
+	// 	return
+    // }
+    // fmt.Printf("ButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
+
+    // chunks = MessageInitialize()
     // msg = SendToDevice(dev, chunks)
     // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
