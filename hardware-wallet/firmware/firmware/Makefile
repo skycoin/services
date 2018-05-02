@@ -27,8 +27,6 @@ OBJS += recovery.o
 OBJS += reset.o
 OBJS += signing.o
 OBJS += crypto.o
-OBJS += ethereum.o
-OBJS += ethereum_tokens.o
 
 OBJS += debug.o
 
@@ -99,7 +97,6 @@ CFLAGS += -DQR_MAX_VERSION=0
 CFLAGS += -DDEBUG_LINK=$(DEBUG_LINK)
 CFLAGS += -DDEBUG_LOG=$(DEBUG_LOG)
 CFLAGS += -DSCM_REVISION='"$(shell git rev-parse HEAD | sed 's:\(..\):\\x\1:g')"'
-CFLAGS += -DUSE_ETHEREUM=1
 
 bootloader.o: ../fastflash/bootloader.bin
 	$(OBJCOPY) -I binary -O elf32-littlearm -B arm \
