@@ -77,10 +77,6 @@ void fsm_msgEthereumTxAck(EthereumTxAck *msg);
 void fsm_msgEthereumSignMessage(EthereumSignMessage *msg);
 void fsm_msgEthereumVerifyMessage(EthereumVerifyMessage *msg);
 
-void fsm_msgNEMGetAddress(NEMGetAddress *msg);
-void fsm_msgNEMSignTx(NEMSignTx *msg);
-void fsm_msgNEMDecryptMessage(NEMDecryptMessage *msg);
-
 void fsm_msgCosiCommit(CosiCommit *msg);
 void fsm_msgCosiSign(CosiSign *msg);
 
