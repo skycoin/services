@@ -75,9 +75,27 @@ LDFLAGS  += --static \
             -T$(LDSCRIPT) \
             -nostartfiles \
             -Wl,--gc-sections
+#libtrezor.a
 
-LDLIBS   += -ltrezor
-LIBDEPS  += $(TOP_DIR)/libtrezor.a
+OBJS += startup.o
+
+OBJS += buttons.o
+OBJS += layout.o
+OBJS += oled.o
+OBJS += rng.o
+OBJS += serialno.o
+
+OBJS += setup.o
+
+OBJS += util.o
+OBJS += memory.o
+
+OBJS += timer.o
+
+OBJS += gen/bitmaps.o
+OBJS += gen/fonts.o
+
+#end libtrezor.a
 
 LDLIBS   += -lopencm3_stm32f2
 LIBDEPS  += $(TOOLCHAIN_DIR)/lib/libopencm3_stm32f2.a
@@ -173,6 +191,9 @@ $(NAME).elf: $(OBJS) $(LDSCRIPT) $(LIBDEPS)
 %.d: %.c Makefile
 	@$(CC) $(CFLAGS) -MM -MP -MG -o $@ $<
 
+%.o: %.s Makefile
+	$(AS) $(CPUFLAGS) -o $@ $<
+
 proto:
 	cd protob && make
 
@@ -180,6 +201,7 @@ clean:
 	rm -f *.elf
 	rm -f *.bin
 	rm -f *.d
+	rm -f gen/*.d
 	rm -f firmware/*.d
 	rm -f $(OBJS)
 	cd protob && make clean
