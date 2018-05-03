@@ -103,8 +103,57 @@ OBJS += firmware/layout2.o
 OBJS += firmware/storage.o
 OBJS += firmware/messages.o
 OBJS += firmware/fsm.o
+OBJS += firmware/recovery.o
+OBJS += firmware/protect.o
+OBJS += firmware/pinmatrix.o
+OBJS += firmware/reset.o
+
 OBJS += protob/messages.pb.o
 OBJS += protob/types.pb.o
+
+
+OBJS += ../firmware/vendor/skycoin-crypto/skycoin_crypto.o
+#trezor-crypto
+OBJS += ../firmware/vendor/trezor-crypto/address.o
+OBJS += ../firmware/vendor/trezor-crypto/bignum.o
+OBJS += ../firmware/vendor/trezor-crypto/ecdsa.o
+OBJS += ../firmware/vendor/trezor-crypto/curves.o
+OBJS += ../firmware/vendor/trezor-crypto/secp256k1.o
+OBJS += ../firmware/vendor/trezor-crypto/nist256p1.o
+OBJS += ../firmware/vendor/trezor-crypto/rand.o
+OBJS += ../firmware/vendor/trezor-crypto/memzero.o
+
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/curve25519-donna-32bit.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/curve25519-donna-helpers.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/modm-donna-32bit.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/ed25519-donna-basepoint-table.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/ed25519-donna-32bit-tables.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/ed25519-donna-impl-base.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/ed25519.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/curve25519-donna-scalarmult-base.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/ed25519-sha3.o
+OBJS += ../firmware/vendor/trezor-crypto/ed25519-donna/ed25519-keccak.o
+
+OBJS += ../firmware/vendor/trezor-crypto/hmac.o
+OBJS += ../firmware/vendor/trezor-crypto/bip32.o
+OBJS += ../firmware/vendor/trezor-crypto/bip39.o
+OBJS += ../firmware/vendor/trezor-crypto/pbkdf2.o
+OBJS += ../firmware/vendor/trezor-crypto/base32.o
+OBJS += ../firmware/vendor/trezor-crypto/base58.o
+OBJS += ../firmware/vendor/trezor-crypto/segwit_addr.o
+
+OBJS += ../firmware/vendor/trezor-crypto/ripemd160.o
+OBJS += ../firmware/vendor/trezor-crypto/sha2.o
+OBJS += ../firmware/vendor/trezor-crypto/sha3.o
+OBJS += ../firmware/vendor/trezor-crypto/blake256.o
+OBJS += ../firmware/vendor/trezor-crypto/hasher.o
+
+OBJS += ../firmware/vendor/trezor-crypto/aes/aescrypt.o
+OBJS += ../firmware/vendor/trezor-crypto/aes/aeskey.o
+OBJS += ../firmware/vendor/trezor-crypto/aes/aestab.o
+OBJS += ../firmware/vendor/trezor-crypto/aes/aes_modes.o
+#end trezor-crypto
+
 
 NAME  = skycoin
 

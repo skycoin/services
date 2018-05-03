@@ -514,17 +514,3 @@ void recovery_abort(void)
 		awaiting_word = 0;
 	}
 }
-
-#if DEBUG_LINK
-
-const char *recovery_get_fake_word(void)
-{
-	return fake_word;
-}
-
-uint32_t recovery_get_word_pos(void)
-{
-	return word_pos;
-}
-
-#endif

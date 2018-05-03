@@ -111,9 +111,6 @@ bool storage_hasMnemonic(void);
 const char *storage_getMnemonic(void);
 
 bool storage_hasNode(void);
-#if DEBUG_LINK
-void storage_dumpNode(HDNodeType *node);
-#endif
 
 bool storage_containsPin(const char *pin);
 bool storage_hasPin(void);

@@ -26,13 +26,7 @@
 
 void fsm_sendSuccess(const char *text);
 
-#if DEBUG_LINK
-void fsm_sendFailureDebug(FailureType code, const char *text, const char *source);
-
-#define fsm_sendFailure(code, text) fsm_sendFailureDebug((code), (text), __FILE__ ":" VERSTR(__LINE__) ":")
-#else
 void fsm_sendFailure(FailureType code, const char *text);
-#endif
 
 void fsm_msgInitialize(Initialize *msg);
 void fsm_msgGetFeatures(GetFeatures *msg);
@@ -59,18 +53,5 @@ void fsm_msgEntropyAck(EntropyAck *msg);
 void fsm_msgRecoveryDevice(RecoveryDevice *msg);
 void fsm_msgWordAck(WordAck *msg);
 void fsm_msgSetU2FCounter(SetU2FCounter *msg);
-
-void fsm_msgCosiCommit(CosiCommit *msg);
-void fsm_msgCosiSign(CosiSign *msg);
-
-// debug message functions
-#if DEBUG_LINK
-//void fsm_msgDebugLinkDecision(DebugLinkDecision *msg);
-void fsm_msgDebugLinkGetState(DebugLinkGetState *msg);
-void fsm_msgDebugLinkStop(DebugLinkStop *msg);
-void fsm_msgDebugLinkMemoryWrite(DebugLinkMemoryWrite *msg);
-void fsm_msgDebugLinkMemoryRead(DebugLinkMemoryRead *msg);
-void fsm_msgDebugLinkFlashErase(DebugLinkFlashErase *msg);
-#endif
 
 #endif

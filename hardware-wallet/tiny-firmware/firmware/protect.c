@@ -27,7 +27,6 @@
 #include "fsm.h"
 #include "layout2.h"
 #include "util.h"
-#include "debug.h"
 #include "gettext.h"
 #include "memzero.h"
 
@@ -40,9 +39,6 @@ bool protectButton(ButtonRequestType type, bool confirm_only)
 	ButtonRequest resp;
 	bool result = false;
 	bool acked = false;
-#if DEBUG_LINK
-	bool debug_decided = false;
-#endif
 
 	memset(&resp, 0, sizeof(ButtonRequest));
 	resp.has_code = true;
@@ -83,25 +79,6 @@ bool protectButton(ButtonRequestType type, bool confirm_only)
 			result = false;
 			break;
 		}
-
-#if DEBUG_LINK
-		// check DebugLink
-		if (msg_tiny_id == MessageType_MessageType_DebugLinkDecision) {
-			msg_tiny_id = 0xFFFF;
-			DebugLinkDecision *dld = (DebugLinkDecision *)msg_tiny;
-			result = dld->yes_no;
-			debug_decided = true;
-		}
-
-		if (acked && debug_decided) {
-			break;
-		}
-
-		if (msg_tiny_id == MessageType_MessageType_DebugLinkGetState) {
-			msg_tiny_id = 0xFFFF;
-			fsm_msgDebugLinkGetState((DebugLinkGetState *)msg_tiny);
-		}
-#endif
 	}
 
 	usbTiny(0);
@@ -136,12 +113,6 @@ const char *requestPin(PinMatrixRequestType type, const char *text)
 			usbTiny(0);
 			return 0;
 		}
-#if DEBUG_LINK
-		if (msg_tiny_id == MessageType_MessageType_DebugLinkGetState) {
-			msg_tiny_id = 0xFFFF;
-			fsm_msgDebugLinkGetState((DebugLinkGetState *)msg_tiny);
-		}
-#endif
 	}
 }
 
