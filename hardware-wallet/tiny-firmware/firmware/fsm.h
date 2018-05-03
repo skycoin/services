@@ -44,30 +44,18 @@ void fsm_msgPing(Ping *msg);
 void fsm_msgChangePin(ChangePin *msg);
 void fsm_msgWipeDevice(WipeDevice *msg);
 void fsm_msgGetEntropy(GetEntropy *msg);
-void fsm_msgGetPublicKey(GetPublicKey *msg);
 void fsm_msgLoadDevice(LoadDevice *msg);
 void fsm_msgResetDevice(ResetDevice *msg);
 void fsm_msgBackupDevice(BackupDevice *msg);
-void fsm_msgSignTx(SignTx *msg);
 //void fsm_msgPinMatrixAck(PinMatrixAck *msg);
 void fsm_msgCancel(Cancel *msg);
-void fsm_msgTxAck(TxAck *msg);
 void fsm_msgCipherKeyValue(CipherKeyValue *msg);
 void fsm_msgClearSession(ClearSession *msg);
 void fsm_msgApplySettings(ApplySettings *msg);
 void fsm_msgApplyFlags(ApplyFlags *msg);
 //void fsm_msgButtonAck(ButtonAck *msg);
-void fsm_msgGetAddress(GetAddress *msg);
 void fsm_msgEntropyAck(EntropyAck *msg);
-void fsm_msgSignMessage(SignMessage *msg);
-void fsm_msgVerifyMessage(VerifyMessage *msg);
-void fsm_msgSignIdentity(SignIdentity *msg);
-void fsm_msgGetECDHSessionKey(GetECDHSessionKey *msg);
-/* ECIES disabled
-void fsm_msgEncryptMessage(EncryptMessage *msg);
-void fsm_msgDecryptMessage(DecryptMessage *msg);
-*/
-//void fsm_msgPassphraseAck(PassphraseAck *msg);
+
 void fsm_msgRecoveryDevice(RecoveryDevice *msg);
 void fsm_msgWordAck(WordAck *msg);
 void fsm_msgSetU2FCounter(SetU2FCounter *msg);

@@ -102,6 +102,7 @@ OBJS += firmware/trezor.o
 OBJS += firmware/layout2.o
 OBJS += firmware/storage.o
 OBJS += firmware/messages.o
+OBJS += firmware/fsm.o
 OBJS += protob/messages.pb.o
 OBJS += protob/types.pb.o
 
