@@ -81,6 +81,7 @@ LIBDEPS  += $(TOP_DIR)/libtrezor.a
 LDLIBS   += -lopencm3_stm32f2
 LIBDEPS  += $(TOOLCHAIN_DIR)/lib/libopencm3_stm32f2.a
 
+CFLAGS+= -DFASTFLASH=0
 CFLAGS += -DEMULATOR=0
 CFLAGS += -DMEMORY_PROTECT=0
 
@@ -98,9 +99,11 @@ OBJS += $(TOP_DIR)vendor/nanopb/pb_encode.o
 
 OBJS += firmware/usb.o
 OBJS += firmware/trezor.o
+OBJS += firmware/layout2.o
+OBJS += firmware/storage.o
+OBJS += firmware/messages.o
 OBJS += protob/messages.pb.o
 OBJS += protob/types.pb.o
-
 
 NAME  = skycoin
 
@@ -125,5 +128,6 @@ clean:
 	rm -f *.elf
 	rm -f *.bin
 	rm -f *.d
+	rm -f firmware/*.d
 	rm -f $(OBJS)
 	cd protob && make clean

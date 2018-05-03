@@ -21,7 +21,6 @@
 
 #include "trezor.h"
 #include "messages.h"
-#include "debug.h"
 #include "fsm.h"
 #include "util.h"
 #include "gettext.h"
@@ -83,14 +82,6 @@ static uint32_t msg_out_end = 0;
 static uint32_t msg_out_cur = 0;
 static uint8_t msg_out[MSG_OUT_SIZE];
 
-#if DEBUG_LINK
-
-static uint32_t msg_debug_out_start = 0;
-static uint32_t msg_debug_out_end = 0;
-static uint32_t msg_debug_out_cur = 0;
-static uint8_t msg_debug_out[MSG_DEBUG_OUT_SIZE];
-
-#endif
 
 static inline void msg_out_append(uint8_t c)
 {
@@ -106,24 +97,6 @@ static inline void msg_out_append(uint8_t c)
 	}
 }
 
-#if DEBUG_LINK
-
-static inline void msg_debug_out_append(uint8_t c)
-{
-	if (msg_debug_out_cur == 0) {
-		msg_debug_out[msg_debug_out_end * 64] = '?';
-		msg_debug_out_cur = 1;
-	}
-	msg_debug_out[msg_debug_out_end * 64 + msg_debug_out_cur] = c;
-	msg_debug_out_cur++;
-	if (msg_debug_out_cur == 64) {
-		msg_debug_out_cur = 0;
-		msg_debug_out_end = (msg_debug_out_end + 1) % (MSG_DEBUG_OUT_SIZE / 64);
-	}
-}
-
-#endif
-
 static inline void msg_out_pad(void)
 {
 	if (msg_out_cur == 0) return;
@@ -135,21 +108,6 @@ static inline void msg_out_pad(void)
 	msg_out_end = (msg_out_end + 1) % (MSG_OUT_SIZE / 64);
 }
 
-#if DEBUG_LINK
-
-static inline void msg_debug_out_pad(void)
-{
-	if (msg_debug_out_cur == 0) return;
-	while (msg_debug_out_cur < 64) {
-		msg_debug_out[msg_debug_out_end * 64 + msg_debug_out_cur] = 0;
-		msg_debug_out_cur++;
-	}
-	msg_debug_out_cur = 0;
-	msg_debug_out_end = (msg_debug_out_end + 1) % (MSG_DEBUG_OUT_SIZE / 64);
-}
-
-#endif
-
 static bool pb_callback_out(pb_ostream_t *stream, const uint8_t *buf, size_t count)
 {
 	(void)stream;
@@ -158,19 +116,6 @@ static bool pb_callback_out(pb_ostream_t *stream, const uint8_t *buf, size_t cou
 	}
 	return true;
 }
-
-#if DEBUG_LINK
-
-static bool pb_debug_callback_out(pb_ostream_t *stream, const uint8_t *buf, size_t count)
-{
-	(void)stream;
-	for (size_t i = 0; i < count; i++) {
-		msg_debug_out_append(buf[i]);
-	}
-	return true;
-}
-
-#endif
 
 bool msg_write_common(char type, uint16_t msg_id, const void *msg_ptr)
 {
@@ -193,12 +138,7 @@ bool msg_write_common(char type, uint16_t msg_id, const void *msg_ptr)
 		append = msg_out_append;
 		pb_callback = pb_callback_out;
 	} else
-#if DEBUG_LINK
-	if (type == 'd') {
-		append = msg_debug_out_append;
-		pb_callback = pb_debug_callback_out;
-	} else
-#endif
+
 	{
 		return false;
 	}
@@ -217,11 +157,6 @@ bool msg_write_common(char type, uint16_t msg_id, const void *msg_ptr)
 	if (type == 'n') {
 		msg_out_pad();
 	}
-#if DEBUG_LINK
-	else if (type == 'd') {
-		msg_debug_out_pad();
-	}
-#endif
 	return status;
 }
 
@@ -297,22 +232,9 @@ const uint8_t *msg_out_data(void)
 	if (msg_out_start == msg_out_end) return 0;
 	uint8_t *data = msg_out + (msg_out_start * 64);
 	msg_out_start = (msg_out_start + 1) % (MSG_OUT_SIZE / 64);
-	debugLog(0, "", "msg_out_data");
 	return data;
 }
 
-#if DEBUG_LINK
-
-const uint8_t *msg_debug_out_data(void)
-{
-	if (msg_debug_out_start == msg_debug_out_end) return 0;
-	uint8_t *data = msg_debug_out + (msg_debug_out_start * 64);
-	msg_debug_out_start = (msg_debug_out_start + 1) % (MSG_DEBUG_OUT_SIZE / 64);
-	debugLog(0, "", "msg_debug_out_data");
-	return data;
-}
-
-#endif
 
 CONFIDENTIAL uint8_t msg_tiny[64];
 uint16_t msg_tiny_id = 0xFFFF;
@@ -349,14 +271,6 @@ void msg_read_tiny(const uint8_t *buf, int len)
 		case MessageType_MessageType_Initialize:
 			fields = Initialize_fields;
 			break;
-#if DEBUG_LINK
-		case MessageType_MessageType_DebugLinkDecision:
-			fields = DebugLinkDecision_fields;
-			break;
-		case MessageType_MessageType_DebugLinkGetState:
-			fields = DebugLinkGetState_fields;
-			break;
-#endif
 	}
 	if (fields) {
 		bool status = pb_decode(&stream, fields, msg_tiny);
