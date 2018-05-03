@@ -97,6 +97,15 @@ OBJS += gen/fonts.o
 
 #end libtrezor.a
 
+ifdef APPVER
+CFLAGS   += -DAPPVER=$(APPVER)
+LDSCRIPT  = $(TOP_DIR)/memory_app_$(APPVER).ld
+else
+LDSCRIPT  = $(TOP_DIR)/memory.ld
+endif
+
+CFLAGS += -DSCM_REVISION='"$(shell git rev-parse HEAD | sed 's:\(..\):\\x\1:g')"'
+
 LDLIBS   += -lopencm3_stm32f2
 LIBDEPS  += $(TOOLCHAIN_DIR)/lib/libopencm3_stm32f2.a
 
@@ -106,8 +115,12 @@ CFLAGS += -DMEMORY_PROTECT=0
 
 # end Makefile.include
 
+DEBUG_LINK ?= 0
 CFLAGS += -Wno-sequence-point
 CFLAGS += -I$(TOP_DIR)vendor/nanopb -Iprotob -DPB_FIELD_16BIT=1
+CFLAGS += -DQR_MAX_VERSION=0
+CFLAGS += -DDEBUG_LINK=$(DEBUG_LINK)
+CFLAGS += -DDEBUG_LOG=$(DEBUG_LOG)
 
 INC+=-Ifirmware
 CFLAGS += -I. $(INC)
