@@ -34,7 +34,6 @@
 #include "base58.h"
 #include "ecdsa.h"
 #include "reset.h"
-#include "recovery.h"
 #include "memory.h"
 #include "usb.h"
 #include "util.h"
@@ -161,7 +160,6 @@ void fsm_sendFailure(FailureType code, const char *text)
 
 void fsm_msgInitialize(Initialize *msg)
 {
-	recovery_abort();
 	if (msg && msg->has_state && msg->state.size == 64) {
 		uint8_t i_state[64];
 		if (!session_getState(msg->state.bytes, i_state, NULL)) {
@@ -486,7 +484,6 @@ void fsm_msgBackupDevice(BackupDevice *msg)
 void fsm_msgCancel(Cancel *msg)
 {
 	(void)msg;
-	recovery_abort();
 	fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
 }
 
@@ -497,33 +494,4 @@ void fsm_msgEntropyAck(EntropyAck *msg)
 	} else {
 		reset_entropy(0, 0);
 	}
-}
-
-void fsm_msgRecoveryDevice(RecoveryDevice *msg)
-{
-	const bool dry_run = msg->has_dry_run ? msg->dry_run : false;
-	if (dry_run) {
-		CHECK_PIN
-	} else {
-		CHECK_NOT_INITIALIZED
-	}
-
-	CHECK_PARAM(!msg->has_word_count || msg->word_count == 12 || msg->word_count == 18 || msg->word_count == 24, _("Invalid word count"));
-
-	recovery_init(
-		msg->has_word_count ? msg->word_count : 12,
-		msg->has_passphrase_protection && msg->passphrase_protection,
-		msg->has_pin_protection && msg->pin_protection,
-		msg->has_language ? msg->language : 0,
-		msg->has_label ? msg->label : 0,
-		msg->has_enforce_wordlist && msg->enforce_wordlist,
-		msg->has_type ? msg->type : 0,
-		msg->has_u2f_counter ? msg->u2f_counter : 0,
-		dry_run
-	);
-}
-
-void fsm_msgWordAck(WordAck *msg)
-{
-	recovery_word(msg->word);
 }

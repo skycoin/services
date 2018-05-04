@@ -42,9 +42,6 @@ enum MessageType {
 	MessageType_PassphraseAck = 42 [(wire_in) = true, (wire_tiny) = true];
 	MessageType_PassphraseStateRequest = 77 [(wire_out) = true];
 	MessageType_PassphraseStateAck = 78 [(wire_in) = true, (wire_tiny) = true];
-	MessageType_RecoveryDevice = 45 [(wire_in) = true];
-	MessageType_WordRequest = 46 [(wire_out) = true];
-	MessageType_WordAck = 47 [(wire_in) = true];
 	MessageType_GetFeatures = 55 [(wire_in) = true];
 	MessageType_SkycoinAddress = 114 [(wire_in) = true];
 	MessageType_SkycoinCheckMessageSignature = 115 [(wire_in) = true];
