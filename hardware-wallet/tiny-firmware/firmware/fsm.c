@@ -159,28 +159,6 @@ void fsm_sendFailure(FailureType code, const char *text)
 	msg_write(MessageType_MessageType_Failure, resp);
 }
 
-static HDNode *fsm_getDerivedNode(const char *curve, const uint32_t *address_n, size_t address_n_count, uint32_t *fingerprint)
-{
-	static CONFIDENTIAL HDNode node;
-	if (fingerprint) {
-		*fingerprint = 0;
-	}
-	if (!storage_getRootNode(&node, curve, true)) {
-		fsm_sendFailure(FailureType_Failure_NotInitialized, _("Device not initialized or passphrase request cancelled or unsupported curve"));
-		layoutHome();
-		return 0;
-	}
-	if (!address_n || address_n_count == 0) {
-		return &node;
-	}
-	if (hdnode_private_ckd_cached(&node, address_n, address_n_count, fingerprint) == 0) {
-		fsm_sendFailure(FailureType_Failure_ProcessError, _("Failed to derive private key"));
-		layoutHome();
-		return 0;
-	}
-	return &node;
-}
-
 void fsm_msgInitialize(Initialize *msg)
 {
 	recovery_abort();
@@ -512,126 +490,6 @@ void fsm_msgCancel(Cancel *msg)
 	fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
 }
 
-void fsm_msgCipherKeyValue(CipherKeyValue *msg)
-{
-	CHECK_INITIALIZED
-
-	CHECK_PARAM(msg->has_key, _("No key provided"));
-	CHECK_PARAM(msg->has_value, _("No value provided"));
-	CHECK_PARAM(msg->value.size % 16 == 0, _("Value length must be a multiple of 16"));
-
-	CHECK_PIN
-
-	const HDNode *node = fsm_getDerivedNode(SECP256K1_NAME, msg->address_n, msg->address_n_count, NULL);
-	if (!node) return;
-
-	bool encrypt = msg->has_encrypt && msg->encrypt;
-	bool ask_on_encrypt = msg->has_ask_on_encrypt && msg->ask_on_encrypt;
-	bool ask_on_decrypt = msg->has_ask_on_decrypt && msg->ask_on_decrypt;
-	if ((encrypt && ask_on_encrypt) || (!encrypt && ask_on_decrypt)) {
-		layoutCipherKeyValue(encrypt, msg->key);
-		if (!protectButton(ButtonRequestType_ButtonRequest_Other, false)) {
-			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-			layoutHome();
-			return;
-		}
-	}
-
-	uint8_t data[256 + 4];
-	strlcpy((char *)data, msg->key, sizeof(data));
-	strlcat((char *)data, ask_on_encrypt ? "E1" : "E0", sizeof(data));
-	strlcat((char *)data, ask_on_decrypt ? "D1" : "D0", sizeof(data));
-
-	hmac_sha512(node->private_key, 32, data, strlen((char *)data), data);
-
-	RESP_INIT(CipheredKeyValue);
-	if (encrypt) {
-		aes_encrypt_ctx ctx;
-		aes_encrypt_key256(data, &ctx);
-		aes_cbc_encrypt(msg->value.bytes, resp->value.bytes, msg->value.size, ((msg->iv.size == 16) ? (msg->iv.bytes) : (data + 32)), &ctx);
-	} else {
-		aes_decrypt_ctx ctx;
-		aes_decrypt_key256(data, &ctx);
-		aes_cbc_decrypt(msg->value.bytes, resp->value.bytes, msg->value.size, ((msg->iv.size == 16) ? (msg->iv.bytes) : (data + 32)), &ctx);
-	}
-	resp->has_value = true;
-	resp->value.size = msg->value.size;
-	msg_write(MessageType_MessageType_CipheredKeyValue, resp);
-	layoutHome();
-}
-
-void fsm_msgClearSession(ClearSession *msg)
-{
-	(void)msg;
-	session_clear(true); // clear PIN as well
-	layoutScreensaver();
-	fsm_sendSuccess(_("Session cleared"));
-}
-
-void fsm_msgApplySettings(ApplySettings *msg)
-{
-	CHECK_PARAM(msg->has_label || msg->has_language || msg->has_use_passphrase || msg->has_homescreen, _("No setting provided"));
-
-	CHECK_PIN
-
-	if (msg->has_label) {
-		layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("change name to"), msg->label, "?", NULL, NULL);
-		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
-			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-			layoutHome();
-			return;
-		}
-	}
-	if (msg->has_language) {
-		layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("change language to"), msg->language, "?", NULL, NULL);
-		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
-			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-			layoutHome();
-			return;
-		}
-	}
-	if (msg->has_use_passphrase) {
-		layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), msg->use_passphrase ? _("enable passphrase") : _("disable passphrase"), _("encryption?"), NULL, NULL, NULL);
-		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
-			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-			layoutHome();
-			return;
-		}
-	}
-	if (msg->has_homescreen) {
-		layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("change the home"), _("screen?"), NULL, NULL, NULL);
-		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
-			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-			layoutHome();
-			return;
-		}
-	}
-
-	if (msg->has_label) {
-		storage_setLabel(msg->label);
-	}
-	if (msg->has_language) {
-		storage_setLanguage(msg->language);
-	}
-	if (msg->has_use_passphrase) {
-		storage_setPassphraseProtection(msg->use_passphrase);
-	}
-	if (msg->has_homescreen) {
-		storage_setHomescreen(msg->homescreen.bytes, msg->homescreen.size);
-	}
-	storage_update();
-	fsm_sendSuccess(_("Settings applied"));
-	layoutHome();
-}
-
-void fsm_msgApplyFlags(ApplyFlags *msg)
-{
-	if (msg->has_flags) {
-		storage_applyFlags(msg->flags);
-	}
-	fsm_sendSuccess(_("Flags applied"));
-}
-
 void fsm_msgEntropyAck(EntropyAck *msg)
 {
 	if (msg->has_entropy) {
@@ -668,18 +526,4 @@ void fsm_msgRecoveryDevice(RecoveryDevice *msg)
 void fsm_msgWordAck(WordAck *msg)
 {
 	recovery_word(msg->word);
-}
-
-void fsm_msgSetU2FCounter(SetU2FCounter *msg)
-{
-	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you want to set"), _("the U2F counter?"), NULL, NULL, NULL, NULL);
-	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
-		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-		layoutHome();
-		return;
-	}
-	storage_setU2FCounter(msg->u2f_counter);
-	storage_update();
-	fsm_sendSuccess(_("U2F counter set"));
-	layoutHome();
 }

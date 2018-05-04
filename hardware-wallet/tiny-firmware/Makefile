@@ -132,7 +132,6 @@ OBJS += firmware/recovery.o
 OBJS += firmware/protect.o
 OBJS += firmware/pinmatrix.o
 OBJS += firmware/reset.o
-OBJS += firmware/fastflash.o
 
 OBJS += protob/messages.pb.o
 OBJS += protob/types.pb.o
