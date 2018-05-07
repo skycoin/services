@@ -1,5 +1,5 @@
 # imported from Makefile.include
-TOP_DIR       := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../firmware/
+TOP_DIR       := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TOOLCHAIN_DIR ?= $(TOP_DIR)vendor/libopencm3
 APPVER = 1.0.0
 
@@ -179,7 +179,7 @@ OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aes_modes.o
 
 NAME  = skycoin
 
-all: proto $(NAME).bin
+all: proto libopencm3 $(NAME).bin
 
 $(NAME).bin: $(NAME).elf
 	$(OBJCOPY) -Obinary $(NAME).elf $(NAME).bin
@@ -198,6 +198,9 @@ $(NAME).elf: $(OBJS) $(LDSCRIPT) $(LIBDEPS)
 
 proto:
 	cd protob && make
+
+libopencm3:
+	cd vendor/libopencm3 && make
 
 clean:
 	rm -f *.elf
