@@ -1,80 +1,4 @@
-# imported from Makefile.include
-TOP_DIR       := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-TOOLCHAIN_DIR ?= $(TOP_DIR)vendor/libopencm3
-APPVER = 1.0.0
 
-PREFIX   ?= arm-none-eabi-
-CC       := $(PREFIX)gcc
-LD       := $(PREFIX)gcc
-OBJCOPY  := $(PREFIX)objcopy
-OBJDUMP  := $(PREFIX)objdump
-AR       := $(PREFIX)ar
-AS       := $(PREFIX)as
-OPENOCD  := openocd -f interface/stlink-v2.cfg -c "transport select hla_swd" -f target/stm32f2x.cfg
-
-OPTFLAGS ?= -O3
-DBGFLAGS ?= -g -DNDEBUG
-CPUFLAGS ?= -mcpu=cortex-m3 -mthumb
-FPUFLAGS ?= -msoft-float
-
-CFLAGS   += $(OPTFLAGS) \
-            $(DBGFLAGS) \
-            -std=gnu99 \
-            -W \
-            -Wall \
-            -Wextra \
-            -Wimplicit-function-declaration \
-            -Wredundant-decls \
-            -Wstrict-prototypes \
-            -Wundef \
-            -Wshadow \
-            -Wpointer-arith \
-            -Wformat \
-            -Wreturn-type \
-            -Wsign-compare \
-            -Wmultichar \
-            -Wformat-nonliteral \
-            -Winit-self \
-            -Wuninitialized \
-            -Wformat-security \
-            -Werror \
-            -fno-common \
-            -fno-exceptions \
-            -fvisibility=internal \
-            -ffunction-sections \
-            -fdata-sections \
-            -fstack-protector-all \
-            $(CPUFLAGS) \
-            $(FPUFLAGS) \
-            -DSTM32F2 \
-            -DCONFIDENTIAL='__attribute__((section("confidential")))' \
-            -DRAND_PLATFORM_INDEPENDENT=1 \
-            -I$(TOOLCHAIN_DIR)/include \
-            -I$(TOP_DIR) \
-            -I$(TOP_DIR)gen \
-            -I$(TOP_DIR)vendor/trezor-crypto \
-            -I$(TOP_DIR)vendor/trezor-qrenc \
-            -I$(TOP_DIR)vendor/skycoin-crypto
-
-LDFLAGS  += -L$(TOP_DIR) \
-            $(DBGFLAGS) \
-            $(CPUFLAGS) \
-            $(FPUFLAGS)
-
-
-
-LDSCRIPT  = memory.ld
-
-LDFLAGS  += --static \
-            -Wl,--start-group \
-            -lc \
-            -lgcc \
-            -lnosys \
-            -Wl,--end-group \
-            -L$(TOOLCHAIN_DIR)/lib \
-            -T$(LDSCRIPT) \
-            -nostartfiles \
-            -Wl,--gc-sections
 #libtrezor.a
 
 OBJS += startup.o
@@ -179,27 +103,16 @@ OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aes_modes.o
 
 NAME  = skycoin
 
-all: proto libopencm3 $(NAME).bin
+.PHONY: proto libopencm3
 
-$(NAME).bin: $(NAME).elf
-	$(OBJCOPY) -Obinary $(NAME).elf $(NAME).bin
+all: libopencm3 proto $(NAME).bin
 
-$(NAME).elf: $(OBJS) $(LDSCRIPT) $(LIBDEPS)
-	$(LD) -o $(NAME).elf $(OBJS) $(LDLIBS) $(LDFLAGS)
+include Makefile.include
 
-%.o: %.c Makefile
-	$(CC) $(CFLAGS) -MMD -MP -o $@ -c $<
-
-%.d: %.c Makefile
-	@$(CC) $(CFLAGS) -MM -MP -MG -o $@ $<
-
-%.o: %.s Makefile
-	$(AS) $(CPUFLAGS) -o $@ $<
-
-proto:
+proto: 
 	cd protob && make
 
-libopencm3:
+libopencm3: 
 	cd vendor/libopencm3 && make
 
 clean:
