@@ -2,10 +2,15 @@ make -C vendor/nanopb/generator/proto/
 make
 make -C bootloader/ align
 
-cp bootloader/bootloader.bin bootloader/combine/bl.bin
-cp skycoin.bin bootloader/combine/fw.bin
-pushd bootloader/combine/ && ./prepare.py
-popd;
+cp skycoin.bin bootloader
+pushd bootloader
+./firmware_align.py bootloader.bin
+./firmware_sign.py -f skycoin.bin
+
+cp bootloader/bootloader.bin combine/bl.bin
+cp skycoin.bin combine/fw.bin
+pushd combine/ && ./prepare.py
+popd; popd;
 
 #st-flash erase
 
