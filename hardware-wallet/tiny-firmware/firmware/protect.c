@@ -23,7 +23,6 @@
 #include "usb.h"
 #include "oled.h"
 #include "buttons.h"
-#include "pinmatrix.h"
 #include "fsm.h"
 #include "layout2.h"
 #include "util.h"
