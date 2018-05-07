@@ -62,7 +62,7 @@ LDFLAGS  += -L$(TOP_DIR) \
 
 
 
-LDSCRIPT  = memory.ld
+LDSCRIPT  = $(TOP_DIR)memory.ld
 
 LDFLAGS  += --static \
             -Wl,--start-group \
@@ -84,7 +84,13 @@ $(NAME).elf: $(OBJS) $(LDSCRIPT) $(LIBDEPS)
 %.o: %.c Makefile
 	$(CC) $(CFLAGS) -MMD -MP -o $@ -c $<
 
+%.small.o: %.c Makefile
+	$(CC) $(CFLAGS) -MMD -MP -o $@ -c $<
+
 %.d: %.c Makefile
+	@$(CC) $(CFLAGS) -MM -MP -MG -o $@ $<
+
+%.small.d: %.c Makefile
 	@$(CC) $(CFLAGS) -MM -MP -MG -o $@ $<
 
 %.o: %.s Makefile
