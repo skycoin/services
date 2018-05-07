@@ -36,7 +36,6 @@
 #include "memory.h"
 #include "rng.h"
 #include "storage.h"
-#include "protect.h"
 #include "layout2.h"
 #include "usb.h"
 #include "gettext.h"
@@ -498,9 +497,7 @@ const uint8_t *storage_getSeed(bool usePassphrase)
 
 	// if storage has mnemonic, convert it to node and use it
 	if (storageRom->has_mnemonic) {
-		if (usePassphrase && !protectPassphrase()) {
-			return NULL;
-		}
+
 		// if storage was not imported (i.e. it was properly generated or recovered)
 		if (!storageRom->has_imported || !storageRom->imported) {
 			// test whether mnemonic is a valid BIP-0039 mnemonic
@@ -533,9 +530,7 @@ bool storage_getRootNode(HDNode *node, const char *curve, bool usePassphrase)
 {
 	// if storage has node, decrypt and use it
 	if (storageRom->has_node && strcmp(curve, SECP256K1_NAME) == 0) {
-		if (!protectPassphrase()) {
-			return false;
-		}
+
 		if (!storage_loadNode(&storageRom->node, curve, node)) {
 			return false;
 		}

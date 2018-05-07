@@ -69,18 +69,6 @@ static uint8_t msg_resp[MSG_OUT_SIZE] __attribute__ ((aligned));
 		return; \
 	}
 
-#define CHECK_PIN \
-	if (!protectPin(true)) { \
-		layoutHome(); \
-		return; \
-	}
-
-#define CHECK_PIN_UNCACHED \
-	if (!protectPin(false)) { \
-		layoutHome(); \
-		return; \
-	}
-
 #define CHECK_PARAM(cond, errormsg) \
 	if (!(cond)) { \
 		fsm_sendFailure(FailureType_Failure_DataError, (errormsg)); \
@@ -335,61 +323,11 @@ void fsm_msgPing(Ping *msg)
 		}
 	}
 
-	if (msg->has_pin_protection && msg->pin_protection) {
-		CHECK_PIN
-	}
-
-	if (msg->has_passphrase_protection && msg->passphrase_protection) {
-		if (!protectPassphrase()) {
-			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-			return;
-		}
-	}
-
 	if (msg->has_message) {
 		resp->has_message = true;
 		memcpy(&(resp->message), &(msg->message), sizeof(resp->message));
 	}
 	msg_write(MessageType_MessageType_Success, resp);
-	layoutHome();
-}
-
-void fsm_msgChangePin(ChangePin *msg)
-{
-	bool removal = msg->has_remove && msg->remove;
-	if (removal) {
-		if (storage_hasPin()) {
-			layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("remove current PIN?"), NULL, NULL, NULL, NULL);
-		} else {
-			fsm_sendSuccess(_("PIN removed"));
-			return;
-		}
-	} else {
-		if (storage_hasPin()) {
-			layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("change current PIN?"), NULL, NULL, NULL, NULL);
-		} else {
-			layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("set new PIN?"), NULL, NULL, NULL, NULL);
-		}
-	}
-	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
-		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-		layoutHome();
-		return;
-	}
-
-	CHECK_PIN_UNCACHED
-
-	if (removal) {
-		storage_setPin("");
-		storage_update();
-		fsm_sendSuccess(_("PIN removed"));
-	} else {
-		if (protectChangePin()) {
-			fsm_sendSuccess(_("PIN changed"));
-		} else {
-			fsm_sendFailure(FailureType_Failure_PinMismatch, NULL);
-		}
-	}
 	layoutHome();
 }
 
@@ -406,26 +344,6 @@ void fsm_msgWipeDevice(WipeDevice *msg)
 	// the following does not work on Mac anyway :-/ Linux/Windows are fine, so it is not needed
 	// usbReconnect(); // force re-enumeration because of the serial number change
 	fsm_sendSuccess(_("Device wiped"));
-	layoutHome();
-}
-
-void fsm_msgGetEntropy(GetEntropy *msg)
-{
-	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("send entropy?"), NULL, NULL, NULL, NULL);
-	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
-		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-		layoutHome();
-		return;
-	}
-
-	RESP_INIT(Entropy);
-	uint32_t len = msg->size;
-	if (len > 1024) {
-		len = 1024;
-	}
-	resp->entropy.size = len;
-	random_buffer(resp->entropy.bytes, len);
-	msg_write(MessageType_MessageType_Entropy, resp);
 	layoutHome();
 }
 
@@ -453,45 +371,8 @@ void fsm_msgLoadDevice(LoadDevice *msg)
 	layoutHome();
 }
 
-void fsm_msgResetDevice(ResetDevice *msg)
-{
-	CHECK_NOT_INITIALIZED
-
-	CHECK_PARAM(!msg->has_strength || msg->strength == 128 || msg->strength == 192 || msg->strength == 256, _("Invalid seed strength"));
-
-	reset_init(
-		msg->has_display_random && msg->display_random,
-		msg->has_strength ? msg->strength : 128,
-		msg->has_passphrase_protection && msg->passphrase_protection,
-		msg->has_pin_protection && msg->pin_protection,
-		msg->has_language ? msg->language : 0,
-		msg->has_label ? msg->label : 0,
-		msg->has_u2f_counter ? msg->u2f_counter : 0,
-		msg->has_skip_backup ? msg->skip_backup : false
-	);
-}
-
-void fsm_msgBackupDevice(BackupDevice *msg)
-{
-	CHECK_INITIALIZED
-
-	CHECK_PIN_UNCACHED
-
-	(void)msg;
-	reset_backup(true);
-}
-
 void fsm_msgCancel(Cancel *msg)
 {
 	(void)msg;
 	fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
-}
-
-void fsm_msgEntropyAck(EntropyAck *msg)
-{
-	if (msg->has_entropy) {
-		reset_entropy(msg->entropy.bytes, msg->entropy.size);
-	} else {
-		reset_entropy(0, 0);
-	}
 }

@@ -256,15 +256,6 @@ void msg_read_tiny(const uint8_t *buf, int len)
 	pb_istream_t stream = pb_istream_from_buffer((uint8_t *)buf + 9, msg_size);
 
 	switch (msg_id) {
-		case MessageType_MessageType_PinMatrixAck:
-			fields = PinMatrixAck_fields;
-			break;
-		case MessageType_MessageType_ButtonAck:
-			fields = ButtonAck_fields;
-			break;
-		case MessageType_MessageType_PassphraseAck:
-			fields = PassphraseAck_fields;
-			break;
 		case MessageType_MessageType_Cancel:
 			fields = Cancel_fields;
 			break;

@@ -129,8 +129,6 @@ OBJS += firmware/storage.o
 OBJS += firmware/messages.o
 OBJS += firmware/fsm.o
 OBJS += firmware/protect.o
-OBJS += firmware/pinmatrix.o
-OBJS += firmware/reset.o
 
 OBJS += protob/messages.pb.o
 OBJS += protob/types.pb.o
