@@ -1,5 +1,27 @@
 NAME  = bootloader
 
+#libtrezor.a
+
+OBJS += ../startup.o
+
+OBJS += ../buttons.o
+OBJS += ../layout.o
+OBJS += ../oled.o
+OBJS += ../rng.o
+OBJS += ../serialno.o
+
+OBJS += ../setup.o
+
+OBJS += ../util.o
+OBJS += ../memory.o
+
+OBJS += ../timer.o
+
+OBJS += ../gen/bitmaps.o
+OBJS += ../gen/fonts.o
+
+#end libtrezor.a
+
 OBJS += bootloader.o
 OBJS += signatures.o
 OBJS += usb.o
@@ -14,18 +36,11 @@ CFLAGS += -DUSE_PRECOMPUTED_IV=0
 CFLAGS += -DUSE_PRECOMPUTED_CP=0
 OPTFLAGS ?= -Os
 
+LDSCRIPT = bootloader-memory.ld
+LDLIBS   += -lopencm3_stm32f2
+
 include ../Makefile.include
 
 
-LDLIBS   += -L$(TOP_DIR)../firmware/ -ltrezor
-LDSCRIPT  = bootloader-memory.ld
-LDLIBS   += -lopencm3_stm32f2
-
 align: $(NAME).bin
 	./firmware_align.py $(NAME).bin
-
-clean:
-	rm -f *.elf
-	rm -f *.bin
-	rm -f *.d
-	rm -f *.o
