@@ -259,6 +259,9 @@ void msg_read_tiny(const uint8_t *buf, int len)
 		case MessageType_MessageType_Cancel:
 			fields = Cancel_fields;
 			break;
+		case MessageType_MessageType_ButtonAck:
+			fields = ButtonAck_fields;
+			break;
 		case MessageType_MessageType_Initialize:
 			fields = Initialize_fields;
 			break;
