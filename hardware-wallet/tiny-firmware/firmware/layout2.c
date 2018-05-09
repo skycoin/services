@@ -27,7 +27,6 @@
 #include "bitmaps.h"
 #include "string.h"
 #include "util.h"
-#include "qr_encode.h"
 #include "timer.h"
 #include "bignum.h"
 #include "secp256k1.h"
