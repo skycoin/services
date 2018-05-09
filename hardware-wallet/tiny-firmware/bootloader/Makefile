@@ -34,6 +34,12 @@ OBJS += ../vendor/trezor-crypto/memzero.small.o
 
 CFLAGS += -DUSE_PRECOMPUTED_IV=0
 CFLAGS += -DUSE_PRECOMPUTED_CP=0
+
+ifeq ($(SIGNATURE_PROTECT),1)
+CFLAGS += -DSIGNATURE_PROTECT=1
+else
+CFLAGS += -DSIGNATURE_PROTECT=0
+endif
 OPTFLAGS ?= -Os
 
 LDSCRIPT = bootloader-memory.ld
