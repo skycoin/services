@@ -3,7 +3,7 @@ all: messages.pb.c types.pb.c messages_map.h
 PYTHON ?= python
 
 %.pb.c: %.pb %.options
-	$(PYTHON) ../../firmware/vendor/nanopb/generator/nanopb_generator.py $< -L '#include "%s"' -T
+	$(PYTHON) ../vendor/nanopb/generator/nanopb_generator.py $< -L '#include "%s"' -T
 
 %.pb: %.proto
 	protoc -I/usr/include -I. $< -o $@
