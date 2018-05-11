@@ -20,22 +20,6 @@ func MessageInitialize() [][64]byte {
     return chunks
 }
 
-
-func MessageResetDevice() [][64]byte {
-    resetDevice := &messages.ResetDevice{
-        Strength:    proto.Uint32(256),
-        U2FCounter:    proto.Uint32(0),
-        Language:   proto.String("english"),
-        SkipBackup:     proto.Bool(false),
-        PassphraseProtection:     proto.Bool(false),
-        PinProtection:     proto.Bool(false),
-        DisplayRandom:     proto.Bool(false),
-    }
-    data, _ := proto.Marshal(resetDevice)
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ResetDevice)
-    return chunks
-}
-
 func MessageWipeDevice() [][64]byte {
     wipeDevice := &messages.WipeDevice{}
     data, err := proto.Marshal(wipeDevice)
@@ -187,10 +171,6 @@ func main() {
     var chunks [][64]byte
 
     WipeDevice(dev)
-
-    // chunks = MessageResetDevice()
-    // msg = SendToDevice(dev, chunks)
-    // fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
 
     LoadDevice(dev)
 
