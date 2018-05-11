@@ -1,4 +1,4 @@
-This repository had been copied and modified from [trezor-mcu](https://github.com/trezor/trezor-mcu). Please refer to the [README.md file](https://github.com/trezor/trezor-mcu/blob/master/README.md) on that repository for extra details about bootloader and firmware compilation.
+This firmware had been copied and modified from [trezor-mcu](https://github.com/trezor/trezor-mcu). Please refer to the [README.md file](https://github.com/trezor/trezor-mcu/blob/master/README.md) on that repository for extra details about bootloader and firmware compilation.
 
 This code aims at tranforming the cipher library from [this repository](https://github.com/skycoin/skycoin/tree/develop/src/cipher) into firmware for the STM32 hardware.
 
@@ -44,7 +44,7 @@ Restart your machine or force your udev kernel module to [reload the rules](http
 
 # 2. How to compile firmware
 
-    cd firmware
+    cd tiny-firmware
     . make_firmware.sh
 
 # 3. How to burn the firmware in the device
@@ -77,8 +77,8 @@ If you are fast enough you can also quickly click the button "accept" on the dev
 
 ## Use golang code examples
 
-Check [here](https://github.com/skycoin/services/tree/hardware-wallet/hardware-wallet/go-api-for-hardware-wallet) for golang code example communicating with the device.
+Check [here](https://github.com/skycoin/services/tree/master/hardware-wallet/go-api-for-hardware-wallet) for golang code example communicating with the device.
 
-Feel free to hack [main.go](https://github.com/skycoin/services/blob/hardware-wallet/hardware-wallet/go-api-for-hardware-wallet/main.go) file.
+Feel free to hack [main.go](https://github.com/skycoin/services/blob/master/hardware-wallet/go-api-for-hardware-wallet/main.go) file.
 
 You can also try the trezorctl [python based command line](https://github.com/trezor/python-trezor).
