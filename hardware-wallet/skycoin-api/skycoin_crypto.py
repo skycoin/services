@@ -1,4 +1,4 @@
-from ctypes import cdll, c_char_p, c_uint32, c_size_t, addressof, create_string_buffer
+from ctypes import cdll, c_char_p, c_uint32, c_size_t, byref, addressof, create_string_buffer
 import binascii
 
 class SkycoinCrypto(object):
@@ -19,3 +19,9 @@ class SkycoinCrypto(object):
         pubkey = create_string_buffer(33)
         self.lib.generate_pubkey_from_seckey(seckey, pubkey)
         return pubkey
+
+    def Base58AddressFromPubkey(self, pubkey):
+        address = create_string_buffer(36)
+        address_size = c_size_t(36)
+        self.lib.generate_base58_address_from_pubkey(pubkey, address, byref(address_size))
+        return address

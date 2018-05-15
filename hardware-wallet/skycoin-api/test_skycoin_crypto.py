@@ -35,6 +35,12 @@ class TestSkycoinCrypto(unittest.TestCase):
         pubkey = skycoin.GeneratePubkeyFromSeckey(seckey)
         self.assertEqual(binascii.hexlify(pubkey), binascii.hexlify(b'\x02\x44\x35\x0f\xaa\x76\x79\x9f\xec\x03\xde\x2f\x32\x4a\xcd\x07\x7f\xd1\xb6\x86\xc3\xa8\x9b\xab\xc0\xef\x47\x09\x6c\xcc\x5a\x13\xfa'))
 
+    def test_base58_address_from_pubkey(self):
+        skycoin = SkycoinCrypto()
+        pubkey = create_string_buffer(b'\x02\xe5\xbe\x89\xfa\x16\x1b\xf6\xb0\xbc\x64\xec\x9e\xc7\xfe\x27\x31\x1f\xbb\x78\x94\x9c\x3e\xf9\x73\x9d\x4c\x73\xa8\x49\x20\xd6\xe1')
+        address = skycoin.Base58AddressFromPubkey(pubkey)
+        self.assertEqual(address.value, b"2EVNa4CK9SKosT4j1GEn8SuuUUEAXaHAMbM")
+        self.assertEqual(skycoin.lib.strlen(address), 35)
 
 if __name__ == '__main__':
     unittest.main()
