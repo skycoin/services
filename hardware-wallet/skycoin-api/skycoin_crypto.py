@@ -9,9 +9,13 @@ class SkycoinCrypto(object):
         signature = create_string_buffer(65)
         self.lib.ecdsa_skycoin_sign(c_uint32(seed), seckey, digest, signature)
         return signature
-
     
     def ComputeSha256Sum(self, seed):
         digest = create_string_buffer(32)
         self.lib.compute_sha256sum(seed, digest, self.lib.strlen(seed))
         return digest
+
+    def GeneratePubkeyFromSeckey(self, seckey):
+        pubkey = create_string_buffer(33)
+        self.lib.generate_pubkey_from_seckey(seckey, pubkey)
+        return pubkey
