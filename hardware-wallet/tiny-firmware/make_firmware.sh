@@ -1,6 +1,6 @@
 make -C vendor/libopencm3/
-make -C protob/
 make -C vendor/nanopb/generator/proto/
+make -C protob/
 make -C bootloader/ align
 make sign
 
