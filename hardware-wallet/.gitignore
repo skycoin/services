@@ -1,2 +1,3 @@
 *.o
+*.d
 test_skycoin_crypto
