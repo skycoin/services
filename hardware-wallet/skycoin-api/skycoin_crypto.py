@@ -25,3 +25,8 @@ class SkycoinCrypto(object):
         address_size = c_size_t(36)
         self.lib.generate_base58_address_from_pubkey(pubkey, address, byref(address_size))
         return address
+
+    def RecoverPubkeyFromSignature(self, message, signature):
+        pubkey = create_string_buffer(33)
+        self.lib.recover_pubkey_from_signed_message(message, signature, pubkey)
+        return pubkey
