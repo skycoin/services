@@ -4,7 +4,8 @@ import argparse
 import hashlib
 import struct
 import binascii
-import ecdsa
+import skycoin_crypto
+import random
 
 try:
     raw_input
@@ -14,11 +15,11 @@ except:
 SLOTS = 3
 
 pubkeys = {
-    1: '04d571b7f148c5e4232c3814f777d8faeaf1a84216c78d569b71041ffc768a5b2d810fc3bb134dd026b57e65005275aedef43e155f48fc11a32ec790a93312bd58',
-    2: '0463279c0c0866e50c05c799d32bd6bab0188b6de06536d1109d2ed9ce76cb335c490e55aee10cc901215132e853097d5432eda06b792073bd7740c94ce4516cb1',
-    3: '0443aedbb6f7e71c563f8ed2ef64ec9981482519e7ef4f4aa98b27854e8c49126d4956d300ab45fdc34cd26bc8710de0a31dbdf6de7435fd0b492be70ac75fde58',
-    4: '04877c39fd7c62237e038235e9c075dab261630f78eeb8edb92487159fffedfdf6046c6f8b881fa407c4a4ce6c28de0b19c1f4e29f1fcbc5a58ffd1432a3e0938a',
-    5: '047384c51ae81add0a523adbb186c91b906ffb64c2c765802bf26dbd13bdf12c319e80c2213a136c8ee03d7874fd22b70d68e7dee469decfbbb510ee9a460cda45',
+    1: '025839078e6c11c09ad4b00092f5feefd566f92af60f2c71facfb01d2b84c043d4',
+    2: '029170192c2fdefb4d377af9e196e06d1176f86f733523d3950f90ff84c0cd02d3',
+    3: '03338ffc0ff42df07d27b0b4131cd96ffdfa4685b5566aafc7aa71ed10fd1cbd6f',
+    4: '039f12c93645e35e5274dc38f191be0b6d1321ec35d2d2a3ddf7d13ed12f6da85b',
+    5: '03b17c7b7c564385be66f9c1b9da6a0b5aea56f0cb70548e6528a2f4f7b27245d8',
 }
 
 INDEXES_START = len('TRZR') + struct.calcsize('<I')
@@ -28,8 +29,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Commandline tool for signing Trezor firmware.')
     parser.add_argument('-f', '--file', dest='path', help="Firmware file to modify")
     parser.add_argument('-s', '--sign', dest='sign', action='store_true', help="Add signature to firmware slot")
-    parser.add_argument('-p', '--pem', dest='pem', action='store_true', help="Use PEM instead of SECEXP")
-    parser.add_argument('-g', '--generate', dest='generate', action='store_true', help='Generate new ECDSA keypair')
 
     return parser.parse_args()
 
@@ -67,7 +66,6 @@ def check_signatures(data):
 
     to_sign = prepare(data)[256:] # without meta
     fingerprint = hashlib.sha256(to_sign).hexdigest()
-
     print("Firmware fingerprint:", fingerprint)
 
     used = []
@@ -78,19 +76,18 @@ def check_signatures(data):
             print("Slot #%d" % (x + 1), 'is empty')
         else:
             pk = pubkeys[indexes[x]]
-            verify = ecdsa.VerifyingKey.from_string(binascii.unhexlify(pk)[1:],
-                        curve=ecdsa.curves.SECP256k1, hashfunc=hashlib.sha256)
 
-            try:
-                verify.verify(signature, to_sign, hashfunc=hashlib.sha256)
-
+            skycoin = skycoin_crypto.SkycoinCrypto()
+            pubkey = skycoin.RecoverPubkeyFromSignature(binascii.unhexlify(fingerprint), signature)
+            pubkey = binascii.hexlify(pubkey)
+            
+            if (pubkey == pk):
                 if indexes[x] in used:
                     print("Slot #%d signature: DUPLICATE" % (x + 1), binascii.hexlify(signature))
                 else:
                     used.append(indexes[x])
                     print("Slot #%d signature: VALID" % (x + 1), binascii.hexlify(signature))
-
-            except:
+            else:
                 print("Slot #%d signature: INVALID" % (x + 1), binascii.hexlify(signature))
 
 
@@ -105,39 +102,30 @@ def modify(data, slot, index, signature):
 
     return data
 
-def sign(data, is_pem):
+def sign(data):
     # Ask for index and private key and signs the firmware
 
     slot = int(raw_input('Enter signature slot (1-%d): ' % SLOTS))
     if slot < 1 or slot > SLOTS:
         raise Exception("Invalid slot")
 
-    if is_pem:
-        print("Paste ECDSA private key in PEM format and press Enter:")
-        print("(blank private key removes the signature on given index)")
-        pem_key = ''
-        while True:
-            key = raw_input()
-            pem_key += key + "\n"
-            if key == '':
-                break
-        if pem_key.strip() == '':
-            # Blank key,let's remove existing signature from slot
-            return modify(data, slot, 0, '\x00' * 64)
-        key = ecdsa.SigningKey.from_pem(pem_key)
-    else:
-        print("Paste SECEXP (in hex) and press Enter:")
-        print("(blank private key removes the signature on given index)")
-        secexp = raw_input()
-        if secexp.strip() == '':
-            # Blank key,let's remove existing signature from slot
-            return modify(data, slot, 0, '\x00' * 64)
-        key = ecdsa.SigningKey.from_secret_exponent(secexp = int(secexp, 16), curve=ecdsa.curves.SECP256k1, hashfunc=hashlib.sha256)
+    print("Paste SECEXP (in hex) and press Enter:")
+    print("(blank private key removes the signature on given index)")
+    secexp = raw_input()
+    if secexp.strip() == '':
+        # Blank key,let's remove existing signature from slot
+        return modify(data, slot, 0, '\x00' * 64)
+    skycoin = skycoin_crypto.SkycoinCrypto()
+    seckey = binascii.unhexlify(secexp)
+    pubkey = skycoin.GeneratePubkeyFromSeckey(seckey)
+    pubkey = binascii.hexlify(pubkey.value)
 
     to_sign = prepare(data)[256:] # without meta
+    fingerprint = hashlib.sha256(to_sign).hexdigest()
+    print("Firmware fingerprint:", fingerprint)
 
     # Locate proper index of current signing key
-    pubkey = b'04' + binascii.hexlify(key.get_verifying_key().to_string())
+    # pubkey = b'04' + binascii.hexlify(key.get_verifying_key().to_string())
     index = None
     for i, pk in pubkeys.items():
         if pk == pubkey:
@@ -147,26 +135,17 @@ def sign(data, is_pem):
     if index == None:
         raise Exception("Unable to find private key index. Unknown private key?")
 
-    signature = key.sign_deterministic(to_sign, hashfunc=hashlib.sha256)
+    signature = skycoin.EcdsaSkycoinSign(binascii.unhexlify(fingerprint), seckey, random.randint(1, 0xFFFFFFFF))
 
-    return modify(data, slot, index, signature)
+    print("Skycoin signature:", binascii.hexlify(signature.value))
+    print("Skycoin signature:", signature.value)
+    if len(signature.value) != 64:
+        raise Exception("Signature lenght {} is not correct".format(len(signature.value)))
+    # signature = binascii.hexlify(signature)
+
+    return modify(data, slot, index, str(signature.value))
 
 def main(args):
-    if args.generate:
-        key = ecdsa.SigningKey.generate(
-            curve=ecdsa.curves.SECP256k1,
-            hashfunc=hashlib.sha256)
-
-        print("PRIVATE KEY (SECEXP):")
-        print(binascii.hexlify(key.to_string()))
-        print()
-
-        print("PRIVATE KEY (PEM):")
-        print(key.to_pem())
-
-        print("PUBLIC KEY:")
-        print('04' + binascii.hexlify(key.get_verifying_key().to_string()))
-        return
 
     if not args.path:
         raise Exception("-f/--file is required")
@@ -186,7 +165,7 @@ def main(args):
     check_signatures(data)
 
     if args.sign:
-        data = sign(data, args.pem)
+        data = sign(data)
         check_signatures(data)
 
     fp = open(args.path, 'wb')
