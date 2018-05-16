@@ -44,12 +44,6 @@ Restart your machine or force your udev kernel module to [reload the rules](http
 
 # 2. How to compile firmware
 
-The first time we need to prepare the script for firmware signature:
-
-    cd tiny-firmware/bootloader
-    ./prepare_signature.sh
-    cd -
-
 Then for the actual compilation source make_firmware.sh script:
     cd tiny-firmware
     . make_firmware.sh
@@ -70,7 +64,7 @@ If you sourced the make_firmware.sh file as recommended. You can use the alias s
 
     st-trezor
 
-# 4. Communicate with the device
+# 4. Firmware signature
 
 ## Skip the wrong firmware signature warning
 
@@ -81,6 +75,41 @@ The devices allows the user to skip the warning but during that time the OS of t
 If when you plug the device your OS is not seeing the device, skip the warning on device's screen saying that the signature is wrong and then try [this](https://askubuntu.com/questions/645/how-do-you-reset-a-usb-device-from-the-command-line).
 
 If you are fast enough you can also quickly click the button "accept" on the device when the warning about wrong firmware signature appears.
+
+## How to perform a custom signature
+
+### Environment setup
+
+The first time we need to prepare the script for firmware signature:
+
+    cd tiny-firmware/bootloader
+    ./prepare_signature.sh
+
+This script will generate and copy libskycoin-crypto.so and libtrezor-crypto.so in bootloader repertory.
+
+These libraries are required to perform signature and signature checking from [firmware_sign.py](https://github.com/skycoin/services/blob/master/hardware-wallet/tiny-firmware/bootloader/firmware_sign.py) script.
+
+Note: you also need to be able to generate skycoin key pairs. You can for instance use the [skycoin-cli](https://github.com/skycoin/skycoin).
+
+### You need three signatures:
+
+The system stores five public keys and expects three signatures issued from one of these public keys.
+
+The public keys are hardwritten in the bootloader's source code in file [signatures.c](https://github.com/skycoin/services/blob/master/hardware-wallet/tiny-firmware/bootloader/signatures.c)
+
+The signatures are also present in [firmware_sign.py](https://github.com/skycoin/services/blob/master/hardware-wallet/tiny-firmware/bootloader/firmware_sign.py) script, in the "pubkeys" array.
+
+### Use your secret key to perform signature
+
+Run:
+
+    ./firmware_sign.py -s -f skycoin.bin
+
+The command line tool will ask you in which of the three slots do you want to store the signature.
+
+The it will ask you to provide a secret key that must correspond to one of the five public keys stored in the bootloader and the script as described above.
+
+# 5. Communicate with the device
 
 ## Use golang code examples
 
