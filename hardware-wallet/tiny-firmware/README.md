@@ -44,6 +44,13 @@ Restart your machine or force your udev kernel module to [reload the rules](http
 
 # 2. How to compile firmware
 
+The first time we need to prepare the script for firmware signature:
+
+    cd tiny-firmware/bootloader
+    ./prepare_signature.sh
+    cd -
+
+Then for the actual compilation source make_firmware.sh script:
     cd tiny-firmware
     . make_firmware.sh
 
