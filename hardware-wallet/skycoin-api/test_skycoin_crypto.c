@@ -54,8 +54,11 @@ START_TEST(test_generate_public_key_from_seckey)
 
     memcpy(seckey, fromhex("a7e130694166cdb95b1e1bbce3f21e4dbd63f46df42b48c5a1f8295033d57d04"), sizeof(seckey));
     generate_pubkey_from_seckey(seckey, pubkey);
-
     ck_assert_mem_eq(pubkey, fromhex("0244350faa76799fec03de2f324acd077fd1b686c3a89babc0ef47096ccc5a13fa"), SHA256_DIGEST_LENGTH);
+
+    memcpy(seckey, fromhex("c89b70a1f7b960c08068de9f2d3b32287833b26372935aa5042f7cc1dc985335"), sizeof(seckey));
+    generate_pubkey_from_seckey(seckey, pubkey);
+    ck_assert_mem_eq(pubkey, fromhex("03b17c7b7c564385be66f9c1b9da6a0b5aea56f0cb70548e6528a2f4f7b27245d8"), SHA256_DIGEST_LENGTH);
 }
 END_TEST
 
@@ -118,6 +121,13 @@ START_TEST(test_generate_deterministic_key_pair_iterator)
     ck_assert_mem_eq(pubkey, fromhex("035843e72258696b391cf1d898fc65f31e66876ea0c9e101f8ddc3ebb4b87dc5b0"), 33);
     ck_assert_mem_eq(seckey, fromhex("84fdc649964bf299a787cb78cd975910e197dbddd7db776ece544f41c44b3056"), 32);
     ck_assert_mem_eq(nextSeed, fromhex("70d382540812d4abc969dcc2adc66e805db96f7e1dcbe1ae6bbf2878211cbcf6"), 32);
+
+    strcpy(seed, "skycoin5");
+    memset(pubkey, 0, sizeof(pubkey));
+    memset(seckey, 0, sizeof(seckey));
+    generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
+    ck_assert_mem_eq(pubkey, fromhex("03b17c7b7c564385be66f9c1b9da6a0b5aea56f0cb70548e6528a2f4f7b27245d8"), 33);
+    ck_assert_mem_eq(seckey, fromhex("c89b70a1f7b960c08068de9f2d3b32287833b26372935aa5042f7cc1dc985335"), 32);
 }
 END_TEST
 
