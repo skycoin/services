@@ -1,5 +1,41 @@
 NAME  = bootloader
 
+OBJS += ../vendor/skycoin-crypto/skycoin_crypto.o
+#trezor-crypto
+OBJS += $(TOP_DIR)vendor/trezor-crypto/address.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/curves.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/nist256p1.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/rand.o
+
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/curve25519-donna-32bit.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/curve25519-donna-helpers.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/modm-donna-32bit.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-donna-basepoint-table.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-donna-32bit-tables.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-donna-impl-base.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/curve25519-donna-scalarmult-base.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-sha3.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-keccak.o
+
+OBJS += $(TOP_DIR)vendor/trezor-crypto/hmac.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/bip32.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/bip39.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/pbkdf2.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/base32.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/base58.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/segwit_addr.o
+
+OBJS += $(TOP_DIR)vendor/trezor-crypto/ripemd160.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/sha3.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/blake256.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/hasher.o
+
+OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aescrypt.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aeskey.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aestab.o
+OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aes_modes.o
+#end trezor-crypto
 #libtrezor.a
 
 OBJS += ../startup.o

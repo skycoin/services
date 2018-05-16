@@ -21,8 +21,7 @@
 #include <string.h>
 
 #include "signatures.h"
-#include "ecdsa.h"
-#include "secp256k1.h"
+#include "skycoin_crypto.h"
 #include "sha2.h"
 #include "bootloader.h"
 
@@ -58,7 +57,6 @@ int signatures_ok(uint8_t *store_hash)
 	const uint8_t sigindex2 = *((const uint8_t *)FLASH_META_SIGINDEX2);
 	const uint8_t sigindex3 = *((const uint8_t *)FLASH_META_SIGINDEX3);
 
-
 	if (sigindex1 < 1 || sigindex1 > PUBKEYS) return SIG_FAIL; // invalid index
 	if (sigindex2 < 1 || sigindex2 > PUBKEYS) return SIG_FAIL; // invalid index
 	if (sigindex3 < 1 || sigindex3 > PUBKEYS) return SIG_FAIL; // invalid index
@@ -67,15 +65,24 @@ int signatures_ok(uint8_t *store_hash)
 	if (sigindex1 == sigindex3) return SIG_FAIL; // duplicate use
 	if (sigindex2 == sigindex3) return SIG_FAIL; // duplicate use
 
-	if (0 != ecdsa_verify_digest(&secp256k1, pubkey[sigindex1 - 1], (const uint8_t *)FLASH_META_SIG1, hash)) { // failure
+	uint8_t pubkey1[33];
+	uint8_t pubkey2[33];
+	uint8_t pubkey3[33];
+	recover_pubkey_from_signed_message((char*)hash, (const uint8_t *)FLASH_META_SIG1, pubkey1);
+	if (0 != memcmp(pubkey1, pubkey[sigindex1 - 1], 33)) // failure
+	{
 		return SIG_FAIL;
-	}
-	if (0 != ecdsa_verify_digest(&secp256k1, pubkey[sigindex2 - 1], (const uint8_t *)FLASH_META_SIG2, hash)) { // failure
+	} 
+	recover_pubkey_from_signed_message((char*)hash, (const uint8_t *)FLASH_META_SIG2, pubkey2);
+	if (0 != memcmp(pubkey2, pubkey[sigindex2 - 1], 33)) // failure
+	{
 		return SIG_FAIL;
-	}
-	if (0 != ecdsa_verify_digest(&secp256k1, pubkey[sigindex3 - 1], (const uint8_t *)FLASH_META_SIG3, hash)) { // failture
+	} 
+	recover_pubkey_from_signed_message((char*)hash, (const uint8_t *)FLASH_META_SIG3, pubkey3);
+	if (0 != memcmp(pubkey3, pubkey[sigindex3 - 1], 33)) // failure
+	{
 		return SIG_FAIL;
-	}
+	} 
 #endif
 
 	return SIG_OK;
