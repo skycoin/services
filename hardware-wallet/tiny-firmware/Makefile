@@ -1,22 +1,17 @@
 APPVER = 1.0.0
 CFLAGS += -DAPPVER=$(APPVER)
+
 #libtrezor.a
-
 OBJS += startup.o
-
 OBJS += buttons.o
 OBJS += layout.o
 OBJS += oled.o
 OBJS += rng.o
 OBJS += serialno.o
-
 OBJS += setup.o
-
 OBJS += util.o
 OBJS += memory.o
-
 OBJS += timer.o
-
 OBJS += gen/bitmaps.o
 OBJS += gen/fonts.o
 
@@ -50,49 +45,27 @@ OBJS += firmware/protect.o
 OBJS += protob/messages.pb.o
 OBJS += protob/types.pb.o
 
-
+#skycoin-crypto
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/skycoin_crypto.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/base58.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/blake256.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/hasher.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/rand.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/sha2.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/bignum.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/curves.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/hmac.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/ripemd160.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/bip32.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/ecdsa.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/memzero.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/secp256k1.o
+#end skycoin-crypto
+
 #trezor-crypto
-OBJS += $(TOP_DIR)vendor/trezor-crypto/address.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/bignum.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ecdsa.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/curves.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/secp256k1.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/nist256p1.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/rand.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/memzero.o
-
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/curve25519-donna-32bit.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/curve25519-donna-helpers.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/modm-donna-32bit.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-donna-basepoint-table.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-donna-32bit-tables.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-donna-impl-base.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/curve25519-donna-scalarmult-base.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-sha3.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ed25519-donna/ed25519-keccak.o
-
-OBJS += $(TOP_DIR)vendor/trezor-crypto/hmac.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/bip32.o
 OBJS += $(TOP_DIR)vendor/trezor-crypto/bip39.o
 OBJS += $(TOP_DIR)vendor/trezor-crypto/pbkdf2.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/base32.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/base58.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/segwit_addr.o
-
-OBJS += $(TOP_DIR)vendor/trezor-crypto/ripemd160.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/sha2.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/sha3.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/blake256.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/hasher.o
-
-OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aescrypt.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aeskey.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aestab.o
-OBJS += $(TOP_DIR)vendor/trezor-crypto/aes/aes_modes.o
 #end trezor-crypto
-
 
 NAME  = skycoin
 
