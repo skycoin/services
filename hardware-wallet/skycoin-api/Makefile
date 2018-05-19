@@ -23,30 +23,34 @@ CFLAGS   += $(OPTFLAGS) \
             -Wformat-security \
             -Werror
 
-
-INC=-I$(TREZOR_CRYPTO_PATH) -I$(CHECK_PATH)/src
+INC=-I$(CHECK_PATH)/src
+INC+=-Itools/
 CFLAGS += -I. $(INC)
 
-SRCS  += skycoin_crypto.c
+SRCS += skycoin_crypto.c
+SRCS += $(shell ls tools/*.c)
 
 OBJS   = $(SRCS:.c=.o)
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-TESTLIBS = -L/usr/local/lib/ -lm -lrt -L$(CHECK_PATH)/src -lcheck  
-CRYPTOLIBS = -L$(TREZOR_CRYPTO_PATH) -ltrezor-crypto
+TESTLIBS = -L/usr/local/lib/ -lm -lrt -L$(CHECK_PATH)/src -lcheck 
 
 all: test_skycoin_crypto
 
 skycoin-crypto: skycoin_crypto.o $(OBJS)
-	$(CC) -rdynamic -shared $(CFLAGS) $(OBJS) $(CRYPTOLIBS) -o libskycoin-crypto.so
+	$(CC) -rdynamic -shared $(CFLAGS) $(OBJS) -o libskycoin-crypto.so
+
+skycoin-crypto-link-static: skycoin_crypto.o $(OBJS)
+	$(CC) -rdynamic -shared -fPIC $(CFLAGS) $(OBJS) -o libskycoin-crypto.so
 
 test_skycoin_crypto: test_skycoin_crypto.o skycoin-crypto
-	$(CC) test_skycoin_crypto.o $(OBJS) -L. -lskycoin-crypto  $(TESTLIBS) $(CRYPTOLIBS) -o test_skycoin_crypto
+	$(CC) test_skycoin_crypto.o $(OBJS) -L. -lskycoin-crypto  $(TESTLIBS) -o test_skycoin_crypto
 
 
 
 clean:
 	rm -f *.o test_skycoin_crypto
 	rm -f *.so
+	rm -f tools/*.o
