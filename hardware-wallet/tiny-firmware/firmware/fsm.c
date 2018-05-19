@@ -29,7 +29,6 @@
 #include "oled.h"
 #include "protect.h"
 #include "layout2.h"
-#include "address.h"
 #include "base58.h"
 #include "ecdsa.h"
 #include "memory.h"
@@ -42,7 +41,6 @@
 #include "ripemd160.h"
 #include "curves.h"
 #include "secp256k1.h"
-#include "rfc6979.h"
 #include "gettext.h"
 #include "skycoin_crypto.h"
 

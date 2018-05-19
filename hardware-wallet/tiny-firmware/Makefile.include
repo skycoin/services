@@ -50,8 +50,10 @@ CFLAGS   += $(OPTFLAGS) \
             -I$(TOOLCHAIN_DIR)/include \
             -I$(TOP_DIR) \
             -I$(TOP_DIR)gen \
-            -I$(TOP_DIR)vendor/trezor-crypto \
-            -I$(TOP_DIR)vendor/skycoin-crypto
+            -I$(TOP_DIR)vendor/skycoin-crypto \
+            -I$(TOP_DIR)vendor/skycoin-crypto/tools \
+            -I$(TOP_DIR)vendor/skycoin-crypto/trezor-tools \
+            -I$(TOP_DIR)vendor/skycoin-crypto/trezor-tools/aes
 
 LDFLAGS  += -L$(TOP_DIR) \
             $(DBGFLAGS) \

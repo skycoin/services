@@ -21,26 +21,23 @@ OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/base58.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/blake256.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/hasher.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/rand.o
-# OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/sha2.o
-# OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/bignum.o
+
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/curves.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/hmac.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/ripemd160.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/bip32.o
-# OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/ecdsa.o
-# OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/memzero.o
-# OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/secp256k1.o
+
 #end skycoin-crypto
 
 OBJS += bootloader.o
 OBJS += signatures.o
 OBJS += usb.o
 
-OBJS += ../vendor/trezor-crypto/bignum.small.o
-OBJS += ../vendor/trezor-crypto/ecdsa.small.o
-OBJS += ../vendor/trezor-crypto/secp256k1.small.o
-OBJS += ../vendor/trezor-crypto/sha2.small.o
-OBJS += ../vendor/trezor-crypto/memzero.small.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/bignum.small.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/ecdsa.small.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/secp256k1.small.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/sha2.small.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/memzero.small.o
 
 CFLAGS += -DUSE_PRECOMPUTED_IV=0
 CFLAGS += -DUSE_PRECOMPUTED_CP=0
