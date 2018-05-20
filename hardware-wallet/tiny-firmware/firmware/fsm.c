@@ -43,6 +43,7 @@
 #include "secp256k1.h"
 #include "gettext.h"
 #include "skycoin_crypto.h"
+#include "skycoin_check_signature.h"
 
 // message methods
 

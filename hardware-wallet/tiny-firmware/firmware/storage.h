@@ -87,7 +87,6 @@ void storage_loadDevice(LoadDevice *msg);
 const uint8_t *storage_getSeed(bool usePassphrase);
 
 bool storage_getU2FRoot(HDNode *node);
-bool storage_getRootNode(HDNode *node, const char *curve, bool usePassphrase);
 
 const char *storage_getLabel(void);
 void storage_setLabel(const char *label);
@@ -122,9 +121,6 @@ void storage_clearPinArea(void);
 void storage_resetPinFails(uint32_t *pinfailptr);
 bool storage_increasePinFails(uint32_t *pinfailptr);
 uint32_t *storage_getPinFailsPtr(void);
-
-uint32_t storage_nextU2FCounter(void);
-void storage_setU2FCounter(uint32_t u2fcounter);
 
 bool storage_isInitialized(void);
 

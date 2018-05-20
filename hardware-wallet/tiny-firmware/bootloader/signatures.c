@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "signatures.h"
-#include "skycoin_crypto.h"
+#include "skycoin_check_signature.h"
 #include "sha2.h"
 #include "bootloader.h"
 

@@ -27,7 +27,6 @@
 #include "trezor.h"
 #include "sha2.h"
 #include "aes/aes.h"
-#include "pbkdf2.h"
 #include "hmac.h"
 #include "bip32.h"
 #include "bip39.h"
@@ -526,41 +525,6 @@ bool storage_getU2FRoot(HDNode *node)
 	return storageRom->has_u2froot && storage_loadNode(&storageRom->u2froot, NIST256P1_NAME, node);
 }
 
-bool storage_getRootNode(HDNode *node, const char *curve, bool usePassphrase)
-{
-	// if storage has node, decrypt and use it
-	if (storageRom->has_node && strcmp(curve, SECP256K1_NAME) == 0) {
-
-		if (!storage_loadNode(&storageRom->node, curve, node)) {
-			return false;
-		}
-		if (storageRom->has_passphrase_protection && storageRom->passphrase_protection && sessionPassphraseCached && strlen(sessionPassphrase) > 0) {
-			// decrypt hd node
-			uint8_t secret[64];
-			PBKDF2_HMAC_SHA512_CTX pctx;
-			pbkdf2_hmac_sha512_Init(&pctx, (const uint8_t *)sessionPassphrase, strlen(sessionPassphrase), (const uint8_t *)"TREZORHD", 8);
-			get_root_node_callback(0, BIP39_PBKDF2_ROUNDS);
-			for (int i = 0; i < 8; i++) {
-				pbkdf2_hmac_sha512_Update(&pctx, BIP39_PBKDF2_ROUNDS / 8);
-				get_root_node_callback((i + 1) * BIP39_PBKDF2_ROUNDS / 8, BIP39_PBKDF2_ROUNDS);
-			}
-			pbkdf2_hmac_sha512_Final(&pctx, secret);
-			aes_decrypt_ctx ctx;
-			aes_decrypt_key256(secret, &ctx);
-			aes_cbc_decrypt(node->chain_code, node->chain_code, 32, secret + 32, &ctx);
-			aes_cbc_decrypt(node->private_key, node->private_key, 32, secret + 32, &ctx);
-		}
-		return true;
-	}
-
-	const uint8_t *seed = storage_getSeed(usePassphrase);
-	if (seed == NULL) {
-		return false;
-	}
-	
-	return hdnode_from_seed(seed, 64, curve, node);
-}
-
 const char *storage_getLabel(void)
 {
 	return storageRom->has_label ? storageRom->label : 0;
@@ -812,29 +776,6 @@ void storage_applyFlags(uint32_t flags)
 uint32_t storage_getFlags(void)
 {
 	return storageRom->has_flags ? storageRom->flags : 0;
-}
-
-uint32_t storage_nextU2FCounter(void)
-{
-	uint32_t *ptr = ((uint32_t *) FLASH_STORAGE_U2FAREA) + (storage_u2f_offset / 32);
-	uint32_t newval = 0xfffffffe << (storage_u2f_offset & 31);
-
-	flash_clear_status_flags();
-	flash_unlock();
-	flash_program_word((uint32_t) ptr, newval);
-	storage_u2f_offset++;
-	if (storage_u2f_offset >= 8 * FLASH_STORAGE_U2FAREA_LEN) {
-		storage_area_recycle(*storage_getPinFailsPtr());
-	}
-	flash_lock();
-	storage_check_flash_errors();
-	return storageRom->u2f_counter + storage_u2f_offset;
-}
-
-void storage_setU2FCounter(uint32_t u2fcounter)
-{
-	storageUpdate.has_u2f_counter = true;
-	storageUpdate.u2f_counter = u2fcounter - storage_u2f_offset;
 }
 
 void storage_wipe(void)

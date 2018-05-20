@@ -1,4 +1,5 @@
 #include "skycoin_crypto.h"
+#include "skycoin_check_signature.h"
 
 #include <stdio.h>
 #include <string.h>
