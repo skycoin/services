@@ -29,6 +29,7 @@ CFLAGS += -I. $(INC)
 
 SRCS += skycoin_crypto.c
 SRCS += skycoin_check_signature.c
+SRCS += skycoin_check_signature_tools.c
 SRCS += $(shell ls tools/*.c)
 
 OBJS   = $(SRCS:.c=.o)

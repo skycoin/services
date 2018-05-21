@@ -2,16 +2,9 @@
 
 #include <string.h> // memcpy
 #include "curves.h"
-#include "bignum.h"
-#include "bip32.h"
-
-
-static void create_node(const char* seed_str, HDNode* node)
-{
-    const char* curve_name = SECP256K1_NAME; 
-    hdnode_from_seed((const uint8_t *)seed_str, strlen(seed_str), curve_name, node);
-    hdnode_fill_public_key(node);
-}
+#include "skycoin_check_signature_tools.h"
+// #include "bignum.h"
+// #include "bip32.h"
 
 // Compute public key from signature and recovery id.
 // returns 0 if verification succeeded
@@ -41,8 +34,8 @@ int verify_digest_recover(const ecdsa_curve *curve, uint8_t *pub_key, const uint
 
 	memcpy(&cp.x, &r, sizeof(bignum256));
 	// compute y from x
-	uncompress_coords(curve, recid & 1, &cp.x, &cp.y);
-	if (!ecdsa_validate_pubkey(curve, &cp)) {
+	uncompress_mcoords(curve, recid & 1, &cp.x, &cp.y);
+	if (!mecdsa_validate_pubkey(curve, &cp)) {
 		return 1;
 	}
 	// r := r^-1
@@ -66,12 +59,12 @@ int verify_digest_recover(const ecdsa_curve *curve, uint8_t *pub_key, const uint
     bn_multiply(&r, &s, &curve->order);
 
 	// cp := s * R = s * k *G
-	point_multiply(curve, &s, &cp, &cp);
+	mpoint_multiply(curve, &s, &cp, &cp);
 	// cp2 := -digest * G
-	scalar_multiply(curve, &e, &cp2);
+	mscalar_multiply(curve, &e, &cp2);
 	
     // cp := (s * k - digest) * G = (r*priv) * G = r * Pub
-	point_add(curve, &cp2, &cp);
+	mpoint_add(curve, &cp2, &cp);
 	pub_key[0] = 0x04;
 	bn_write_be(&cp.x, pub_key + 1);
 	bn_write_be(&cp.y, pub_key + 33);
@@ -86,7 +79,7 @@ returns 0 if signature matches and 5 if it does not*/
 int recover_pubkey_from_signed_message(const char* message, const uint8_t* signature, uint8_t* pubkey)
 {
     int res = -1;
-    HDNode dummy_node;
+    HNode dummy_node;
     char seed_str[256] = "dummy seed";
 	uint8_t long_pubkey[65];
     create_node(seed_str, &dummy_node);

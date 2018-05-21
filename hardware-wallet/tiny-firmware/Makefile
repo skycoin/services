@@ -47,6 +47,7 @@ OBJS += protob/types.pb.o
 
 #skycoin-crypto
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/skycoin_crypto.o
+OBJS += $(TOP_DIR)vendor/skycoin-crypto/skycoin_check_signature_tools.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/skycoin_check_signature.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/base58.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/blake256.o
