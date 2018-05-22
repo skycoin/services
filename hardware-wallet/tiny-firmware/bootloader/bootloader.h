@@ -35,6 +35,9 @@
 #include "memory.h"
 
 void layoutFirmwareHash(const uint8_t *hash);
+#if SIGNATURE_DEBUG
+void layout32bits(const uint8_t *buffer, const char* message);
+#endif
 bool firmware_present(void);
 
 #endif

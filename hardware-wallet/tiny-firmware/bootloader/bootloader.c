@@ -43,6 +43,21 @@ void layoutFirmwareHash(const uint8_t *hash)
 	layoutDialog(&bmp_icon_question, "Abort", "Continue", "Compare fingerprints", str[0], str[1], str[2], str[3], NULL, NULL);
 }
 
+#if SIGNATURE_DEBUG
+void layout32bits(const uint8_t *buffer, const char* message)
+{
+	char str[4][17];
+	for (int i = 0; i < 4; i++) {
+		data2hex(buffer + i * 8, 8, str[i]);
+	}
+	layoutDialog(&bmp_icon_question, "Abort", "Continue", message, str[0], str[1], str[2], str[3], NULL, NULL);
+	do {
+		delay(100000);
+		buttonUpdate();
+	} while (!button.YesUp && !button.NoUp);
+}
+#endif
+
 void show_halt(void)
 {
 	layoutDialog(&bmp_icon_error, NULL, NULL, NULL, "Unofficial firmware", "aborted.", NULL, "Unplug your TREZOR", "contact our support.", NULL);
