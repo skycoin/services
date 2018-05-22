@@ -135,13 +135,14 @@ def sign(data):
     if index == None:
         raise Exception("Unable to find private key index. Unknown private key?")
 
-    signature = skycoin.EcdsaSkycoinSign(binascii.unhexlify(fingerprint), seckey, random.randint(1, 0xFFFFFFFF))
+    for i in range(10): #attempt 10 times until finding a signature with 64 bytes (the 65's byte will be assumed as 0)
+        signature = skycoin.EcdsaSkycoinSign(binascii.unhexlify(fingerprint), seckey, random.randint(1, 0xFFFFFFFF))
+        if len(signature.value) == 64:
+            break
 
     print("Skycoin signature:", binascii.hexlify(signature.value))
-    print("Skycoin signature:", signature.value)
     if len(signature.value) != 64:
         raise Exception("Signature lenght {} is not correct".format(len(signature.value)))
-    # signature = binascii.hexlify(signature)
 
     return modify(data, slot, index, str(signature.value))
 
