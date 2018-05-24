@@ -63,6 +63,7 @@
  */
 
 #if EMULATOR
+extern uint8_t *emulator_flash_base;
 #define FLASH_ORIGIN            ((uint32_t) emulator_flash_base)
 #else
 #define FLASH_ORIGIN		(0x08000000)

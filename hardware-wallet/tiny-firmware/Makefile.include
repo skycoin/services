@@ -1,6 +1,23 @@
 TOP_DIR       := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TOOLCHAIN_DIR ?= $(TOP_DIR)vendor/libopencm3
 
+ifeq ($(EMULATOR),1)
+
+PYTHON ?= python
+
+CC       ?= gcc
+LD       := $(CC)
+OBJCOPY  := objcopy
+OBJDUMP  := objdump
+AR       := ar
+AS       := as
+
+OPTFLAGS ?= -O3
+DBGFLAGS ?= -g3 -ggdb3
+CPUFLAGS ?=
+FPUFLAGS ?=
+
+else
 PREFIX   ?= arm-none-eabi-
 CC       := $(PREFIX)gcc
 LD       := $(PREFIX)gcc
@@ -14,6 +31,19 @@ OPTFLAGS ?= -O3
 DBGFLAGS ?= -g -DNDEBUG
 CPUFLAGS ?= -mcpu=cortex-m3 -mthumb
 FPUFLAGS ?= -msoft-float
+
+LDFLAGS  += --static \
+            -Wl,--start-group \
+            -lc \
+            -lgcc \
+            -lnosys \
+            -Wl,--end-group \
+            -L$(TOOLCHAIN_DIR)/lib \
+            -T$(LDSCRIPT) \
+            -nostartfiles \
+            -Wl,--gc-sections
+
+endif
 
 CFLAGS   += $(OPTFLAGS) \
             $(DBGFLAGS) \
@@ -60,19 +90,14 @@ LDFLAGS  += -L$(TOP_DIR) \
             $(CPUFLAGS) \
             $(FPUFLAGS)
 
-LDFLAGS  += --static \
-            -Wl,--start-group \
-            -lc \
-            -lgcc \
-            -lnosys \
-            -Wl,--end-group \
-            -L$(TOOLCHAIN_DIR)/lib \
-            -T$(LDSCRIPT) \
-            -nostartfiles \
-            -Wl,--gc-sections
-
 CFLAGS += -DFASTFLASH=0
-CFLAGS += -DEMULATOR=0
+
+ifeq ($(EMULATOR),1)
+CFLAGS   += -DEMULATOR=1
+else
+CFLAGS   += -DEMULATOR=0
+endif
+
 CFLAGS += -DMEMORY_PROTECT=0
 CFLAGS += -DDEBUG_RNG=0
 

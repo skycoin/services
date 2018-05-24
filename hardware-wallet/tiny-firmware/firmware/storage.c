@@ -44,18 +44,10 @@
 static const uint32_t storage_magic = 0x726f7473;   // 'stor' as uint32_t
 
 static uint32_t storage_uuid[12 / sizeof(uint32_t)];
-#ifndef __clang__
-// TODO: Fix this for Clang
-_Static_assert(((uint32_t)storage_uuid & 3) == 0, "uuid unaligned");
-_Static_assert((sizeof(storage_uuid) & 3) == 0, "uuid unaligned");
-#endif
+_Static_assert(sizeof(storage_uuid) == 12, "storage_uuid has wrong size");
 
-Storage CONFIDENTIAL storageUpdate;
-#ifndef __clang__
-// TODO: Fix this for Clang
-_Static_assert(((uint32_t)&storageUpdate & 3) == 0, "storage unaligned");
+Storage CONFIDENTIAL storageUpdate __attribute__((aligned(4)));
 _Static_assert((sizeof(storageUpdate) & 3) == 0, "storage unaligned");
-#endif
 
 #define STORAGE_ROM ((const Storage *)(FLASH_STORAGE_START + sizeof(storage_magic) + sizeof(storage_uuid)))
 
@@ -126,7 +118,9 @@ static char CONFIDENTIAL sessionPassphrase[51];
 void storage_show_error(void)
 {
 	layoutDialog(&bmp_icon_error, NULL, NULL, NULL, _("Storage failure"), _("detected."), NULL, _("Please unplug"), _("the device."), NULL);
+#if !EMULATOR
 	shutdown();
+#endif
 }
 
 void storage_check_flash_errors(void)
