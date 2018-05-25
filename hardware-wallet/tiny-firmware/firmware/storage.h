@@ -118,9 +118,10 @@ void storage_setPin(const char *pin);
 void session_cachePin(void);
 bool session_isPinCached(void);
 void storage_clearPinArea(void);
-void storage_resetPinFails(uint32_t *pinfailptr);
-bool storage_increasePinFails(uint32_t *pinfailptr);
-uint32_t *storage_getPinFailsPtr(void);
+void storage_resetPinFails(uint32_t flash_pinfails);
+bool storage_increasePinFails(uint32_t flash_pinfails);
+uint32_t storage_getPinWait(uint32_t flash_pinfails);
+uint32_t storage_getPinFailsOffset(void);
 
 bool storage_isInitialized(void);
 
