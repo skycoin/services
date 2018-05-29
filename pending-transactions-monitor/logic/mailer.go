@@ -13,12 +13,6 @@ type Letter struct {
 	Body    string
 }
 
-// IMailer represents a mail sender
-type IMailer interface {
-	SendMail(l *Letter) error
-	SendFeedback(l *Letter) error
-}
-
 // Mailer represents a mail sender
 type Mailer struct {
 	host      string
@@ -41,6 +35,7 @@ func NewMailer(host string, username string, password string, toAddress string) 
 func (m Mailer) SendMail(l *Letter) error {
 	host, err := url.Parse("//" + m.host)
 	if err != nil {
+		fmt.Println("Mailer.SendMail > Error (url.Parse): host, username, toAddress ", m.host, m.username, m.toAddress, "\n", err)
 		return err
 	}
 
@@ -57,6 +52,10 @@ func (m Mailer) SendMail(l *Letter) error {
 		"%s\r\n", l.To, m.username, l.Subject, l.Body)
 	msg := []byte(body)
 	err = smtp.SendMail(m.host, auth, m.username, to, msg)
+
+	if err != nil {
+		fmt.Println("Mailer.SendMail > Error (smtp.SendMail): host, username, toAddress ", m.host, m.username, m.toAddress, "\n", err)
+	}
 
 	return err
 }

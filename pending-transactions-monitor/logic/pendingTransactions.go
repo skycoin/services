@@ -2,6 +2,7 @@ package pendingTransactionsMonitor
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -21,11 +22,13 @@ func NewMonitor(nodeAddress string) *Monitor {
 func get(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
+		fmt.Println("Monitor.get > Error (http.Get): url:", url, "\n", err)
 		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Println("Monitor.get > Error (ioutil.ReadAll): url: ", url, "\n", err)
 		return nil, err
 	}
 
@@ -48,11 +51,16 @@ type PendingTransactionsResponse struct {
 func (m Monitor) GetPendingTransactions() ([]PendingTransactionsResponse, error) {
 	response, err := get(m.NodeAddress + `/pendingTxs`)
 	if err != nil {
+		fmt.Println("Monitor.GetPendingTransactions > Error (get): NodeAddress: ", m.NodeAddress, "\n", err)
 		return nil, err
 	}
 
 	transactions := []PendingTransactionsResponse{}
 	if err = json.Unmarshal(response, &transactions); err != nil {
+		fmt.Println("Monitor.GetPendingTransactions > Error (json.Unmarshal): NodeAddress:",
+			m.NodeAddress,
+			"\n",
+			err)
 		return nil, err
 	}
 
