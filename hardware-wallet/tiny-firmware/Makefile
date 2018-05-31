@@ -104,9 +104,17 @@ endif
 
 NAME  = skycoin
 
+
+ifneq ($(EMULATOR),1)
 .PHONY: proto libopencm3
 
 all: libopencm3 proto $(NAME).bin
+else
+.PHONY: proto 
+
+all: proto $(NAME).bin
+endif
+
 
 proto: 
 	cd protob && make

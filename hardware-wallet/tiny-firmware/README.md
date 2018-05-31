@@ -48,6 +48,12 @@ Then for the actual compilation source make_firmware.sh script:
     cd tiny-firmware
     . make_firmware.sh
 
+If you want to compile on PC target set EMULATOR environment variable to 1:
+
+    cd tiny-firmware
+    export EMULATOR=1
+    . make_firmware.sh
+
 # 3. How to burn the firmware in the device
 
 ## Use ST-LINK to burn the device
