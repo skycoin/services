@@ -90,16 +90,14 @@ CFLAGS += -Wno-int-to-pointer-cast
 CFLAGS   += -include $(TOP_DIR)emulator/emulator.h
 CFLAGS   += -include stdio.h
 
-
+ifeq ($(HEADLESS),1)
 CFLAGS   += -DHEADLESS=1
-# ifeq ($(HEADLESS),1)
-# CFLAGS   += -DHEADLESS=1
-# else
-# CFLAGS   += -DHEADLESS=0
+else
+CFLAGS   += -DHEADLESS=0
 
-# CFLAGS   += -I/usr/include/SDL2 -D_REENTRANT
-# LDLIBS   += -lSDL2
-# endif
+CFLAGS   += -I/usr/include/SDL2 -D_REENTRANT
+LDLIBS   += -lSDL2
+endif
 endif
 
 NAME  = skycoin

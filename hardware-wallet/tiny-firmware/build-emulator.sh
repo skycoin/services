@@ -11,6 +11,7 @@ docker run -t -v $(pwd)/build:/build:z $IMAGE /bin/sh -c "\
 	cd services/hardware-wallet/tiny-firmware && \
 	git checkout $TAG && \
 	export EMULATOR=1
+	export HEADLESS=1
 	make -C vendor/nanopb/generator/proto/ && \
 	make -C protob/ && \
 	make -C emulator/ && \
