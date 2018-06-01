@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-IMAGE=trezor-mcu-build-emulator64
+IMAGE=skycoin-mcu-build-emulator64
 TAG=${1:-master}
 ELFFILE=build/trezor-emulator64-$TAG
 
@@ -11,7 +11,7 @@ docker run -t -v $(pwd)/build:/build:z $IMAGE /bin/sh -c "\
 	cd services/hardware-wallet/tiny-firmware && \
 	git checkout $TAG && \
 	export EMULATOR=1
-	export HEADLESS=1
+	export HEADLESS=0
 	make -C vendor/nanopb/generator/proto/ && \
 	make -C protob/ && \
 	make -C emulator/ && \
