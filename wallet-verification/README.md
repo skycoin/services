@@ -8,12 +8,12 @@
 
 ## macOS gpg (2.2.7) installation instructions:
 ```sh
-    $ brew install gnupg gnupg2 
+    $ brew install gnupg 
 ```
 
 ## Ubuntu gpg (1.4.20) installation instructions:
 ```sh
-$ sudo apt-get install gnupg gnupg2
+$ sudo apt-get install gnupg
 ```
 
 # How to install/run on osx & linux
