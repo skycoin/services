@@ -19,5 +19,6 @@ $ sudo apt-get install gnupg
 # How to install/run on osx & linux
 To run validation process perform following command:
 ```sh
+$ export VERSION=0.23.0
 $ sh ./run.sh
 ```
