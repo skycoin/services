@@ -4,7 +4,17 @@
 
 # Required packages
 1. curl
-2. gpg2
+2. gpg
+
+## macOS gpg (2.2.7) installation instructions:
+```sh
+    $ brew install gnupg gnupg2 
+```
+
+## Ubuntu gpg (1.4.20) installation instructions:
+```sh
+$ sudo apt-get install gnupg gnupg2
+```
 
 # How to install/run on osx & linux
 To run validation process perform following command:
