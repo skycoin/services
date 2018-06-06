@@ -226,17 +226,18 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
 
 int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
 {
-    const uint8_t* mnemo = storage_getSeed(false);
-    char seed[64] = {0};
+    const char* mnemo = storage_getMnemonic();
+    uint8_t seed[33] = {0};
     uint8_t nextSeed[SHA256_DIGEST_LENGTH] = {0};
     if (mnemo == NULL)
     {
         return -1;
     }
-	memcpy(seed, mnemo, sizeof(seed));
-	for (uint8_t i = 0; i < index; ++i)
+	// compute_sha256sum(mnemo, seed, strlen(mnemo));
+	generate_deterministic_key_pair_iterator(mnemo, nextSeed, seckey, pubkey);
+	for (uint8_t i = 1; i < index; ++i)
 	{
-		generate_deterministic_key_pair_iterator(seed, nextSeed, seckey, pubkey);
+		generate_deterministic_key_pair_iterator((char*)seed, nextSeed, seckey, pubkey);
 		memcpy(seed, nextSeed, 32);
 		seed[32] = 0;
 	}
@@ -342,6 +343,25 @@ void fsm_msgWipeDevice(WipeDevice *msg)
 	// usbReconnect(); // force re-enumeration because of the serial number change
 	fsm_sendSuccess(_("Device wiped"));
 	layoutHome();
+}
+
+void fsm_msgSetMnemonic(SetMnemonic* msg)
+{
+	RESP_INIT(Success);
+	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("I take the risk"), NULL, _("Writing mnemonic"), _("is not recommended."), _("Continue only if you"), _("know what you are"), _("doing!"), NULL);
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+	if (!mnemonic_check(msg->mnemonic)) {
+		fsm_sendFailure(FailureType_Failure_DataError, _("Mnemonic with wrong checksum provided"));
+		layoutHome();
+		return;
+	}
+	storage_setMnemonic(msg->mnemonic);
+	fsm_sendSuccess(_(msg->mnemonic));
+
 }
 
 void fsm_msgLoadDevice(LoadDevice *msg)

@@ -47,6 +47,17 @@ func MessageLoadDevice() [][64]byte {
     return chunks
 }
 
+func MessageSetMnemonic() [][64]byte {
+    setMnemonicMessage := &messages.SetMnemonic{
+        Mnemonic:    proto.String("cloud flower upset remain green metal below cup stem infant art thank"),
+    }
+
+    data, _ := proto.Marshal(setMnemonicMessage)
+
+    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SetMnemonic)
+    return chunks
+}
+
 func MessageSkycoinAddress() [][64]byte {
     skycoinAddress := &messages.SkycoinAddress{
         AddressN:    proto.Uint32(1),
@@ -71,7 +82,6 @@ func MessageCheckMessageSignature() [][64]byte {
     chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinCheckMessageSignature)
     return chunks
 }
-
 
 func MessageSkycoinSignMessage() [][64]byte {
     skycoinSignMessage := &messages.SkycoinSignMessage{
@@ -139,7 +149,6 @@ func WipeDevice(dev usb.Device) {
     Initialize(dev)
 }
 
-
 func LoadDevice(dev usb.Device) {
     var msg wire.Message
     var chunks [][64]byte
@@ -165,14 +174,38 @@ func LoadDevice(dev usb.Device) {
     Initialize(dev)
 }
 
+func SetMnemonic(dev usb.Device) {
+
+    var msg wire.Message
+    var chunks [][64]byte
+    var err error
+
+    chunks = MessageSetMnemonic()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("SetMnemonic %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    chunks = MessageButtonAck()
+    SendToDeviceNoAnswer(dev, chunks)
+
+    _, err = msg.ReadFrom(dev)
+    time.Sleep(1*time.Second)
+	if err != nil {
+        fmt.Printf(err.Error())
+		return
+    }
+    fmt.Printf("MessageButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
+}
+
 func main() {
     dev, _ := hardwareWallet.GetTrezorDevice()
     var msg wire.Message
     var chunks [][64]byte
 
-    WipeDevice(dev)
+    // WipeDevice(dev)
 
-    LoadDevice(dev)
+    // LoadDevice(dev)
+
+    SetMnemonic(dev)
 
     chunks = MessageSkycoinAddress()
     msg = SendToDevice(dev, chunks)
@@ -185,4 +218,6 @@ func main() {
     chunks = MessageCheckMessageSignature()
     msg = SendToDevice(dev, chunks)
     fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    Initialize(dev)
 }

@@ -34,6 +34,7 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey);
 void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg);
 void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg);
 void fsm_msgSkycoinAddress(SkycoinAddress* msg);
+void fsm_msgSetMnemonic(SetMnemonic* msg);
 void fsm_msgPing(Ping *msg);
 void fsm_msgWipeDevice(WipeDevice *msg);
 void fsm_msgLoadDevice(LoadDevice *msg);

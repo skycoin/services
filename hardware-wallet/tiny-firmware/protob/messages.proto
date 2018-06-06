@@ -24,6 +24,7 @@ enum MessageType {
 	MessageType_Cancel = 20 [(wire_in) = true];
 	MessageType_ButtonRequest = 26 [(wire_out) = true];
 	MessageType_ButtonAck = 27 [(wire_in) = true, (wire_tiny) = true];
+	MessageType_SetMnemonic = 113 [(wire_in) = true];
 	MessageType_SkycoinAddress = 114 [(wire_in) = true];
 	MessageType_SkycoinCheckMessageSignature = 115 [(wire_in) = true];
 	MessageType_SkycoinSignMessage = 116 [(wire_in) = true];
@@ -80,6 +81,15 @@ message Features {
 	optional uint32 fw_patch = 24;			// reported firmware version if in bootloader mode
 	optional string fw_vendor = 25;			// reported firmware vendor if in bootloader mode
 	optional bytes fw_vendor_keys = 26;		// reported firmware vendor keys (their hash)
+}
+
+
+/**
+ * Request: Send a mnemonic to the device
+ * @next Success
+ */
+ message SetMnemonic {
+	required string mnemonic = 1; // mnemonic
 }
 
 /**
