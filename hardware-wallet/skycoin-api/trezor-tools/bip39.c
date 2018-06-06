@@ -28,23 +28,9 @@
 #include "hmac.h"
 #include "rand.h"
 #include "sha2.h"
-#include "pbkdf2.h"
 #include "bip39_english.h"
 #include "options.h"
 #include "memzero.h"
-
-#if USE_BIP39_CACHE
-
-static int bip39_cache_index = 0;
-
-static CONFIDENTIAL struct {
-	bool set;
-	char mnemonic[256];
-	char passphrase[64];
-	uint8_t seed[512 / 8];
-} bip39_cache[BIP39_CACHE_SIZE];
-
-#endif
 
 const char *mnemonic_generate(int strength)
 {
@@ -206,52 +192,6 @@ int mnemonic_check(const char *mnemonic)
 		return bits[0] == bits[32]; // compare 8 bits
 	}
 	return 0;
-}
-
-// passphrase must be at most 256 characters or code may crash
-void mnemonic_to_seed(const char *mnemonic, const char *passphrase, uint8_t seed[512 / 8], void (*progress_callback)(uint32_t current, uint32_t total))
-{
-	int passphraselen = strlen(passphrase);
-#if USE_BIP39_CACHE
-	int mnemoniclen = strlen(mnemonic);
-	// check cache
-	if (mnemoniclen < 256 && passphraselen < 64) {
-		for (int i = 0; i < BIP39_CACHE_SIZE; i++) {
-			if (!bip39_cache[i].set) continue;
-			if (strcmp(bip39_cache[i].mnemonic, mnemonic) != 0) continue;
-			if (strcmp(bip39_cache[i].passphrase, passphrase) != 0) continue;
-			// found the correct entry
-			memcpy(seed, bip39_cache[i].seed, 512 / 8);
-			return;
-		}
-	}
-#endif
-	uint8_t salt[8 + 256];
-	memcpy(salt, "mnemonic", 8);
-	memcpy(salt + 8, passphrase, passphraselen);
-	static CONFIDENTIAL PBKDF2_HMAC_SHA512_CTX pctx;
-	pbkdf2_hmac_sha512_Init(&pctx, (const uint8_t *)mnemonic, strlen(mnemonic), salt, passphraselen + 8);
-	if (progress_callback) {
-		progress_callback(0, BIP39_PBKDF2_ROUNDS);
-	}
-	for (int i = 0; i < 16; i++) {
-		pbkdf2_hmac_sha512_Update(&pctx, BIP39_PBKDF2_ROUNDS / 16);
-		if (progress_callback) {
-			progress_callback((i + 1) * BIP39_PBKDF2_ROUNDS / 16, BIP39_PBKDF2_ROUNDS);
-		}
-	}
-	pbkdf2_hmac_sha512_Final(&pctx, seed);
-	memzero(salt, sizeof(salt));
-#if USE_BIP39_CACHE
-	// store to cache
-	if (mnemoniclen < 256 && passphraselen < 64) {
-		bip39_cache[bip39_cache_index].set = true;
-		strcpy(bip39_cache[bip39_cache_index].mnemonic, mnemonic);
-		strcpy(bip39_cache[bip39_cache_index].passphrase, passphrase);
-		memcpy(bip39_cache[bip39_cache_index].seed, seed, 512 / 8);
-		bip39_cache_index = (bip39_cache_index + 1) % BIP39_CACHE_SIZE;
-	}
-#endif
 }
 
 const char * const *mnemonic_wordlist(void)

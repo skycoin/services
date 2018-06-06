@@ -99,7 +99,7 @@ _Static_assert(FLASH_STORAGE_START + FLASH_STORAGE_REALLEN <= FLASH_STORAGE_PINA
  */
 static uint32_t storage_u2f_offset;
 
-static bool sessionSeedCached, sessionSeedUsesPassphrase;
+static bool sessionSeedCached;
 
 static uint8_t CONFIDENTIAL sessionSeed[64];
 
@@ -458,42 +458,6 @@ void storage_setHomescreen(const uint8_t *data, uint32_t size)
 		memset(storageUpdate.homescreen.bytes, 0, sizeof(storageUpdate.homescreen.bytes));
 		storageUpdate.homescreen.size = 0;
 	}
-}
-
-static void get_root_node_callback(uint32_t iter, uint32_t total)
-{
-	usbSleep(1);
-	layoutProgress(_("Waking up"), 1000 * iter / total);
-}
-
-const uint8_t *storage_getSeed(bool usePassphrase)
-{
-	// root node is properly cached
-	if (usePassphrase == sessionSeedUsesPassphrase
-		&& sessionSeedCached) {
-		return sessionSeed;
-	}
-
-	// if storage has mnemonic, convert it to node and use it
-	if (storageRom->has_mnemonic) {
-
-		// if storage was not imported (i.e. it was properly generated or recovered)
-		if (!storageRom->has_imported || !storageRom->imported) {
-			// test whether mnemonic is a valid BIP-0039 mnemonic
-			if (!mnemonic_check(storageRom->mnemonic)) {
-				// and if not then halt the device
-				storage_show_error();
-			}
-		}
-		char oldTiny = usbTiny(1);
-		mnemonic_to_seed(storageRom->mnemonic, usePassphrase ? sessionPassphrase : "", sessionSeed, get_root_node_callback); // BIP-0039
-		usbTiny(oldTiny);
-		sessionSeedCached = true;
-		sessionSeedUsesPassphrase = usePassphrase;
-		return sessionSeed;
-	}
-
-	return NULL;
 }
 
 static bool storage_loadNode(const StorageHDNode *node, const char *curve, HDNode *out) {
