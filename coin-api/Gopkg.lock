@@ -16,43 +16,14 @@
 [[projects]]
   branch = "master"
   name = "github.com/btcsuite/btcd"
-  packages = [
-    "btcec",
-    "btcjson",
-    "chaincfg",
-    "chaincfg/chainhash",
-    "rpcclient",
-    "wire"
-  ]
+  packages = ["btcec"]
   revision = "2be2f12b358dc57d70b8f501b00be450192efbc3"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/btclog"
+  name = "github.com/cenkalti/backoff"
   packages = ["."]
-  revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/btcutil"
-  packages = [
-    ".",
-    "base58",
-    "bech32"
-  ]
-  revision = "501929d3d046174c3d39f0ea54ece471aa17238c"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/go-socks"
-  packages = ["socks"]
-  revision = "4720035b7bfd2a9bb130b1c184f8bbe41b6f0d0f"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/websocket"
-  packages = ["."]
-  revision = "31079b6807923eb23992c421b114992b95131b55"
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
 
 [[projects]]
   name = "github.com/coreos/go-systemd"
@@ -73,10 +44,46 @@
   version = "v3.2.0"
 
 [[projects]]
+  name = "github.com/ethereum/go-ethereum"
+  packages = [
+    ".",
+    "common",
+    "common/hexutil",
+    "common/math",
+    "core/types",
+    "crypto",
+    "crypto/secp256k1",
+    "crypto/sha3",
+    "ethclient",
+    "ethdb",
+    "log",
+    "metrics",
+    "p2p/netutil",
+    "params",
+    "rlp",
+    "rpc",
+    "trie"
+  ]
+  revision = "eae63c511ceafab14b92e274c1b18bf1700e2d3d"
+  version = "v1.8.10"
+
+[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
   version = "v1.4.7"
+
+[[projects]]
+  name = "github.com/go-stack/stack"
+  packages = ["."]
+  revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
+  version = "v1.7.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
 
 [[projects]]
   branch = "master"
@@ -135,15 +142,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mgutz/ansi"
+  packages = ["."]
+  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
-
-[[projects]]
-  name = "github.com/op/go-logging"
-  packages = ["."]
-  revision = "b2cb9fa56473e98db8caba80237377e83fe44db5"
-  version = "v1"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -164,6 +171,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
+
+[[projects]]
   name = "github.com/shopspring/decimal"
   packages = ["."]
   revision = "69b3a8ad1f5f2c8bd855cb6506d18593064a346b"
@@ -178,30 +191,23 @@
 [[projects]]
   branch = "master"
   name = "github.com/skycoin/services"
-  packages = [
-    "bitcoin-scanning-wallet/scan",
-    "coin-api/cmd/cli/handler",
-    "coin-api/cmd/servd",
-    "coin-api/internal/btc",
-    "coin-api/internal/locator",
-    "coin-api/internal/mock",
-    "coin-api/internal/model",
-    "coin-api/internal/multi",
-    "errhandler"
-  ]
+  packages = ["errhandler"]
   revision = "079fe49cfb1ac82b3f2c0fc9f2e602e2eea35c08"
 
 [[projects]]
   name = "github.com/skycoin/skycoin"
   packages = [
-    "src/api/cli",
-    "src/api/webrpc",
     "src/cipher",
     "src/cipher/base58",
-    "src/cipher/chacha20",
+    "src/cipher/chacha20poly1305",
+    "src/cipher/chacha20poly1305/internal/chacha20",
     "src/cipher/encoder",
+    "src/cipher/encrypt",
     "src/cipher/go-bip39",
+    "src/cipher/pbkdf2",
+    "src/cipher/poly1305",
     "src/cipher/ripemd160",
+    "src/cipher/scrypt",
     "src/cipher/secp256k1-go",
     "src/cipher/secp256k1-go/secp256k1-go2",
     "src/coin",
@@ -209,10 +215,14 @@
     "src/daemon/gnet",
     "src/daemon/pex",
     "src/daemon/strand",
+    "src/gui",
     "src/testutil",
     "src/util/droplet",
+    "src/util/elapse",
+    "src/util/fee",
     "src/util/file",
     "src/util/http",
+    "src/util/iputil",
     "src/util/logging",
     "src/util/utc",
     "src/visor",
@@ -221,8 +231,8 @@
     "src/visor/historydb",
     "src/wallet"
   ]
-  revision = "1f4165a330902e2a6178c1a76ef7dd905e583019"
-  version = "v0.20.4"
+  revision = "452491da01d7ce66c4ed6c01e19f986e1dda34ea"
+  version = "v0.23.0"
 
 [[projects]]
   name = "github.com/spf13/afero"
@@ -274,6 +284,25 @@
   version = "v1.2.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/syndtr/goleveldb"
+  packages = [
+    "leveldb",
+    "leveldb/cache",
+    "leveldb/comparer",
+    "leveldb/errors",
+    "leveldb/filter",
+    "leveldb/iterator",
+    "leveldb/journal",
+    "leveldb/memdb",
+    "leveldb/opt",
+    "leveldb/storage",
+    "leveldb/table",
+    "leveldb/util"
+  ]
+  revision = "e2150783cd35f5b607daca48afd8c57ec54cc995"
+
+[[projects]]
   name = "github.com/urfave/cli"
   packages = ["."]
   revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
@@ -297,11 +326,18 @@
   packages = [
     "acme",
     "acme/autocert",
-    "pbkdf2",
-    "ripemd160",
     "ssh/terminal"
   ]
   revision = "c3a3ad6d03f7a915c0f7e194b7152974bb73d287"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = [
+    "context",
+    "websocket"
+  ]
+  revision = "1e491301e022f8f977054da4c2d852decd59571f"
 
 [[projects]]
   branch = "master"
@@ -326,6 +362,24 @@
   version = "v0.3.0"
 
 [[projects]]
+  name = "gopkg.in/fatih/set.v0"
+  packages = ["."]
+  revision = "57907de300222151a123d29255ed17f5ed43fad3"
+  version = "v0.1.0"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/karalabe/cookiejar.v2"
+  packages = ["collections/prque"]
+  revision = "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/natefinch/npipe.v2"
+  packages = ["."]
+  revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
@@ -334,6 +388,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2f608b3fc00bbe7e8432b2d92be0b69b1b41f41ffe54b07a627ba435bf0cd2e7"
+  inputs-digest = "37e5dedfc6d3545ea0557d40bd7ddab1d318f63e3197074b3dda9f6f2ca71312"
   solver-name = "gps-cdcl"
   solver-version = 1
