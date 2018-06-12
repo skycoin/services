@@ -12,7 +12,7 @@ This code aims at tranforming the cipher library from [this repository](https://
 #### Extract crosscompiler and add it to your path
 
     tar xjf gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
-    export PATH="gcc-arm-none-eabi-6-2017-q2-update/bin:$PATH"
+    export PATH="$PWD/gcc-arm-none-eabi-6-2017-q2-update/bin:$PATH"
 
 #### Install ST-LINK
 
@@ -42,9 +42,13 @@ Create a file named 99-dev-kit.rules in your /etc/udev/rules.d/ folder and write
 
 Restart your machine or force your udev kernel module to [reload the rules](https://unix.stackexchange.com/questions/39370/how-to-reload-udev-rules-without-reboot).
 
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+
 # 2. How to compile firmware
 
 Then for the actual compilation source make_firmware.sh script:
+
     cd tiny-firmware
     . make_firmware.sh
 
@@ -53,6 +57,14 @@ If you want to compile on PC target set EMULATOR environment variable to 1:
     cd tiny-firmware
     export EMULATOR=1
     . make_firmware.sh
+
+If you get SDL errors you might want to install these:
+    
+    sudo apt-get install libsdl2-dev libsdl2-image-dev
+
+Works also with docker if you run the script:
+
+    ./build-emulator.sh
 
 # 3. How to burn the firmware in the device
 
