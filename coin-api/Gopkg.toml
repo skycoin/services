@@ -30,10 +30,6 @@
   version = "0.3.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/btcsuite/btcd"
-
-[[constraint]]
   name = "github.com/coreos/go-systemd"
   version = "16.0.0"
 
@@ -55,13 +51,13 @@
 
 [[constraint]]
   name = "github.com/skycoin/skycoin"
-  version = "0.20.4"
+  version = "0.23.0"
 
 [[constraint]]
   name = "github.com/spf13/viper"
   version = "1.0.2"
 
-[[constraint]]
+[[override]]
   name = "github.com/stretchr/testify"
   version = "1.2.1"
 
