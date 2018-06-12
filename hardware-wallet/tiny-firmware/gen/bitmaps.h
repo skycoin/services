@@ -31,5 +31,6 @@ extern const BITMAP bmp_logo48;
 extern const BITMAP bmp_logo48_empty;
 extern const BITMAP bmp_logo64;
 extern const BITMAP bmp_logo64_empty;
+extern const BITMAP bmp_skycoin_logo64;
 
 #endif
