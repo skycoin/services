@@ -6,10 +6,10 @@ PYTHON ?= python
 	$(PYTHON) ../vendor/nanopb/generator/nanopb_generator.py $< -L '#include "%s"' -T
 
 %.pb: %.proto
-	protoc -I/usr/include -I. $< -o $@
+	protoc -I../vendor/nanopb/generator/proto/ -I. $< -o $@
 
 %_pb2.py: %.proto
-	protoc -I/usr/include -I. $< --python_out=.
+	protoc -I../vendor/nanopb/generator/proto/ -I. $< --python_out=.
 
 messages_map.h: messages_map.py messages_pb2.py types_pb2.py
 	$(PYTHON) $< > $@

@@ -1,6 +1,12 @@
 make -C vendor/nanopb/generator/proto/
 make -C protob/
 
+if [ -e "bootloader/skycoin_crypto.py" ]; then
+    pushd bootloader
+    ./prepare_signature.sh
+    popd
+fi
+
 if [ -z "$EMULATOR" ]; then
     EMULATOR=0
 fi  

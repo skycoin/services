@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-IMAGE=skycoin-mcu-build-emulator64
+IMAGE=skycoin-build-emulator64
 TAG=${1:-master}
-ELFFILE=build/trezor-emulator64-$TAG
+ELFFILE=build/skycoin-emulator64-$TAG
 
 docker build -f Dockerfile.emulator -t $IMAGE .
 docker run -t -v $(pwd)/build:/build:z $IMAGE /bin/sh -c "\

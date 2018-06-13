@@ -77,7 +77,6 @@ OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/secp256k1.o
 
 #trezor-crypto
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/trezor-tools/bip39.o
-OBJS += $(TOP_DIR)vendor/skycoin-crypto/trezor-tools/pbkdf2.o
 #end trezor-crypto
 
 
