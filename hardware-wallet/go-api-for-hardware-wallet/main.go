@@ -4,7 +4,7 @@ import (
     "fmt"
     "time"
 
-    "./hardware-wallet"
+    "./emulator-wallet"
 
     messages "./protob"
     "./wire"
@@ -16,7 +16,7 @@ func MessageInitialize() [][64]byte {
     initialize := &messages.Initialize{}
     data, _ := proto.Marshal(initialize)
 
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_Initialize)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_Initialize)
     return chunks
 }
 
@@ -26,14 +26,14 @@ func MessageWipeDevice() [][64]byte {
     if err != nil {
         fmt.Printf(err.Error())
     }
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_WipeDevice)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_WipeDevice)
     return chunks
 }
 
 func MessageButtonAck() [][64]byte{
     buttonAck := &messages.ButtonAck{}
     data, _ := proto.Marshal(buttonAck)
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ButtonAck)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ButtonAck)
     return chunks
 }
 
@@ -43,7 +43,7 @@ func MessageLoadDevice() [][64]byte {
     }
     data, _ := proto.Marshal(loadDevice)
 
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_LoadDevice)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_LoadDevice)
     return chunks
 }
 
@@ -54,7 +54,7 @@ func MessageSetMnemonic() [][64]byte {
 
     data, _ := proto.Marshal(setMnemonicMessage)
 
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SetMnemonic)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SetMnemonic)
     return chunks
 }
 
@@ -65,7 +65,7 @@ func MessageSkycoinAddress() [][64]byte {
     }
     data, _ := proto.Marshal(skycoinAddress)
 
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinAddress)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinAddress)
     return chunks
 }
 
@@ -79,7 +79,7 @@ func MessageCheckMessageSignature() [][64]byte {
 
     data, _ := proto.Marshal(skycoinCheckMessageSignature)
 
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinCheckMessageSignature)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinCheckMessageSignature)
     return chunks
 }
 
@@ -92,7 +92,7 @@ func MessageSkycoinSignMessage() [][64]byte {
 
     data, _ := proto.Marshal(skycoinSignMessage)
 
-    chunks := hardwareWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinSignMessage)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinSignMessage)
     return chunks
 }
 
@@ -197,7 +197,7 @@ func SetMnemonic(dev usb.Device) {
 }
 
 func main() {
-    dev, _ := hardwareWallet.GetTrezorDevice()
+    dev, _ := emulatorWallet.GetTrezorDevice()
     var msg wire.Message
     var chunks [][64]byte
 
