@@ -675,6 +675,14 @@ uint32_t storage_getPinWait(uint32_t flash_pinfails)
 	return ~*(const uint32_t*)FLASH_PTR(flash_pinfails);
 }
 
+uint32_t storage_getPinFailsOffset(void)
+{
+	uint32_t flash_pinfails = FLASH_STORAGE_PINAREA;
+	while (*(const uint32_t*)FLASH_PTR(flash_pinfails) == 0)
+		flash_pinfails += sizeof(uint32_t);
+	return flash_pinfails;
+}
+
 bool storage_isInitialized(void)
 {
 	return storageRom->has_node || storageRom->has_mnemonic;
@@ -695,6 +703,18 @@ bool storage_needsBackup(void)
 {
 	return storageUpdate.has_needs_backup ? storageUpdate.needs_backup
 		: storageRom->has_needs_backup && storageRom->needs_backup;
+}
+
+bool storage_unfinishedBackup(void)
+{
+	return storageUpdate.has_unfinished_backup ? storageUpdate.unfinished_backup
+		: storageRom->has_unfinished_backup && storageRom->unfinished_backup;
+}
+
+void storage_setUnfinishedBackup(bool unfinished_backup)
+{
+	storageUpdate.has_unfinished_backup = true;
+	storageUpdate.unfinished_backup = unfinished_backup;
 }
 
 void storage_setNeedsBackup(bool needs_backup)
