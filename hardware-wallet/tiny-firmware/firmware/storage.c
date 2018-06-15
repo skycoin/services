@@ -113,9 +113,7 @@ static char CONFIDENTIAL sessionPassphrase[51];
 void storage_show_error(void)
 {
 	layoutDialog(&bmp_icon_error, NULL, NULL, NULL, _("Storage failure"), _("detected."), NULL, _("Please unplug"), _("the device."), NULL);
-#if !EMULATOR
 	shutdown();
-#endif
 }
 
 void storage_check_flash_errors(uint32_t status)
@@ -170,6 +168,9 @@ bool storage_from_flash(void)
 	} else if (version <= 8) {
 		// added flags and needsBackup
 		old_storage_size = OLD_STORAGE_SIZE(flags);
+	} else if (version <= 9) {
+		// added flags and needsBackup
+		old_storage_size = OLD_STORAGE_SIZE(unfinished_backup);
 	}
 
 	// erase newly added fields
@@ -209,10 +210,9 @@ bool storage_from_flash(void)
 	}
 	// force recomputing u2f root for storage version < 9.
 	// this is done by re-setting the mnemonic, which triggers the computation
-	if (version < 9) {
-		storageUpdate.has_mnemonic = storageRom->has_mnemonic;
-		strlcpy(storageUpdate.mnemonic, storageRom->mnemonic, sizeof(storageUpdate.mnemonic));
-	}
+	
+	storageUpdate.has_mnemonic = storageRom->has_mnemonic;
+	strlcpy(storageUpdate.mnemonic, storageRom->mnemonic, sizeof(storageUpdate.mnemonic));
 	// update storage version on flash
 	if (version != STORAGE_VERSION) {
 		storage_update();
@@ -224,6 +224,7 @@ void storage_init(void)
 {
 	if (!storage_from_flash()) {
 		storage_wipe();
+		storage_show_error();
 	}
 }
 
@@ -330,10 +331,6 @@ static void storage_commit_locked(bool update)
 	// copy meta back
 	uint32_t flash = FLASH_META_START;
 	flash = storage_flash_words(flash, meta_backup, FLASH_META_DESC_LEN / sizeof(uint32_t));
-
-	// copy storage
-	flash = storage_flash_words(flash, &storage_magic, sizeof(storage_magic) / sizeof(uint32_t));
-	flash = storage_flash_words(flash, storage_uuid, sizeof(storage_uuid) / sizeof(uint32_t));
 
 	// copy storage
 	flash = storage_flash_words(flash, &storage_magic, sizeof(storage_magic) / sizeof(uint32_t));

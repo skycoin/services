@@ -236,6 +236,7 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
     memcpy(resp->message, pubkeybase58, size_sign);
     resp->has_message = true;
     msg_write(MessageType_MessageType_Success, resp);
+	layoutHome();
 }
 
 int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
@@ -284,6 +285,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	memcpy(resp->message, sign58, size_sign);
 	resp->has_message = true;
 	msg_write(MessageType_MessageType_Success, resp);
+	layoutHome();
 }
 
 void fsm_msgSkycoinAddress(SkycoinAddress* msg)
@@ -320,6 +322,7 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 	}
 	resp->has_message = true;
 	msg_write(MessageType_MessageType_Success, resp);
+	layoutHome();
 }
 
 void fsm_msgPing(Ping *msg)
@@ -424,8 +427,9 @@ void fsm_msgSetMnemonic(SetMnemonic* msg)
 		return;
 	}
 	storage_setMnemonic(msg->mnemonic);
+	storage_update();
 	fsm_sendSuccess(_(msg->mnemonic));
-
+	layoutHome();
 }
 
 void fsm_msgGetEntropy(GetEntropy *msg)
