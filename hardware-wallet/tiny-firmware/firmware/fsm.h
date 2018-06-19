@@ -45,5 +45,7 @@ void fsm_msgResetDevice(ResetDevice *msg);
 void fsm_msgBackupDevice(BackupDevice *msg);
 void fsm_msgPinMatrixAck(PinMatrixAck *msg);
 void fsm_msgCancel(Cancel *msg);
+void fsm_msgRecoveryDevice(RecoveryDevice *msg);
+void fsm_msgWordAck(WordAck *msg);
 
 #endif
