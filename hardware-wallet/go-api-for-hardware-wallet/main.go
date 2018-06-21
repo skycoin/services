@@ -289,11 +289,28 @@ func main() {
 
     chunks = MessageSkycoinAddress()
     msg = SendToDevice(dev, chunks)
-    responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
-    err = proto.Unmarshal(msg.Data, responseSkycoinAddress)
-    if err != nil {
-        fmt.Printf("unmarshaling error: %s\n", err.Error())
+    if (msg.Kind == 117) {
+        responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
+        err = proto.Unmarshal(msg.Data, responseSkycoinAddress)
+        if err != nil {
+            fmt.Printf("unmarshaling error: %s\n", err.Error())
+        }
+        fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, responseSkycoinAddress.GetAddress())
+    } else {
+        failureMsg := &messages.Failure{}
+        err = proto.Unmarshal(msg.Data, failureMsg)
+        if err != nil {
+            fmt.Printf("unmarshaling error: %s\n", err.Error())
+        }
+        fmt.Printf("Failure %d! Answer is: %s\n", failureMsg.GetCode(), failureMsg.GetMessage())
     }
 
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, responseSkycoinAddress.String())
+    chunks = MessageSkycoinSignMessage()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    chunks = MessageCheckMessageSignature()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
 }
