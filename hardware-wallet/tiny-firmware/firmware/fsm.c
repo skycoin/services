@@ -149,6 +149,9 @@ void fsm_sendFailure(FailureType code, const char *text)
 			case FailureType_Failure_FirmwareError:
 				text = _("Firmware error");
 				break;
+			case FailureType_Failure_AddressGeneration:
+				text = _("Failed to generate address");
+				break;
 		}
 	}
 	if (text) {
@@ -295,7 +298,7 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
     uint8_t seckey[32] = {0};
     uint8_t pubkey[33] = {0};
 
-	RESP_INIT(Success);
+	RESP_INIT(ResponseSkycoinAddress);
 	// reset_entropy((const uint8_t*)msg->seed, strlen(msg->seed));
 	if (msg->has_address_type  && fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) == 0)
 	{
@@ -306,24 +309,23 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 			case SkycoinAddressType_AddressTypeSkycoin:
 				layoutRawMessage("Skycoin address");
     			generate_base58_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->message, address, size_address);
+				memcpy(resp->address, address, size_address);
 				break;
 			case SkycoinAddressType_AddressTypeBitcoin:
 				layoutRawMessage("Bitcoin address");
 				generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->message, address, size_address);
+				memcpy(resp->address, address, size_address);
 				break;
 			default:
-				layoutRawMessage("Unknown address type");
-				break;
+				fsm_sendFailure(FailureType_Failure_AddressGeneration, "Unknown address type");
+				return;
 		}
 	}
 	else {
-		tohex(resp->message, pubkey, 33);
-		layoutRawMessage(resp->message);
+		fsm_sendFailure(FailureType_Failure_AddressGeneration, "Could not generate address");
+		return;
 	}
-	resp->has_message = true;
-	msg_write(MessageType_MessageType_Success, resp);
+	msg_write(MessageType_MessageType_ResponseSkycoinAddress, resp);
 	layoutHome();
 }
 

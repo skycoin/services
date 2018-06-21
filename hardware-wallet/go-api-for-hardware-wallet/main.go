@@ -19,6 +19,21 @@ func MessageInitialize() [][64]byte {
     return chunks
 }
 
+func MessageResetDevice() [][64]byte {
+    resetDevice := &messages.ResetDevice{
+        Strength:    proto.Uint32(256),
+        U2FCounter:    proto.Uint32(0),
+        Language:   proto.String("english"),
+        SkipBackup:     proto.Bool(false),
+        PassphraseProtection:     proto.Bool(false),
+        PinProtection:     proto.Bool(false),
+        DisplayRandom:     proto.Bool(false),
+    }
+    data, _ := proto.Marshal(resetDevice)
+    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ResetDevice)
+    return chunks
+}
+
 func MessageWipeDevice() [][64]byte {
     wipeDevice := &messages.WipeDevice{}
     data, err := proto.Marshal(wipeDevice)
@@ -270,4 +285,15 @@ func main() {
         proto.Unmarshal(msg.Data, failMsg)
         fmt.Printf("Code: %d\nMessage: %s\n", failMsg.GetCode(), failMsg.GetMessage());
     }
+
+
+    chunks = MessageSkycoinAddress()
+    msg = SendToDevice(dev, chunks)
+    responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
+    err = proto.Unmarshal(msg.Data, responseSkycoinAddress)
+    if err != nil {
+        fmt.Printf("unmarshaling error: %s\n", err.Error())
+    }
+
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, responseSkycoinAddress.String())
 }
