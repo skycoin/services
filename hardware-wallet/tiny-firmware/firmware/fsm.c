@@ -253,8 +253,8 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
     {
         return -1;
     }
-	// compute_sha256sum(mnemo, seed, strlen(mnemo));
 	generate_deterministic_key_pair_iterator(mnemo, nextSeed, seckey, pubkey);
+	memcpy(seed, nextSeed, 32);
 	for (uint8_t i = 1; i < index; ++i)
 	{
 		generate_deterministic_key_pair_iterator((char*)seed, nextSeed, seckey, pubkey);
