@@ -4,7 +4,7 @@ import (
     "fmt"
     "time"
     "strings"
-    wallet "./hardware-wallet"
+    wallet "./emulator-wallet"
 
     messages "./protob"
     "./wire"
@@ -30,7 +30,7 @@ func MessageResetDevice() [][64]byte {
         DisplayRandom:     proto.Bool(false),
     }
     data, _ := proto.Marshal(resetDevice)
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ResetDevice)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ResetDevice)
     return chunks
 }
 
@@ -257,6 +257,7 @@ func main() {
     var msg wire.Message
     var chunks [][64]byte
     var inputWord string
+    var err error
     
     if DeviceConnected(dev) {
         fmt.Printf("Connected\n")
