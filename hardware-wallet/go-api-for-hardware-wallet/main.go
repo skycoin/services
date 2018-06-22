@@ -4,7 +4,7 @@ import (
     "fmt"
     "time"
     "strings"
-    wallet "./emulator-wallet"
+    wallet "./hardware-wallet"
 
     messages "./protob"
     "./wire"
@@ -217,6 +217,9 @@ func MessageWordAck(word string) [][64]byte {
 } 
 
 func DeviceConnected(dev wallet.TrezorDevice) bool {
+    if dev == nil {
+        return false
+    }
     msgRaw := &messages.Ping{}
     data, err := proto.Marshal(msgRaw)
     chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_Ping)
