@@ -300,8 +300,13 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 
 	RESP_INIT(ResponseSkycoinAddress);
 	// reset_entropy((const uint8_t*)msg->seed, strlen(msg->seed));
-	if (msg->has_address_type  && fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) == 0)
+	if (msg->has_address_type)
 	{
+		if (fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) != 0) 
+		{
+			fsm_sendFailure(FailureType_Failure_AddressGeneration, "Key pair generation failed");
+			return;
+		}
     	char address[256] = {0};
     	size_t size_address = sizeof(address);
 		switch (msg->address_type)
@@ -432,6 +437,7 @@ void fsm_msgSetMnemonic(SetMnemonic* msg)
 	}
 	storage_setMnemonic(msg->mnemonic);
 	storage_update();
+	storage_setMnemonic(msg->mnemonic);
 	fsm_sendSuccess(_(msg->mnemonic));
 	layoutHome();
 }
