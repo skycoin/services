@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"time"
-
+    "errors"
 	"../usb"
 
 	messages "../protob"
@@ -16,17 +15,19 @@ type TrezorDevice = usb.Device
 func GetTrezorDevice() (TrezorDevice, error) {
 	w, err := usb.InitWebUSB()
 	if err != nil {
-		log.Fatalf("webusb: %s", err)
+		return nil, err
 	}
 	h, err := usb.InitHIDAPI()
 	if err != nil {
-		log.Fatalf("hidapi: %s", err)
+		return nil, err
 	}
 	b := usb.Init(w, h)
 
 	var infos []usb.Info
 	infos, _ = b.Enumerate()
-
+    if len(infos) < 1 {
+        return nil, errors.New("No USB devices connected.")
+    }
 	tries := 0
 	dev, err := b.Connect(infos[0].Path)
 	if err != nil {
