@@ -119,7 +119,7 @@ void storage_show_error(void)
 void storage_check_flash_errors(uint32_t status)
 {
 	// flash operation failed
-	if (status & (FLASH_SR_PGAERR | FLASH_SR_PGPERR | FLASH_SR_PGSERR | FLASH_SR_WRPERR)) {
+	if (status & (FLASH_SR_PGAERR | FLASH_SR_PGSERR | FLASH_SR_WRPERR)) {
 		storage_show_error();
 	}
 }
@@ -129,7 +129,10 @@ bool storage_from_flash(void)
 	storage_clear_update();
 	if (memcmp(FLASH_PTR(FLASH_STORAGE_START), &storage_magic, sizeof(storage_magic)) != 0) {
 		// wrong magic
-		return false;
+		if (*(uint32_t*)FLASH_PTR(FLASH_STORAGE_START) != 0)
+		{
+			return false;
+		}
 	}
 
 	const uint32_t version = storageRom->version;
