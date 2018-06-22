@@ -216,11 +216,36 @@ func MessageWordAck(word string) [][64]byte {
     return chunks
 } 
 
+func DeviceConnected(dev wallet.TrezorDevice) bool {
+    msgRaw := &messages.Ping{}
+    data, err := proto.Marshal(msgRaw)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_Ping)
+    for _, element := range chunks {
+        _, err = dev.Write(element[:])
+        if err != nil {
+            return false
+        }
+    }
+    var msg wire.Message
+    _, err = msg.ReadFrom(dev)
+    if err != nil {
+        return false
+    }
+    return msg.Kind == uint16(messages.MessageType_MessageType_Success)
+}
+
 func main() {
     dev, _ := wallet.GetTrezorDevice()
     var msg wire.Message
     var chunks [][64]byte
     var inputWord string
+    
+    if DeviceConnected(dev) {
+        fmt.Printf("Connected\n")
+    } else {
+        fmt.Printf("Not Connected\n")
+        return
+    }
     
     WipeDevice(dev)
     
