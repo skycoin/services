@@ -11,8 +11,9 @@ import (
 
 	messages "../protob"
 )
+type TrezorDevice = usb.Device
 
-func GetTrezorDevice() (usb.Device, error) {
+func GetTrezorDevice() (TrezorDevice, error) {
 	w, err := usb.InitWebUSB()
 	if err != nil {
 		log.Fatalf("webusb: %s", err)

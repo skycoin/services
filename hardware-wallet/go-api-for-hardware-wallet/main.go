@@ -3,12 +3,11 @@ package main
 import (
     "fmt"
     "time"
-
-    "./emulator-wallet"
+    "strings"
+    wallet "./emulator-wallet"
 
     messages "./protob"
     "./wire"
-    "./usb"
     "github.com/golang/protobuf/proto"
 )
 
@@ -16,7 +15,7 @@ func MessageInitialize() [][64]byte {
     initialize := &messages.Initialize{}
     data, _ := proto.Marshal(initialize)
 
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_Initialize)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_Initialize)
     return chunks
 }
 
@@ -26,14 +25,14 @@ func MessageWipeDevice() [][64]byte {
     if err != nil {
         fmt.Printf(err.Error())
     }
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_WipeDevice)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_WipeDevice)
     return chunks
 }
 
 func MessageButtonAck() [][64]byte{
     buttonAck := &messages.ButtonAck{}
     data, _ := proto.Marshal(buttonAck)
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ButtonAck)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ButtonAck)
     return chunks
 }
 
@@ -43,7 +42,7 @@ func MessageLoadDevice() [][64]byte {
     }
     data, _ := proto.Marshal(loadDevice)
 
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_LoadDevice)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_LoadDevice)
     return chunks
 }
 
@@ -54,7 +53,7 @@ func MessageSetMnemonic() [][64]byte {
 
     data, _ := proto.Marshal(setMnemonicMessage)
 
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SetMnemonic)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SetMnemonic)
     return chunks
 }
 
@@ -65,7 +64,7 @@ func MessageSkycoinAddress() [][64]byte {
     }
     data, _ := proto.Marshal(skycoinAddress)
 
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinAddress)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinAddress)
     return chunks
 }
 
@@ -79,7 +78,7 @@ func MessageCheckMessageSignature() [][64]byte {
 
     data, _ := proto.Marshal(skycoinCheckMessageSignature)
 
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinCheckMessageSignature)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinCheckMessageSignature)
     return chunks
 }
 
@@ -92,18 +91,18 @@ func MessageSkycoinSignMessage() [][64]byte {
 
     data, _ := proto.Marshal(skycoinSignMessage)
 
-    chunks := emulatorWallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinSignMessage)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_SkycoinSignMessage)
     return chunks
 }
 
-func SendToDeviceNoAnswer(dev usb.Device, chunks [][64]byte) {
+func SendToDeviceNoAnswer(dev wallet.TrezorDevice, chunks [][64]byte) {
     for _, element := range chunks {
         _, _ = dev.Write(element[:])
     }
 }
 
 
-func SendToDevice(dev usb.Device, chunks [][64]byte) wire.Message {
+func SendToDevice(dev wallet.TrezorDevice, chunks [][64]byte) wire.Message {
     for _, element := range chunks {
         _, _ = dev.Write(element[:])
     }
@@ -113,7 +112,7 @@ func SendToDevice(dev usb.Device, chunks [][64]byte) wire.Message {
     return msg
 }
 
-func Initialize(dev usb.Device) {
+func Initialize(dev wallet.TrezorDevice) {
     var msg wire.Message
     var chunks [][64]byte
 
@@ -124,7 +123,7 @@ func Initialize(dev usb.Device) {
     fmt.Printf("Init success Answer is: %s\n", initMsg.State)
 }
 
-func WipeDevice(dev usb.Device) {
+func WipeDevice(dev wallet.TrezorDevice) {
     var msg wire.Message
     var chunks [][64]byte
     var err error
@@ -149,7 +148,7 @@ func WipeDevice(dev usb.Device) {
     Initialize(dev)
 }
 
-func LoadDevice(dev usb.Device) {
+func LoadDevice(dev wallet.TrezorDevice) {
     var msg wire.Message
     var chunks [][64]byte
     var err error
@@ -174,7 +173,7 @@ func LoadDevice(dev usb.Device) {
     Initialize(dev)
 }
 
-func SetMnemonic(dev usb.Device) {
+func SetMnemonic(dev wallet.TrezorDevice) {
 
     var msg wire.Message
     var chunks [][64]byte
@@ -196,28 +195,51 @@ func SetMnemonic(dev usb.Device) {
     fmt.Printf("MessageButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
 }
 
+func MessageRecoveryDevice(words uint32) [][64]byte {
+    msg := &messages.RecoveryDevice{
+        WordCount: proto.Uint32(words),
+        Type: proto.Uint32(0),
+    }
+    data, _ := proto.Marshal(msg)
+
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_RecoveryDevice)
+    return chunks
+}
+
+func MessageWordAck(word string) [][64]byte {
+    msg := &messages.WordAck{
+        Word: proto.String(word),
+    }
+    data, _ := proto.Marshal(msg)
+
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_WordAck)
+    return chunks
+} 
+
 func main() {
-    dev, _ := emulatorWallet.GetTrezorDevice()
+    dev, _ := wallet.GetTrezorDevice()
     var msg wire.Message
     var chunks [][64]byte
-
-    // WipeDevice(dev)
-
-    // LoadDevice(dev)
-
-    SetMnemonic(dev)
-
-    chunks = MessageSkycoinAddress()
+    var inputWord string
+    
+    WipeDevice(dev)
+    
+    chunks = MessageRecoveryDevice(12)
     msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
-    chunks = MessageSkycoinSignMessage()
-    msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
-    chunks = MessageCheckMessageSignature()
-    msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
-    Initialize(dev)
+    if msg.Kind == uint16(messages.MessageType_MessageType_ButtonRequest) {
+        chunks = MessageButtonAck()
+        msg = SendToDevice(dev, chunks)
+    }
+    for msg.Kind == uint16(messages.MessageType_MessageType_WordRequest) {
+        fmt.Print("Word request: ")
+        fmt.Scanln(&inputWord)
+        chunks = MessageWordAck(strings.TrimSpace(inputWord))
+        msg = SendToDevice(dev, chunks)
+    }
+    fmt.Printf("Response: %s\n", messages.MessageType_name[int32(msg.Kind)])
+    if msg.Kind == uint16(messages.MessageType_MessageType_Failure) {
+        failMsg := &messages.Failure{}
+        proto.Unmarshal(msg.Data, failMsg)
+        fmt.Printf("Code: %d\nMessage: %s\n", failMsg.GetCode(), failMsg.GetMessage());
+    }
 }

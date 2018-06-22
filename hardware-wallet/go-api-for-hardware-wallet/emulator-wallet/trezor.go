@@ -9,7 +9,9 @@ import (
 	messages "../protob"
 )
 
-func GetTrezorDevice() (net.Conn, error) {
+type TrezorDevice = net.Conn
+
+func GetTrezorDevice() (TrezorDevice, error) {
 	return net.Dial("udp", "127.0.0.1:21324")
 }
 func MakeTrezorHeader(data []byte, msgID messages.MessageType) []byte {
