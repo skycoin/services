@@ -224,6 +224,7 @@ void storage_init(void)
 {
 	if (!storage_from_flash()) {
 		storage_wipe();
+		storage_show_error();
 	}
 }
 
