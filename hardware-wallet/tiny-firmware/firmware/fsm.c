@@ -47,6 +47,7 @@
 #include "gettext.h"
 #include "skycoin_crypto.h"
 #include "skycoin_check_signature.h"
+#include "check_digest.h"
 
 // message methods
 
@@ -275,7 +276,11 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	int res = 0;
 	RESP_INIT(Success);
     fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey);
-    compute_sha256sum(msg->message, digest, strlen(msg->message));
+	if (is_digest(msg->message) == false) {
+    	compute_sha256sum(msg->message, digest, strlen(msg->message));
+	} else {
+		writebuf_fromhexstr(msg->message, digest);
+	}
     res = ecdsa_skycoin_sign(rand(), seckey, digest, signature);
 	if (res == 0)
 	{
