@@ -1,6 +1,8 @@
 version: "3.6"
 
 services:
+  # Database to perform queries on.
+  # Stateful service
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
     ports:
@@ -37,6 +39,7 @@ services:
         constraints:
           - node.labels.kibana == true
 
+  # Ingestor. Allows to perform transformations on the incoming data
   logstash:
     image: docker.elastic.co/logstash/logstash:6.3.0
     environment:
@@ -51,6 +54,7 @@ services:
           - node.labels.logstash == true
       replicas: 1
 
+  # Tiny service that sends docker logs to logstash
   logspout:
     image: bekt/logspout-logstash
     networks:
@@ -65,6 +69,7 @@ services:
         condition: on-failure
         delay: 30s
 
+  # Tiny service that report host metrics to elasticsearch
   metricbeat:
     image: docker.elastic.co/beats/metricbeat:6.3.0
     command: metricbeat -system.hostfs=/hostfs
