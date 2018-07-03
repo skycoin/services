@@ -4,13 +4,13 @@ This project sets up a test environment containing:
 
    - [x] 6 Skycoin nodes
    - [x] A load balancer ([Traefik](https://traefik.io/))
-   - [ ] A set of CockroachDB
-   - [ ] Metrics
-   - [ ] Logging system (working through swarm)
+   - [x] A set of CockroachDB
+   - [x] Metrics
+   - [x] Logging system (working through swarm)
    - [x] Update system (using swarm)
    - [x] The coin nodes communicate with each other
    - [ ] Autoupdate
-   - [ ] Gui dashboard for users (traefik dashboard)
+   - [ ] Gui dashboard for users (traefik dashboard, kibana dashboard, cocroach dashboard)
    - [x] Node registration (through swarm)
 
 
@@ -40,7 +40,7 @@ If you choose to hold your own image repository locally:
 ```bash
     # We will deploy the registry into a single node.
     # First tag the node with a label
-    ocker node update --label-add registry=true $node_name
+    docker node update --label-add registry=true $node_name
 
     # Then pull the image and create the service, which will
     # be deployed on the tagged node
@@ -48,13 +48,7 @@ If you choose to hold your own image repository locally:
     docker service create --name registry --constraint 'node.labels.registry==true' registry:2
 ```
 
-Make sure that from now on you build or copy the images into
-the node that is running the registry service.
-
-If you plan to make this registry publicly available or run it into
-a production environment make sure to take additional steps to secure it.
-
-Those steps are defined [here](https://docs.docker.com/registry/deploying/#run-an-externally-accessible-registry)
+To make it available to other hosts you need to follow the steps defined in the [docs](https://docs.docker.com/registry/deploying/#run-an-externally-accessible-registry)
 in the section called "Get a certificate".
 
 ### Create a Docker image for a new coin
@@ -73,7 +67,7 @@ Follow the instructions [here](https://github.com/skycoin/skycoin/tree/develop/c
 newcoin binary.
 
 Now we can use it to create a new coin with the configuration
-file provided in this project (skyfiber.toml).
+file provided in this project (skynode/fiber.toml).
 
 From the skycoin project root, run the following:
 ```bash
@@ -98,11 +92,13 @@ Also from the skycoin project root, run the following:
 
 Now, get into testenvironment project root and run the following:
 
-    docker build -f sky-node/Dockerfile -t registry:5000/sky-node:1 sky-node
+    docker build -f sky-node/Dockerfile -t registry/sky-node:1 sky-node
 
-With this we have build a new image called registry:5000/sky-node:1. The registry:5000
-is telling Docker to pull this image from there. As our registry service is called
-"registry" the swarm DNS will resolve that name into the container ip.
+Registry here refers to the one you are using, either hosted externally or not. If you
+host it locally you may need to append the port where the service is listening, for example
+registry:5000/sky-node:1.
+
+Push the image as normal, so its available by the other services in the swarm.
 
 ### Deploy the services
 
@@ -160,3 +156,9 @@ You can find instructions to do so in these links:
 1. https://docs.docker.com/registry/deploying/#run-an-externally-accessible-registry)
 2. https://docs.traefik.io/user-guide/docker-and-lets-encrypt/
 3. https://docs.traefik.io/user-guide/cluster-docker-consul/
+
+### Accessing logs and metrics
+In order to visualize whats happening inside the hosts and containers you
+can additionally deploy a second stack.
+
+You can find how [here](./LOG_STACK.md)
