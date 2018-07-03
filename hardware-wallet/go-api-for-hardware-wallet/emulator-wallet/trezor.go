@@ -1,43 +1,18 @@
-package hardwareWallet
+package emulatorWallet
 
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
-	"time"
-    "errors"
-	"../usb"
+
+	"net"
 
 	messages "../protob"
 )
-type TrezorDevice = usb.Device
+
+type TrezorDevice = net.Conn
 
 func GetTrezorDevice() (TrezorDevice, error) {
-	w, err := usb.InitWebUSB()
-	if err != nil {
-		return nil, err
-	}
-	h, err := usb.InitHIDAPI()
-	if err != nil {
-		return nil, err
-	}
-	b := usb.Init(w, h)
-
-	var infos []usb.Info
-	infos, _ = b.Enumerate()
-    if len(infos) < 1 {
-        return nil, errors.New("No USB devices connected.")
-    }
-	tries := 0
-	dev, err := b.Connect(infos[0].Path)
-	if err != nil {
-		fmt.Printf(err.Error())
-		if tries < 3 {
-			tries++
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-	return dev, err
+	return net.Dial("udp", "127.0.0.1:21324")
 }
 func MakeTrezorHeader(data []byte, msgID messages.MessageType) []byte {
 	header := new(bytes.Buffer)

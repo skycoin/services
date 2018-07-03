@@ -9,6 +9,7 @@
 #include "base58.h"
 #include "ecdsa.h"
 #include "secp256k1.h"
+#include "check_digest.h"
 
 #define FROMHEX_MAXLEN 512
 
@@ -400,6 +401,16 @@ START_TEST(test_signature)
 }
 END_TEST
 
+
+START_TEST(test_checkdigest)
+{
+    ck_assert(is_digest("02df09821cff4874198a1dbdc462d224bd99728eeed024185879225762376132"));
+    ck_assert(!is_digest("02df09821cff4874198a1dbdc462d224bd99728eeed0241858792257623761")); //too short
+    ck_assert(!is_digest("02df09821cff4874198a1dbdc462d224bd99728eeed0241858792257623761256")); //too long
+    ck_assert(!is_digest("02df09821cff4874198a1dbdc462d224bd99728eeed0241858792257623761r")); //non hex digits
+}
+END_TEST
+
 // define test suite and cases
 Suite *test_suite(void)
 {
@@ -419,6 +430,7 @@ Suite *test_suite(void)
     tcase_add_test(tc, test_recover_pubkey_from_signed_message);
     tcase_add_test(tc, test_base58_decode);
     tcase_add_test(tc, test_signature);
+    tcase_add_test(tc, test_checkdigest);
     suite_add_tcase(s, tc);
 
     return s;

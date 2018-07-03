@@ -16,4 +16,5 @@ void generate_bitcoin_address_from_pubkey(const uint8_t* pubkey, char* address, 
 void generate_bitcoin_private_address_from_seckey(const uint8_t* pubkey, char* address, size_t *size_address);
 int ecdsa_skycoin_sign(const uint32_t nonce_value, const uint8_t *priv_key, const uint8_t *digest, uint8_t *sig);
 void tohex(char * str, const uint8_t* buffer, int bufferLength);
+void writebuf_fromhexstr(const char *str, uint8_t* buf);
 #endif

@@ -28,9 +28,12 @@
 #include "storage.h"
 #include "oled.h"
 #include "protect.h"
+#include "pinmatrix.h"
 #include "layout2.h"
 #include "base58.h"
 #include "ecdsa.h"
+#include "reset.h"
+#include "recovery.h"
 #include "memory.h"
 #include "usb.h"
 #include "util.h"
@@ -44,6 +47,7 @@
 #include "gettext.h"
 #include "skycoin_crypto.h"
 #include "skycoin_check_signature.h"
+#include "check_digest.h"
 
 // message methods
 
@@ -63,6 +67,18 @@ static uint8_t msg_resp[MSG_OUT_SIZE] __attribute__ ((aligned));
 #define CHECK_NOT_INITIALIZED \
 	if (storage_isInitialized()) { \
 		fsm_sendFailure(FailureType_Failure_UnexpectedMessage, _("Device is already initialized. Use Wipe first.")); \
+		return; \
+	}
+
+#define CHECK_PIN \
+	if (!protectPin(true)) { \
+		layoutHome(); \
+		return; \
+	}
+
+#define CHECK_PIN_UNCACHED \
+	if (!protectPin(false)) { \
+		layoutHome(); \
 		return; \
 	}
 
@@ -134,6 +150,9 @@ void fsm_sendFailure(FailureType code, const char *text)
 			case FailureType_Failure_FirmwareError:
 				text = _("Firmware error");
 				break;
+			case FailureType_Failure_AddressGeneration:
+				text = _("Failed to generate address");
+				break;
 		}
 	}
 	if (text) {
@@ -145,6 +164,7 @@ void fsm_sendFailure(FailureType code, const char *text)
 
 void fsm_msgInitialize(Initialize *msg)
 {
+    recovery_abort();
 	if (msg && msg->has_state && msg->state.size == 64) {
 		uint8_t i_state[64];
 		if (!session_getState(msg->state.bytes, i_state, NULL)) {
@@ -222,6 +242,7 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
     memcpy(resp->message, pubkeybase58, size_sign);
     resp->has_message = true;
     msg_write(MessageType_MessageType_Success, resp);
+	layoutHome();
 }
 
 int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
@@ -233,8 +254,8 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
     {
         return -1;
     }
-	// compute_sha256sum(mnemo, seed, strlen(mnemo));
 	generate_deterministic_key_pair_iterator(mnemo, nextSeed, seckey, pubkey);
+	memcpy(seed, nextSeed, 32);
 	for (uint8_t i = 1; i < index; ++i)
 	{
 		generate_deterministic_key_pair_iterator((char*)seed, nextSeed, seckey, pubkey);
@@ -255,7 +276,11 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	int res = 0;
 	RESP_INIT(Success);
     fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey);
-    compute_sha256sum(msg->message, digest, strlen(msg->message));
+	if (is_digest(msg->message) == false) {
+    	compute_sha256sum(msg->message, digest, strlen(msg->message));
+	} else {
+		writebuf_fromhexstr(msg->message, digest);
+	}
     res = ecdsa_skycoin_sign(rand(), seckey, digest, signature);
 	if (res == 0)
 	{
@@ -270,6 +295,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	memcpy(resp->message, sign58, size_sign);
 	resp->has_message = true;
 	msg_write(MessageType_MessageType_Success, resp);
+	layoutHome();
 }
 
 void fsm_msgSkycoinAddress(SkycoinAddress* msg)
@@ -277,10 +303,15 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
     uint8_t seckey[32] = {0};
     uint8_t pubkey[33] = {0};
 
-	RESP_INIT(Success);
+	RESP_INIT(ResponseSkycoinAddress);
 	// reset_entropy((const uint8_t*)msg->seed, strlen(msg->seed));
-	if (msg->has_address_type  && fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) == 0)
+	if (msg->has_address_type)
 	{
+		if (fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) != 0) 
+		{
+			fsm_sendFailure(FailureType_Failure_AddressGeneration, "Key pair generation failed");
+			return;
+		}
     	char address[256] = {0};
     	size_t size_address = sizeof(address);
 		switch (msg->address_type)
@@ -288,24 +319,24 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 			case SkycoinAddressType_AddressTypeSkycoin:
 				layoutRawMessage("Skycoin address");
     			generate_base58_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->message, address, size_address);
+				memcpy(resp->address, address, size_address);
 				break;
 			case SkycoinAddressType_AddressTypeBitcoin:
 				layoutRawMessage("Bitcoin address");
 				generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->message, address, size_address);
+				memcpy(resp->address, address, size_address);
 				break;
 			default:
-				layoutRawMessage("Unknown address type");
-				break;
+				fsm_sendFailure(FailureType_Failure_AddressGeneration, "Unknown address type");
+				return;
 		}
 	}
 	else {
-		tohex(resp->message, pubkey, 33);
-		layoutRawMessage(resp->message);
+		fsm_sendFailure(FailureType_Failure_AddressGeneration, "Could not generate address");
+		return;
 	}
-	resp->has_message = true;
-	msg_write(MessageType_MessageType_Success, resp);
+	msg_write(MessageType_MessageType_ResponseSkycoinAddress, resp);
+	layoutHome();
 }
 
 void fsm_msgPing(Ping *msg)
@@ -321,11 +352,61 @@ void fsm_msgPing(Ping *msg)
 		}
 	}
 
+	if (msg->has_pin_protection && msg->pin_protection) {
+		CHECK_PIN
+	}
+
+	if (msg->has_passphrase_protection && msg->passphrase_protection) {
+		if (!protectPassphrase()) {
+			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+			return;
+		}
+	}
+
 	if (msg->has_message) {
 		resp->has_message = true;
 		memcpy(&(resp->message), &(msg->message), sizeof(resp->message));
 	}
 	msg_write(MessageType_MessageType_Success, resp);
+	layoutHome();
+}
+
+void fsm_msgChangePin(ChangePin *msg)
+{
+	bool removal = msg->has_remove && msg->remove;
+	if (removal) {
+		if (storage_hasPin()) {
+			layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("remove current PIN?"), NULL, NULL, NULL, NULL);
+		} else {
+			fsm_sendSuccess(_("PIN removed"));
+			return;
+		}
+	} else {
+		if (storage_hasPin()) {
+			layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("change current PIN?"), NULL, NULL, NULL, NULL);
+		} else {
+			layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("set new PIN?"), NULL, NULL, NULL, NULL);
+		}
+	}
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+
+	CHECK_PIN_UNCACHED
+
+	if (removal) {
+		storage_setPin("");
+		storage_update();
+		fsm_sendSuccess(_("PIN removed"));
+	} else {
+		if (protectChangePin()) {
+			fsm_sendSuccess(_("PIN changed"));
+		} else {
+			fsm_sendFailure(FailureType_Failure_PinMismatch, NULL);
+		}
+	}
 	layoutHome();
 }
 
@@ -360,8 +441,30 @@ void fsm_msgSetMnemonic(SetMnemonic* msg)
 		return;
 	}
 	storage_setMnemonic(msg->mnemonic);
+	storage_update();
+	storage_setMnemonic(msg->mnemonic);
 	fsm_sendSuccess(_(msg->mnemonic));
+	layoutHome();
+}
 
+void fsm_msgGetEntropy(GetEntropy *msg)
+{
+	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("send entropy?"), NULL, NULL, NULL, NULL);
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+
+	RESP_INIT(Entropy);
+	uint32_t len = msg->size;
+	if (len > 1024) {
+		len = 1024;
+	}
+	resp->entropy.size = len;
+	random_buffer(resp->entropy.bytes, len);
+	msg_write(MessageType_MessageType_Entropy, resp);
+	layoutHome();
 }
 
 void fsm_msgLoadDevice(LoadDevice *msg)
@@ -388,8 +491,82 @@ void fsm_msgLoadDevice(LoadDevice *msg)
 	layoutHome();
 }
 
+void fsm_msgResetDevice(ResetDevice *msg)
+{
+	CHECK_NOT_INITIALIZED
+
+	CHECK_PARAM(!msg->has_strength || msg->strength == 128 || msg->strength == 192 || msg->strength == 256, _("Invalid seed strength"));
+
+	reset_init(
+		msg->has_display_random && msg->display_random,
+		msg->has_strength ? msg->strength : 128,
+		msg->has_passphrase_protection && msg->passphrase_protection,
+		msg->has_pin_protection && msg->pin_protection,
+		msg->has_language ? msg->language : 0,
+		msg->has_label ? msg->label : 0,
+		msg->has_skip_backup ? msg->skip_backup : false
+	);
+}
+
+void fsm_msgBackupDevice(BackupDevice *msg)
+{
+	CHECK_INITIALIZED
+
+	CHECK_PIN_UNCACHED
+
+	(void)msg;
+	reset_backup(true);
+}
+
+void fsm_msgRecoveryDevice(RecoveryDevice *msg)
+{
+	const bool dry_run = msg->has_dry_run ? msg->dry_run : false;
+	if (dry_run) {
+		CHECK_PIN
+	} else {
+		CHECK_NOT_INITIALIZED
+	}
+
+	CHECK_PARAM(!msg->has_word_count || msg->word_count == 12 || msg->word_count == 18 || msg->word_count == 24, _("Invalid word count"));
+
+	if (!dry_run) {
+		layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("recover the device?"), NULL, NULL, NULL, NULL);
+		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+			layoutHome();
+			return;
+		}
+	}
+
+	recovery_init(
+		msg->has_word_count ? msg->word_count : 12,
+		msg->has_passphrase_protection && msg->passphrase_protection,
+		msg->has_pin_protection && msg->pin_protection,
+		msg->has_language ? msg->language : 0,
+		msg->has_label ? msg->label : 0,
+		msg->has_enforce_wordlist && msg->enforce_wordlist,
+		msg->has_type ? msg->type : 0,
+		dry_run
+	);
+}
+
+void fsm_msgWordAck(WordAck *msg)
+{
+	recovery_word(msg->word);
+}
+
 void fsm_msgCancel(Cancel *msg)
 {
 	(void)msg;
+	recovery_abort();
 	fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+}
+
+void fsm_msgEntropyAck(EntropyAck *msg)
+{
+	if (msg->has_entropy) {
+		reset_entropy(msg->entropy.bytes, msg->entropy.size);
+	} else {
+		reset_entropy(0, 0);
+	}
 }

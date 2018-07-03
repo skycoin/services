@@ -113,15 +113,13 @@ static char CONFIDENTIAL sessionPassphrase[51];
 void storage_show_error(void)
 {
 	layoutDialog(&bmp_icon_error, NULL, NULL, NULL, _("Storage failure"), _("detected."), NULL, _("Please unplug"), _("the device."), NULL);
-#if !EMULATOR
 	shutdown();
-#endif
 }
 
 void storage_check_flash_errors(uint32_t status)
 {
 	// flash operation failed
-	if (status & (FLASH_SR_PGAERR | FLASH_SR_PGPERR | FLASH_SR_PGSERR | FLASH_SR_WRPERR)) {
+	if (status & (FLASH_SR_PGAERR | FLASH_SR_PGSERR | FLASH_SR_WRPERR)) {
 		storage_show_error();
 	}
 }
@@ -131,7 +129,10 @@ bool storage_from_flash(void)
 	storage_clear_update();
 	if (memcmp(FLASH_PTR(FLASH_STORAGE_START), &storage_magic, sizeof(storage_magic)) != 0) {
 		// wrong magic
-		return false;
+		if (*(uint32_t*)FLASH_PTR(FLASH_STORAGE_START) != 0)
+		{
+			return false;
+		}
 	}
 
 	const uint32_t version = storageRom->version;
@@ -170,6 +171,9 @@ bool storage_from_flash(void)
 	} else if (version <= 8) {
 		// added flags and needsBackup
 		old_storage_size = OLD_STORAGE_SIZE(flags);
+	} else if (version <= 9) {
+		// added flags and needsBackup
+		old_storage_size = OLD_STORAGE_SIZE(unfinished_backup);
 	}
 
 	// erase newly added fields
@@ -209,10 +213,9 @@ bool storage_from_flash(void)
 	}
 	// force recomputing u2f root for storage version < 9.
 	// this is done by re-setting the mnemonic, which triggers the computation
-	if (version < 9) {
-		storageUpdate.has_mnemonic = storageRom->has_mnemonic;
-		strlcpy(storageUpdate.mnemonic, storageRom->mnemonic, sizeof(storageUpdate.mnemonic));
-	}
+	
+	storageUpdate.has_mnemonic = storageRom->has_mnemonic;
+	strlcpy(storageUpdate.mnemonic, storageRom->mnemonic, sizeof(storageUpdate.mnemonic));
 	// update storage version on flash
 	if (version != STORAGE_VERSION) {
 		storage_update();
@@ -224,6 +227,7 @@ void storage_init(void)
 {
 	if (!storage_from_flash()) {
 		storage_wipe();
+		storage_show_error();
 	}
 }
 
@@ -330,10 +334,6 @@ static void storage_commit_locked(bool update)
 	// copy meta back
 	uint32_t flash = FLASH_META_START;
 	flash = storage_flash_words(flash, meta_backup, FLASH_META_DESC_LEN / sizeof(uint32_t));
-
-	// copy storage
-	flash = storage_flash_words(flash, &storage_magic, sizeof(storage_magic) / sizeof(uint32_t));
-	flash = storage_flash_words(flash, storage_uuid, sizeof(storage_uuid) / sizeof(uint32_t));
 
 	// copy storage
 	flash = storage_flash_words(flash, &storage_magic, sizeof(storage_magic) / sizeof(uint32_t));
@@ -675,6 +675,14 @@ uint32_t storage_getPinWait(uint32_t flash_pinfails)
 	return ~*(const uint32_t*)FLASH_PTR(flash_pinfails);
 }
 
+uint32_t storage_getPinFailsOffset(void)
+{
+	uint32_t flash_pinfails = FLASH_STORAGE_PINAREA;
+	while (*(const uint32_t*)FLASH_PTR(flash_pinfails) == 0)
+		flash_pinfails += sizeof(uint32_t);
+	return flash_pinfails;
+}
+
 bool storage_isInitialized(void)
 {
 	return storageRom->has_node || storageRom->has_mnemonic;
@@ -695,6 +703,18 @@ bool storage_needsBackup(void)
 {
 	return storageUpdate.has_needs_backup ? storageUpdate.needs_backup
 		: storageRom->has_needs_backup && storageRom->needs_backup;
+}
+
+bool storage_unfinishedBackup(void)
+{
+	return storageUpdate.has_unfinished_backup ? storageUpdate.unfinished_backup
+		: storageRom->has_unfinished_backup && storageRom->unfinished_backup;
+}
+
+void storage_setUnfinishedBackup(bool unfinished_backup)
+{
+	storageUpdate.has_unfinished_backup = true;
+	storageUpdate.unfinished_backup = unfinished_backup;
 }
 
 void storage_setNeedsBackup(bool needs_backup)

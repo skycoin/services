@@ -105,7 +105,7 @@ void layoutHome(void)
 	}
 	layoutLast = layoutHome;
 	const char *label = storage_isInitialized() ? storage_getLabel() : _("Go to trezor.io/start");
-	const uint8_t *homescreen = storage_getHomescreen();
+	const uint8_t *homescreen = bmp_skycoin_logo64.data;
 	if (homescreen) {
 		BITMAP b;
 		b.width = 128;

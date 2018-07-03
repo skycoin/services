@@ -7,6 +7,7 @@ OBJS += startup.o
 OBJS += timer.o
 OBJS += setup.o
 else
+OBJS += emulator/setup.o
 LDFLAGS  += -L$(TOP_DIR)emulator
 LDLIBS   += -lemulator
 LIBDEPS  += $(TOP_DIR)emulator/libemulator.a
@@ -52,6 +53,9 @@ OBJS += firmware/storage.o
 OBJS += firmware/messages.o
 OBJS += firmware/fsm.o
 OBJS += firmware/protect.o
+OBJS += firmware/pinmatrix.o
+OBJS += firmware/reset.o
+OBJS += firmware/recovery.o
 
 OBJS += protob/messages.pb.o
 OBJS += protob/types.pb.o

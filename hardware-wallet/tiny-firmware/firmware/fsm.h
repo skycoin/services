@@ -36,8 +36,16 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg);
 void fsm_msgSkycoinAddress(SkycoinAddress* msg);
 void fsm_msgSetMnemonic(SetMnemonic* msg);
 void fsm_msgPing(Ping *msg);
+void fsm_msgChangePin(ChangePin *msg);
 void fsm_msgWipeDevice(WipeDevice *msg);
+void fsm_msgGetEntropy(GetEntropy *msg);
+void fsm_msgEntropyAck(EntropyAck *msg);
 void fsm_msgLoadDevice(LoadDevice *msg);
+void fsm_msgResetDevice(ResetDevice *msg);
+void fsm_msgBackupDevice(BackupDevice *msg);
+void fsm_msgPinMatrixAck(PinMatrixAck *msg);
 void fsm_msgCancel(Cancel *msg);
+void fsm_msgRecoveryDevice(RecoveryDevice *msg);
+void fsm_msgWordAck(WordAck *msg);
 
 #endif
