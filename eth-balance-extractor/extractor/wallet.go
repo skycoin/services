@@ -60,6 +60,9 @@ type smartContractInput struct {
 
 func parseSmartContractInput(input string, methodHash string) *smartContractInput {
 	i := hexStringToBytes(input)
+	if len(i) != 68 {
+		return nil
+	}
 	method := strings.ToLower(input[0:10])
 	if methodHash != method {
 		return nil
