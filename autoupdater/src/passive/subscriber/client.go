@@ -4,6 +4,6 @@ type Subscriber interface {
 	Subscribe(topic string)
 }
 
-func NewNatsSubscriber(topic string) Subscriber {
+func NewNats(topic string) Subscriber {
 	return newNats(topic)
 }

@@ -3,7 +3,8 @@ package subscriber
 import (
 	gonats "github.com/nats-io/go-nats"
 	"github.com/sirupsen/logrus"
-	)
+	"fmt"
+)
 
 type nats struct {
 	url string
@@ -24,4 +25,5 @@ func (n *nats) Subscribe(topic string) {
 
 func onUpdate(msg *gonats.Msg) {
 	//TODO use function to update a service
+	fmt.Println(string(msg.Data))
 }
