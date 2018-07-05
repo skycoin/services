@@ -20,6 +20,7 @@ func NewApp() *App {
 
 	commands := []gcli.Command{
 		extractWallets(),
+		continueExtraction(),
 	}
 
 	gcliApp.Commands = commands
@@ -66,6 +67,48 @@ func extractWallets() gcli.Command {
 			}
 
 			o := NewOrchestrator(nodeAPIUrl, smartContractAddress, methodHash, destDir, startBlock, threadsCount)
+
+			go o.StartScanning()
+
+			reader := bufio.NewReader(os.Stdin)
+			for {
+				reader.ReadString('\n')
+			}
+
+			return nil
+		},
+	}
+}
+
+func continueExtraction() gcli.Command {
+	name := "continueExtraction"
+	return gcli.Command{
+		Name:         name,
+		Usage:        "Continue extraction process",
+		ArgsUsage:    "[wallets_file] [node_api_url] [smart_contract_address] [smart_contract_transfer_method_hash] [dest_dir] [start_block] [threads_count]",
+		Description:  fmt.Sprintf(`Starts extraction process`),
+		OnUsageError: onCommandUsageError(name),
+		Action: func(c *gcli.Context) error {
+			walletsFile := c.Args().Get(0)
+			nodeAPIUrl := c.Args().Get(1)
+			smartContractAddress := c.Args().Get(2)
+			methodHash := c.Args().Get(3)
+			destDir := c.Args().Get(4)
+			startBlock, err := strconv.Atoi(c.Args().Get(5))
+			if err != nil {
+				fmt.Println("cli > ", err)
+				return gcli.ShowSubcommandHelp(c)
+			}
+			threadsCount, err := strconv.Atoi(c.Args().Get(6))
+			if err != nil {
+				fmt.Println("cli > ", err)
+				return gcli.ShowSubcommandHelp(c)
+			}
+
+			storage := NewStorage(destDir)
+			wallets := storage.LoadSnapshot(walletsFile)
+			o := NewOrchestrator(nodeAPIUrl, smartContractAddress, methodHash, destDir, startBlock, threadsCount)
+			o.scanner.Wallets = wallets
 
 			go o.StartScanning()
 

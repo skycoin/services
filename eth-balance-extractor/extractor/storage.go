@@ -68,13 +68,8 @@ func (s *Storage) LoadSnapshot(snapshotPath string) map[string]*Wallet {
 			}
 		}
 
-		balanceBytes, err := hex.DecodeString(d[2])
-		if err != nil {
-			fmt.Println("Storage > LoadSnapshot", err)
-			panic(err)
-		}
 		balance := big.NewInt(0)
-		balance.SetBytes(balanceBytes)
+		balance.SetString(d[2], 10)
 
 		w := &Wallet{
 			WalletHash:        d[0],

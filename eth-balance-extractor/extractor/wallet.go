@@ -58,9 +58,13 @@ type smartContractInput struct {
 	amount big.Int
 }
 
-func parseSmartContractInput(input string) smartContractInput {
+func parseSmartContractInput(input string, methodHash string) *smartContractInput {
 	i := hexStringToBytes(input)
-	return smartContractInput{
+	method := strings.ToLower(input[0:10])
+	if methodHash != method {
+		return nil
+	}
+	return &smartContractInput{
 		method: strings.ToLower(input[0:10]),
 		to:     strings.ToLower("0x" + input[34:74]),
 		amount: *big.NewInt(0).SetBytes(i[36:68]),
@@ -136,7 +140,10 @@ func (w *WalletScanner) StartScanning() {
 		t := item.(ethrpc.Transaction)
 
 		publicKey, _ := recoverPublicKey(t.Hash, t.V, t.R, t.S)
-		input := parseSmartContractInput(t.Input)
+		input := parseSmartContractInput(t.Input, w.MethodHash)
+		if input == nil {
+			continue
+		}
 
 		from := strings.ToLower(t.From)
 		to := strings.ToLower(input.to)
