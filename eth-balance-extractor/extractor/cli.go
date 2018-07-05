@@ -46,25 +46,26 @@ func extractWallets() gcli.Command {
 	return gcli.Command{
 		Name:         name,
 		Usage:        "Starts extraction process",
-		ArgsUsage:    "[node_api_url] [smart_contract_address] [dest_dir] [start_block] [threads_count]",
+		ArgsUsage:    "[node_api_url] [smart_contract_address] [smart_contract_transfer_method_hash] [dest_dir] [start_block] [threads_count]",
 		Description:  fmt.Sprintf(`Starts extraction process`),
 		OnUsageError: onCommandUsageError(name),
 		Action: func(c *gcli.Context) error {
 			nodeAPIUrl := c.Args().Get(0)
 			smartContractAddress := c.Args().Get(1)
-			destDir := c.Args().Get(2)
-			startBlock, err := strconv.Atoi(c.Args().Get(3))
+			methodHash := c.Args().Get(2)
+			destDir := c.Args().Get(3)
+			startBlock, err := strconv.Atoi(c.Args().Get(4))
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("cli > ", err)
 				return gcli.ShowSubcommandHelp(c)
 			}
-			threadsCount, err := strconv.Atoi(c.Args().Get(4))
+			threadsCount, err := strconv.Atoi(c.Args().Get(5))
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("cli > ", err)
 				return gcli.ShowSubcommandHelp(c)
 			}
 
-			o := NewOrchestrator(nodeAPIUrl, smartContractAddress, destDir, startBlock, threadsCount)
+			o := NewOrchestrator(nodeAPIUrl, smartContractAddress, methodHash, destDir, startBlock, threadsCount)
 
 			go o.StartScanning()
 

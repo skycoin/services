@@ -26,16 +26,19 @@ type WalletScanner struct {
 	IsStopped         bool
 	IsDisposed        bool
 	Wallets           map[string]*Wallet
+
+	MethodHash string
 }
 
 // NewWalletScanner creates a new instance of the WalletScanner
-func NewWalletScanner(transactionsQueue *queue.RingBuffer) *WalletScanner {
+func NewWalletScanner(transactionsQueue *queue.RingBuffer, methodHash string) *WalletScanner {
 	return &WalletScanner{
 		TransactionsQueue: transactionsQueue,
 		Wallets:           make(map[string]*Wallet),
 		IsStopped:         false,
 		IsDisposed:        false,
 		Stop:              make(chan int, 10),
+		MethodHash:        methodHash,
 	}
 }
 
@@ -55,7 +58,7 @@ type smartContractInput struct {
 	amount big.Int
 }
 
-func ParseSmartContractInput(input string) smartContractInput {
+func parseSmartContractInput(input string) smartContractInput {
 	i := hexStringToBytes(input)
 	return smartContractInput{
 		method: strings.ToLower(input[0:10]),
@@ -94,9 +97,7 @@ func recoverPublicKey(msgHash string, v string, r string, s string) ([]byte, err
 	publicKey, err := secp256k1.RecoverPubkey(msgHashParsed, signature)
 	if err != nil {
 		fmt.Println()
-		fmt.Println()
-		fmt.Println()
-		fmt.Println(err)
+		fmt.Println("Wallet > recoverPublicKey", err)
 		fmt.Println("Sign length: ", len(signature))
 		fmt.Println("Msg length: ", len(msgHashParsed), " ", msgHashParsed)
 		fmt.Println("V: ", v)
@@ -135,12 +136,12 @@ func (w *WalletScanner) StartScanning() {
 		t := item.(ethrpc.Transaction)
 
 		publicKey, _ := recoverPublicKey(t.Hash, t.V, t.R, t.S)
-		input := ParseSmartContractInput(t.Input)
+		input := parseSmartContractInput(t.Input)
 
 		from := strings.ToLower(t.From)
 		to := strings.ToLower(input.to)
 
-		if input.method == "0xa9059cbb" {
+		if input.method == w.MethodHash {
 			balanceFrom := big.NewInt(0)
 			balanceFrom.Set(&input.amount)
 			balanceFrom.Neg(balanceFrom)
@@ -172,12 +173,12 @@ func (w *WalletScanner) StartScanning() {
 
 // StopScanning stops scanning process
 func (w *WalletScanner) StopScanning() {
-	fmt.Println("Wallet scanner is stopping")
+	fmt.Println("Wallet > Wallet scanner is stopping")
 	w.Stop <- 0
 	w.TransactionsQueue.Put(nil)
 	for {
 		if w.IsDisposed {
-			fmt.Println("Wallet scanner is stopped")
+			fmt.Println("Wallet > Wallet scanner is stopped")
 			return
 		}
 	}

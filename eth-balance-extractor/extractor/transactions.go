@@ -8,7 +8,8 @@ import (
 	"github.com/onrik/ethrpc"
 )
 
-type ExtractorStoppedCallback func()
+// OnStopCallback represents a callback function that is invoked when extractor finished its work
+type OnStopCallback func()
 
 // Extractor class
 type Extractor struct {
@@ -22,7 +23,7 @@ type Extractor struct {
 	LastProcessedBlock int
 	TransactionsLimit  int
 
-	ExtractorStoppedCallback ExtractorStoppedCallback
+	OnStopCallback OnStopCallback
 }
 
 // NewExtractor creates a new Extractor class
@@ -40,25 +41,25 @@ func NewExtractor(nodeAPI string, contractAddress string) *Extractor {
 }
 
 func extraction(client *ethrpc.EthRPC, startBlock int, endBlock int, contractAddress string, queue *queue.RingBuffer, stopChannel chan int, id int) {
-	fmt.Println("Started thread with id ", id)
+	fmt.Println("Extractor > Started thread with id ", id)
 	for i := startBlock; i <= endBlock; i++ {
 		block, err := client.EthGetBlockByNumber(i, true)
 		if block == nil {
 			continue
 		}
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("Extractor > extraction", err)
 		}
 		for _, t := range block.Transactions {
 			if strings.ToLower(t.To) == contractAddress {
 				err := queue.Put(t)
 				if err != nil {
-					fmt.Println(err)
+					fmt.Println("Extractor > extraction", err)
 				}
 			}
 		}
 	}
-	fmt.Println("Stopped thread ", id)
+	fmt.Println("Extractor > Stopped thread ", id)
 	stopChannel <- id
 }
 
@@ -81,20 +82,20 @@ func (e *Extractor) StartExtraction(startBlock int, threadsCount int, blocksLimi
 		msg := <-e.Stop
 
 		if msg == 0 {
-			fmt.Println("Stop message has been received")
+			fmt.Println("Extractor > Stop message has been received")
 			e.LastProcessedBlock = lastProcessedBlock
 			e.IsStopped = true
 			e.TransactionsQueue.Put(nil)
 		} else {
 			threadsCount--
 		}
-		fmt.Println("Active threads: ", threadsCount)
+		fmt.Println("Extractor > Active threads: ", threadsCount)
 
 		if threadsCount == 0 {
 			e.IsDisposed = true
 			e.LastProcessedBlock = lastProcessedBlock
-			if e.ExtractorStoppedCallback != nil {
-				e.ExtractorStoppedCallback()
+			if e.OnStopCallback != nil {
+				e.OnStopCallback()
 			}
 			return
 		}
@@ -103,16 +104,16 @@ func (e *Extractor) StartExtraction(startBlock int, threadsCount int, blocksLimi
 			continue
 		}
 
-		fmt.Println("Transactions buffer length: ", e.TransactionsQueue.Len())
+		fmt.Println("Extractor > Transactions buffer length: ", e.TransactionsQueue.Len())
 
 		if lastProcessedBlock >= blocksLimit {
-			fmt.Println("Blocks limit has been reached ", lastProcessedBlock)
+			fmt.Println("Extractor > Blocks limit has been reached ", lastProcessedBlock)
 			go e.StopExtraction()
 			continue
 		}
 
 		if threadsCount == 1 || e.TransactionsQueue.Len() < 50000 {
-			fmt.Println("Started new thread. Starting block is ", lastProcessedBlock)
+			fmt.Println("Extractor > Started new thread. Starting block is ", lastProcessedBlock)
 			go extraction(client, lastProcessedBlock, lastProcessedBlock+blockPerThread, e.ContractAddress, e.TransactionsQueue, e.Stop, threadID)
 			threadsCount++
 			threadID++
@@ -128,9 +129,9 @@ func (e *Extractor) StopExtraction() {
 
 	for {
 		if e.IsDisposed {
-			fmt.Println("Extractor is stopped")
-			if e.ExtractorStoppedCallback != nil {
-				e.ExtractorStoppedCallback()
+			fmt.Println("Extractor > Extractor is stopped")
+			if e.OnStopCallback != nil {
+				e.OnStopCallback()
 			}
 			return
 		}
