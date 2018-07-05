@@ -1,43 +1,46 @@
 matrix:
   include:
-  - language: go
-    go_import_path: github.com/skycoin/services
-    before_install:
-    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
-      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
-    go: 1.9
-    sudo: required
-    install: true
-    script:
-    - cd ./otc
-    - go build
-    after_success:
-    - sh .travis/deploy.sh
-  - language: node_js
-    node_js:
-    - '8'
-    before_install:
-    - npm install -g yarn --cache-min 999999999
-    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
-      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
+  - language: c
+    os:
+    - linux
+    - osx
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+    env: 
+      -PROTOBUF_VERSION=3.4.0
     before_script:
-    - cd otc-web
-    - yarn install
+      - sudo apt-get update 
+      - cd hardware-wallet
+      #install libcheck
+      - wget https://github.com/libcheck/check/releases/download/0.12.0/check-0.12.0.tar.gz
+      - tar xvf check-0.12.0.tar.gz
+      - cd check-0.12.0
+      - autoreconf --install
+      - ./configure
+      - make
+      - cp src/.libs/*.so* src
+      - export CHECK_PATH=$PWD
+      - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CHECK_PATH/src
+      - cd -
+      #install sdl&& \
+      - sudo apt-get install -y build-essential curl unzip git python3 python3-pip python-protobuf
+      - sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev libsdl2-dev libsdl2-image-dev
+      #install protobuf
+      - curl -LO "https://github.com/google/protobuf/releases/download/v${PROTOBUF_VERSION}/protoc-${PROTOBUF_VERSION}-linux-x86_64.zip"
+      - mkdir protoc
+      - yes | unzip "protoc-${PROTOBUF_VERSION}-linux-x86_64.zip" -d ./protoc
+      - find -name protoc
+      - export PATH=$PATH:$PWD/protoc/bin
+      - pip3 install --user --upgrade protobuf
+      - pip3 install --user "protobuf==${PROTOBUF_VERSION}" ecdsa
+      - pip install --user --upgrade protobuf
     script:
-    - yarn build
-    after_success:
-    - sh .travis/deploy.sh
-  - language: node_js
-    node_js:
-    - '8'
-    before_install:
-    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
-      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
-    - npm install -g yarn --cache-min 999999999
-    before_script:
-    - cd otc-web-admin
-    - yarn install
-    script:
-    - yarn build
-    after_success:
-    - sh .travis/deploy.sh
+      - cd skycoin-api
+      - make
+      - ./test_skycoin_crypto
+      - make clean
+      - cd ../tiny-firmware
+      - export EMULATOR=1
+      - . make_firmware.sh
