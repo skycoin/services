@@ -49,6 +49,21 @@ func hexStringToBytes(src string) []byte {
 	return hexStringToBigInt(src).Bytes()
 }
 
+type smartContractInput struct {
+	method string
+	to     string
+	amount big.Int
+}
+
+func ParseSmartContractInput(input string) smartContractInput {
+	i := hexStringToBytes(input)
+	return smartContractInput{
+		method: strings.ToLower(input[0:10]),
+		to:     strings.ToLower("0x" + input[34:74]),
+		amount: *big.NewInt(0).SetBytes(i[36:68]),
+	}
+}
+
 func normalizeHash(src []byte) []byte {
 	if len(src) != 32 {
 		tmp := src
@@ -115,28 +130,41 @@ func (w *WalletScanner) StartScanning() {
 		}
 		if err != nil {
 			log.Fatalln(err)
+			continue
 		}
 		t := item.(ethrpc.Transaction)
+
 		publicKey, _ := recoverPublicKey(t.Hash, t.V, t.R, t.S)
+		input := ParseSmartContractInput(t.Input)
 
-		tFrom := strings.ToLower(t.From)
-		tTo := strings.ToLower(t.To)
+		from := strings.ToLower(t.From)
+		to := strings.ToLower(input.to)
 
-		if tFrom != "" {
-			if w.Wallets[tFrom] != nil {
-				w.Wallets[tFrom].Balance = *w.Wallets[tFrom].Balance.Add(t.Value.Neg(&t.Value), &w.Wallets[tFrom].Balance)
-				w.Wallets[tFrom].TransactionsCount++
+		if input.method == "0xa9059cbb" {
+			balanceFrom := big.NewInt(0)
+			balanceFrom.Set(&input.amount)
+			balanceFrom.Neg(balanceFrom)
+
+			if w.Wallets[from] != nil {
+				w.Wallets[from].Balance = *w.Wallets[from].Balance.Add(&w.Wallets[from].Balance, balanceFrom)
+				w.Wallets[from].TransactionsCount++
 			} else {
-				w.Wallets[tFrom] = &Wallet{Balance: *big.NewInt(0), PublicKey: publicKey, WalletHash: t.From, TransactionsCount: 1}
+				w.Wallets[from] = &Wallet{
+					Balance:           *balanceFrom,
+					PublicKey:         publicKey,
+					WalletHash:        from,
+					TransactionsCount: 1,
+				}
 			}
-		}
 
-		if tTo != "" {
-			if w.Wallets[tTo] != nil {
-				w.Wallets[tTo].Balance = *w.Wallets[tTo].Balance.Add(&t.Value, &w.Wallets[tTo].Balance)
-				w.Wallets[tTo].TransactionsCount++
+			balanceTo := big.NewInt(0)
+			balanceTo.Set(&input.amount)
+
+			if w.Wallets[to] != nil {
+				w.Wallets[to].Balance = *w.Wallets[to].Balance.Add(&w.Wallets[to].Balance, balanceTo)
+				w.Wallets[to].TransactionsCount++
 			} else {
-				w.Wallets[tTo] = &Wallet{Balance: t.Value, PublicKey: nil, WalletHash: t.To, TransactionsCount: 1}
+				w.Wallets[to] = &Wallet{Balance: *balanceTo, PublicKey: nil, WalletHash: to, TransactionsCount: 1}
 			}
 		}
 	}

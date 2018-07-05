@@ -2,6 +2,7 @@ package extractor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/golang-collections/go-datastructures/queue"
 	"github.com/onrik/ethrpc"
@@ -16,6 +17,8 @@ type Extractor struct {
 	IsStopped         bool
 	IsDisposed        bool
 
+	ContractAddress    string
+	NodeAPI            string
 	LastProcessedBlock int
 	TransactionsLimit  int
 
@@ -23,28 +26,35 @@ type Extractor struct {
 }
 
 // NewExtractor creates a new Extractor class
-func NewExtractor() *Extractor {
+func NewExtractor(nodeAPI string, contractAddress string) *Extractor {
 	return &Extractor{
-		TransactionsQueue:  queue.NewRingBuffer(100000),
-		LastProcessedBlock: 0,
-		IsStopped:          false,
-		IsDisposed:         false,
+		TransactionsQueue: queue.NewRingBuffer(100000),
+		IsStopped:         false,
+		IsDisposed:        false,
 
-		TransactionsLimit: 0,
+		ContractAddress:    strings.ToLower(contractAddress),
+		NodeAPI:            nodeAPI,
+		LastProcessedBlock: 0,
+		TransactionsLimit:  0,
 	}
 }
 
-func extraction(client *ethrpc.EthRPC, startBlock int, endBlock int, queue *queue.RingBuffer, stopChannel chan int, id int) {
+func extraction(client *ethrpc.EthRPC, startBlock int, endBlock int, contractAddress string, queue *queue.RingBuffer, stopChannel chan int, id int) {
 	fmt.Println("Started thread with id ", id)
 	for i := startBlock; i <= endBlock; i++ {
 		block, err := client.EthGetBlockByNumber(i, true)
+		if block == nil {
+			continue
+		}
 		if err != nil {
 			fmt.Println(err)
 		}
 		for _, t := range block.Transactions {
-			err := queue.Put(t)
-			if err != nil {
-				fmt.Println(err)
+			if strings.ToLower(t.To) == contractAddress {
+				err := queue.Put(t)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}
@@ -54,7 +64,7 @@ func extraction(client *ethrpc.EthRPC, startBlock int, endBlock int, queue *queu
 
 // StartExtraction start the extraction process
 func (e *Extractor) StartExtraction(startBlock int, threadsCount int, blocksLimit int, blockPerThread int) {
-	client := ethrpc.New("http://127.0.0.1:8545")
+	client := ethrpc.New(e.NodeAPI)
 
 	threadID := 1
 
@@ -62,14 +72,13 @@ func (e *Extractor) StartExtraction(startBlock int, threadsCount int, blocksLimi
 
 	for i := 0; i < threadsCount; i++ {
 		start := startBlock + i*blockPerThread
-		go extraction(client, start, start+blockPerThread, e.TransactionsQueue, e.Stop, threadID)
+		go extraction(client, start, start+blockPerThread, e.ContractAddress, e.TransactionsQueue, e.Stop, threadID)
 		threadID++
 	}
 	lastProcessedBlock := startBlock + threadsCount*blockPerThread
 
 	for {
 		msg := <-e.Stop
-		fmt.Println("Active threads: ", threadsCount)
 
 		if msg == 0 {
 			fmt.Println("Stop message has been received")
@@ -79,9 +88,14 @@ func (e *Extractor) StartExtraction(startBlock int, threadsCount int, blocksLimi
 		} else {
 			threadsCount--
 		}
+		fmt.Println("Active threads: ", threadsCount)
 
 		if threadsCount == 0 {
 			e.IsDisposed = true
+			e.LastProcessedBlock = lastProcessedBlock
+			if e.ExtractorStoppedCallback != nil {
+				e.ExtractorStoppedCallback()
+			}
 			return
 		}
 
@@ -99,7 +113,7 @@ func (e *Extractor) StartExtraction(startBlock int, threadsCount int, blocksLimi
 
 		if threadsCount == 1 || e.TransactionsQueue.Len() < 50000 {
 			fmt.Println("Started new thread. Starting block is ", lastProcessedBlock)
-			go extraction(client, lastProcessedBlock, lastProcessedBlock+blockPerThread, e.TransactionsQueue, e.Stop, threadID)
+			go extraction(client, lastProcessedBlock, lastProcessedBlock+blockPerThread, e.ContractAddress, e.TransactionsQueue, e.Stop, threadID)
 			threadsCount++
 			threadID++
 		}

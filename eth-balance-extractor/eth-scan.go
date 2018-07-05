@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 
@@ -9,17 +8,9 @@ import (
 )
 
 func main() {
-	o := extractor.NewOrchestrator(1000000, 10)
-
-	go o.StartScanning()
-
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		reader.ReadString('\n')
+	app := extractor.NewApp()
+	if err := app.Run(os.Args); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-
-	fmt.Println("Shutting down...")
-	// e.StopExtraction()
-	// scanner.StopScanning()
-	// fmt.Println("Last scanned block is: ", e.LastProcessedBlock)
 }

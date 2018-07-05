@@ -6,21 +6,25 @@ import (
 
 // Orchestrator represents an orchestrator of transactions extractor and wallets scanner
 type Orchestrator struct {
-	extractor *Extractor
-	scanner   *WalletScanner
-	storage   *Storage
+	extractor       *Extractor
+	scanner         *WalletScanner
+	storage         *Storage
+	contractAddress string
+	nodeAPI         string
 
 	startBlock   int
 	threadsCount int
 }
 
 // NewOrchestrator creates a new instance of the Orchestrator
-func NewOrchestrator(startBlock int, threadsCount int) *Orchestrator {
-	e := NewExtractor()
+func NewOrchestrator(nodeAPI string, contractAddress string, destDir string, startBlock int, threadsCount int) *Orchestrator {
+	e := NewExtractor(nodeAPI, contractAddress)
 	return &Orchestrator{
-		extractor: e,
-		scanner:   NewWalletScanner(e.TransactionsQueue),
-		storage:   NewStorage("./tmp"),
+		extractor:       e,
+		scanner:         NewWalletScanner(e.TransactionsQueue),
+		storage:         NewStorage(destDir),
+		contractAddress: contractAddress,
+		nodeAPI:         nodeAPI,
 
 		startBlock:   startBlock,
 		threadsCount: threadsCount,
@@ -28,7 +32,7 @@ func NewOrchestrator(startBlock int, threadsCount int) *Orchestrator {
 }
 
 func reinitializeOrchestrator(o *Orchestrator, wallets map[string]*Wallet) {
-	e := NewExtractor()
+	e := NewExtractor(o.nodeAPI, o.contractAddress)
 	o.extractor = e
 	o.scanner = NewWalletScanner(e.TransactionsQueue)
 	o.scanner.Wallets = wallets
@@ -37,7 +41,7 @@ func reinitializeOrchestrator(o *Orchestrator, wallets map[string]*Wallet) {
 // StartScanning starts scanning process
 func (o *Orchestrator) StartScanning() {
 	lastProcessedBlock := o.startBlock
-	blocksPerIteration := 100
+	blocksPerIteration := 10
 
 	for {
 		o.extractor.ExtractorStoppedCallback = func() {

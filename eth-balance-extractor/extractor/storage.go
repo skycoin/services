@@ -9,14 +9,6 @@ import (
 	"strconv"
 )
 
-// WalletInfo as
-// type WalletInfo struct {
-// 	WalletHash        string `db:"walletHash"`
-// 	PublicKey         []byte `db:"publicKey"`
-// 	TransactionsCount int    `db:"transactionsCount"`
-// 	Balance           []byte `db:"balance"`
-// }
-
 // Storage represets a logic of storing wallets
 type Storage struct {
 	dataDir string
@@ -38,7 +30,7 @@ func (s *Storage) StoreSnapshot(blocksScanned int, snapshot map[string]*Wallet) 
 	}
 	defer f.Close()
 	for key, w := range snapshot {
-		f.WriteString(fmt.Sprintf("%s,%s,%s,%d\n", key, hex.EncodeToString(w.PublicKey), hex.EncodeToString(w.Balance.Bytes()), w.TransactionsCount))
+		f.WriteString(fmt.Sprintf("%s,%s,%s,%d\n", key, hex.EncodeToString(w.PublicKey), w.Balance.Text(10), w.TransactionsCount))
 	}
 }
 
