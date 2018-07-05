@@ -26,10 +26,12 @@ type Extractor struct {
 	OnStopCallback OnStopCallback
 }
 
+const RingBufferLength = 100000
+
 // NewExtractor creates a new Extractor class
 func NewExtractor(nodeAPI string, contractAddress string) *Extractor {
 	return &Extractor{
-		TransactionsQueue: queue.NewRingBuffer(100000),
+		TransactionsQueue: queue.NewRingBuffer(RingBufferLength),
 		IsStopped:         false,
 		IsDisposed:        false,
 
@@ -44,11 +46,15 @@ func extraction(client *ethrpc.EthRPC, startBlock int, endBlock int, contractAdd
 	fmt.Println("Extractor > Started thread with id ", id)
 	for i := startBlock; i <= endBlock; i++ {
 		block, err := client.EthGetBlockByNumber(i, true)
+		if err != nil {
+			fmt.Println("Extractor > extraction", err)
+			panic(err)
+		}
 		if block == nil {
 			continue
 		}
-		if err != nil {
-			fmt.Println("Extractor > extraction", err)
+		if i%100 == 0 {
+			fmt.Println("Extractor > thread", id, "processing block", i)
 		}
 		for _, t := range block.Transactions {
 			if strings.ToLower(t.To) == contractAddress {
@@ -104,15 +110,15 @@ func (e *Extractor) StartExtraction(startBlock int, threadsCount int, blocksLimi
 			continue
 		}
 
-		fmt.Println("Extractor > Transactions buffer length: ", e.TransactionsQueue.Len())
+		fmt.Println("Extractor > Transactions queue length: ", e.TransactionsQueue.Len())
 
-		if lastProcessedBlock >= blocksLimit {
+		if lastProcessedBlock >= blocksLimit && !e.IsStopped {
 			fmt.Println("Extractor > Blocks limit has been reached ", lastProcessedBlock)
-			go e.StopExtraction()
+			e.IsStopped = true
 			continue
 		}
 
-		if threadsCount == 1 || e.TransactionsQueue.Len() < 50000 {
+		if threadsCount == 1 || e.TransactionsQueue.Len() < (RingBufferLength/2) {
 			fmt.Println("Extractor > Started new thread. Starting block is ", lastProcessedBlock)
 			go extraction(client, lastProcessedBlock, lastProcessedBlock+blockPerThread, e.ContractAddress, e.TransactionsQueue, e.Stop, threadID)
 			threadsCount++
