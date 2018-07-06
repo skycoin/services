@@ -3,7 +3,7 @@ package main
 import (
     "fmt"
     "time"
-    "strings"
+    
     wallet "./emulator-wallet"
 
     messages "./protob"
@@ -41,6 +41,13 @@ func MessageWipeDevice() [][64]byte {
         fmt.Printf(err.Error())
     }
     chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_WipeDevice)
+    return chunks
+}
+
+func MessageChangePin() [][64]byte{
+    changePin := &messages.ChangePin{}
+    data, _ := proto.Marshal(changePin)
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_ChangePin)
     return chunks
 }
 
@@ -231,6 +238,16 @@ func MessageWordAck(word string) [][64]byte {
     return chunks
 } 
 
+func MessagePinMatrixAck(p string) [][64]byte {
+    msg := &messages.PinMatrixAck{
+        Pin: proto.String(p),
+    }
+    data, _ := proto.Marshal(msg)
+
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_PinMatrixAck)
+    return chunks
+} 
+
 func DeviceConnected(dev wallet.TrezorDevice) bool {
     if dev == nil {
         return false
@@ -249,35 +266,57 @@ func DeviceConnected(dev wallet.TrezorDevice) bool {
     if err != nil {
         return false
     }
-    return msg.Kind == uint16(messages.MessageType_MessageType_Success)
+    return true
 }
 
 func main() {
     dev, _ := wallet.GetTrezorDevice()
     var msg wire.Message
     var chunks [][64]byte
-    var inputWord string
-    var err error
-    
+    var pinEnc string
     if DeviceConnected(dev) {
-        fmt.Printf("Connected\n")
+        fmt.Printf("%s\n", "Connected")
     } else {
-        fmt.Printf("Not Connected\n")
+        fmt.Printf("%s\n", "Not Connected")
         return
     }
-    
-    WipeDevice(dev)
-    
-    chunks = MessageRecoveryDevice(12)
+    // Make sure device is on home screen
+    Initialize(dev)
+    // Send ChangePin message
+    chunks = MessageChangePin()
     msg = SendToDevice(dev, chunks)
+    // Acknowledge that a button has been pressed
     if msg.Kind == uint16(messages.MessageType_MessageType_ButtonRequest) {
         chunks = MessageButtonAck()
         msg = SendToDevice(dev, chunks)
     }
-    for msg.Kind == uint16(messages.MessageType_MessageType_WordRequest) {
-        fmt.Print("Word request: ")
-        fmt.Scanln(&inputWord)
-        chunks = MessageWordAck(strings.TrimSpace(inputWord))
+    /*
+        The message that is sent contains an encoded form of the PIN.
+        The digits of the PIN are displayed in a 3x3 matrix on the Trezor,
+        and the message that is sent back is a string containing the positions
+        of the digits on that matrix. Below is the mapping between positions
+        and characters to be sent:
+        
+        7 8 9
+        4 5 6
+        1 2 3
+        
+        For example, if the numbers are laid out in this way on the Trezor,
+        
+        3 1 5
+        7 8 4
+        9 6 2
+        
+        To set the PIN "12345", the positions are:
+        
+        top, bottom-right, top-left, right, top-right
+        
+        so you must send "83769".
+    */
+    for msg.Kind == uint16(messages.MessageType_MessageType_PinMatrixRequest) {
+        fmt.Print("PinMatrixRequest response: ")
+        fmt.Scanln(&pinEnc)
+        chunks = MessagePinMatrixAck(pinEnc)
         msg = SendToDevice(dev, chunks)
     }
     fmt.Printf("Response: %s\n", messages.MessageType_name[int32(msg.Kind)])
@@ -286,32 +325,4 @@ func main() {
         proto.Unmarshal(msg.Data, failMsg)
         fmt.Printf("Code: %d\nMessage: %s\n", failMsg.GetCode(), failMsg.GetMessage());
     }
-
-
-    chunks = MessageSkycoinAddress()
-    msg = SendToDevice(dev, chunks)
-    if (msg.Kind == 117) {
-        responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
-        err = proto.Unmarshal(msg.Data, responseSkycoinAddress)
-        if err != nil {
-            fmt.Printf("unmarshaling error: %s\n", err.Error())
-        }
-        fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, responseSkycoinAddress.GetAddress())
-    } else {
-        failureMsg := &messages.Failure{}
-        err = proto.Unmarshal(msg.Data, failureMsg)
-        if err != nil {
-            fmt.Printf("unmarshaling error: %s\n", err.Error())
-        }
-        fmt.Printf("Failure %d! Answer is: %s\n", failureMsg.GetCode(), failureMsg.GetMessage())
-    }
-
-    chunks = MessageSkycoinSignMessage()
-    msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
-    chunks = MessageCheckMessageSignature()
-    msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
-
 }
