@@ -175,12 +175,23 @@ func (w *WalletScanner) StartScanning() {
 		balanceFrom.Neg(balanceFrom)
 
 		if w.Wallets[from] != nil {
+			var pk []byte
+			pk = nil
+			if input.method == w.TransferHash {
+				pk = publicKey
+			}
 			w.Wallets[from].Balance = *w.Wallets[from].Balance.Add(&w.Wallets[from].Balance, balanceFrom)
 			w.Wallets[from].TransactionsCount++
+			w.Wallets[from].PublicKey = pk
 		} else {
+			var pk []byte
+			pk = nil
+			if input.method == w.TransferHash {
+				pk = publicKey
+			}
 			w.Wallets[from] = &Wallet{
 				Balance:           *balanceFrom,
-				PublicKey:         publicKey,
+				PublicKey:         pk,
 				WalletHash:        from,
 				TransactionsCount: 1,
 			}
@@ -190,10 +201,21 @@ func (w *WalletScanner) StartScanning() {
 		balanceTo.Set(&input.amount)
 
 		if w.Wallets[to] != nil {
+			var pk []byte
+			pk = nil
+			if input.method == w.TransferFromHash && to == strings.ToLower(t.From) {
+				pk = publicKey
+			}
 			w.Wallets[to].Balance = *w.Wallets[to].Balance.Add(&w.Wallets[to].Balance, balanceTo)
 			w.Wallets[to].TransactionsCount++
+			w.Wallets[to].PublicKey = pk
 		} else {
-			w.Wallets[to] = &Wallet{Balance: *balanceTo, PublicKey: nil, WalletHash: to, TransactionsCount: 1}
+			var pk []byte
+			pk = nil
+			if input.method == w.TransferFromHash && to == strings.ToLower(t.From) {
+				pk = publicKey
+			}
+			w.Wallets[to] = &Wallet{Balance: *balanceTo, PublicKey: pk, WalletHash: to, TransactionsCount: 1}
 		}
 	}
 }
