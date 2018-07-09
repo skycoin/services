@@ -45,7 +45,7 @@ func reinitializeOrchestrator(o *Orchestrator, wallets map[string]*Wallet) {
 // StartScanning starts scanning process
 func (o *Orchestrator) StartScanning() {
 	lastProcessedBlock := o.startBlock
-	blocksPerIteration := 1000
+	blocksPerIteration := 10000
 
 	for {
 		o.extractor.OnStopCallback = func() {
@@ -65,6 +65,8 @@ func (o *Orchestrator) StartScanning() {
 		if len(o.scanner.Wallets) > 0 {
 			o.storage.StoreSnapshot(lastProcessedBlock, o.scanner.Wallets)
 		}
+		o.storage.SaveTransactions(lastProcessedBlock, "processed-transactions", o.scanner.ProcessedTransactions)
+		o.storage.SaveTransactions(lastProcessedBlock, "ignored-transactions", o.scanner.IgnoredTransactions)
 
 		reinitializeOrchestrator(o, o.scanner.Wallets)
 	}

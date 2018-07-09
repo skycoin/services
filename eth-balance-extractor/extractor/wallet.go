@@ -29,18 +29,23 @@ type WalletScanner struct {
 
 	TransferHash     string
 	TransferFromHash string
+
+	ProcessedTransactions []ethrpc.Transaction
+	IgnoredTransactions   []ethrpc.Transaction
 }
 
 // NewWalletScanner creates a new instance of the WalletScanner
 func NewWalletScanner(transactionsQueue *queue.RingBuffer, transferHash string, transferFromHash string) *WalletScanner {
 	return &WalletScanner{
-		TransactionsQueue: transactionsQueue,
-		Wallets:           make(map[string]*Wallet),
-		IsStopped:         false,
-		IsDisposed:        false,
-		Stop:              make(chan int, 10),
-		TransferHash:      transferHash,
-		TransferFromHash:  transferFromHash,
+		TransactionsQueue:     transactionsQueue,
+		Wallets:               make(map[string]*Wallet),
+		IsStopped:             false,
+		IsDisposed:            false,
+		Stop:                  make(chan int, 10),
+		TransferHash:          transferHash,
+		TransferFromHash:      transferFromHash,
+		ProcessedTransactions: make([]ethrpc.Transaction, 0),
+		IgnoredTransactions:   make([]ethrpc.Transaction, 0),
 	}
 }
 
@@ -64,7 +69,7 @@ type smartContractInput struct {
 
 func parseSmartContractInput(input string, transferHash string, transferFromHash string) *smartContractInput {
 	i := hexStringToBytes(input)
-	if len(input) < 10 {
+	if len(input) != 202 && len(input) != 138 {
 		return nil
 	}
 	method := strings.ToLower(input[0:10])
@@ -159,6 +164,7 @@ func (w *WalletScanner) StartScanning() {
 		publicKey, _ := recoverPublicKey(t.Hash, t.V, t.R, t.S)
 		input := parseSmartContractInput(t.Input, w.TransferHash, w.TransferFromHash)
 		if input == nil {
+			w.IgnoredTransactions = append(w.IgnoredTransactions, t)
 			continue
 		}
 
@@ -217,6 +223,8 @@ func (w *WalletScanner) StartScanning() {
 			}
 			w.Wallets[to] = &Wallet{Balance: *balanceTo, PublicKey: pk, WalletHash: to, TransactionsCount: 1}
 		}
+
+		w.ProcessedTransactions = append(w.ProcessedTransactions, t)
 	}
 }
 

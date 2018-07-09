@@ -3,10 +3,13 @@ package extractor
 import (
 	"encoding/csv"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
 	"strconv"
+
+	"github.com/onrik/ethrpc"
 )
 
 // Storage represets a logic of storing wallets
@@ -81,4 +84,15 @@ func (s *Storage) LoadSnapshot(snapshotPath string) map[string]*Wallet {
 	}
 
 	return wallets
+}
+
+// SaveTransactions safes an array of transactions
+func (s *Storage) SaveTransactions(blocksScanned int, folderName string, transactions []ethrpc.Transaction) {
+	f, err := os.Create(fmt.Sprintf("%s/%s/%d.json", s.dataDir, folderName, blocksScanned))
+	if err != nil {
+		fmt.Println("Storage > StoreSnapshot", err)
+		panic(err)
+	}
+	defer f.Close()
+	json.NewEncoder(f).Encode(transactions)
 }
