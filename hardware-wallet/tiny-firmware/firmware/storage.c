@@ -119,8 +119,19 @@ void storage_show_error(void)
 void storage_check_flash_errors(uint32_t status)
 {
 	// flash operation failed
-	if (status & (FLASH_SR_PGAERR | FLASH_SR_PGSERR | FLASH_SR_WRPERR)) {
-		storage_show_error();
+	if (status & (FLASH_SR_PGAERR | FLASH_SR_PGPERR | FLASH_SR_PGSERR | FLASH_SR_WRPERR)) {
+		if (status & FLASH_SR_PGAERR) {
+			layoutDialog(&bmp_icon_error, NULL, NULL, NULL, _("Storage failure"), _("FLASH_SR_PGAERR."), NULL, _("Please unplug"), _("the device."), NULL);
+		} else if (status & FLASH_SR_PGPERR) {
+			layoutDialog(&bmp_icon_error, NULL, NULL, NULL, _("Storage failure"), _("FLASH_SR_PGPERR."), NULL, _("Please unplug"), _("the device."), NULL);
+		} else if (status & FLASH_SR_PGSERR) {
+			layoutDialog(&bmp_icon_error, NULL, NULL, NULL, _("Storage failure"), _("FLASH_SR_PGSERR."), NULL, _("Please unplug"), _("the device."), NULL);
+		} else if (status & FLASH_SR_WRPERR) {
+			layoutDialog(&bmp_icon_error, NULL, NULL, NULL, _("Storage failure"), _("FLASH_SR_WRPERR."), NULL, _("Please unplug"), _("the device."), NULL);
+		} else {
+			storage_show_error();
+		}
+		shutdown();
 	}
 }
 
@@ -129,10 +140,7 @@ bool storage_from_flash(void)
 	storage_clear_update();
 	if (memcmp(FLASH_PTR(FLASH_STORAGE_START), &storage_magic, sizeof(storage_magic)) != 0) {
 		// wrong magic
-		if (*(uint32_t*)FLASH_PTR(FLASH_STORAGE_START) != 0)
-		{
-			return false;
-		}
+		return false;
 	}
 
 	const uint32_t version = storageRom->version;
@@ -172,8 +180,8 @@ bool storage_from_flash(void)
 		// added flags and needsBackup
 		old_storage_size = OLD_STORAGE_SIZE(flags);
 	} else if (version <= 9) {
-		// added flags and needsBackup
-		old_storage_size = OLD_STORAGE_SIZE(unfinished_backup);
+		// added u2froot, unfinished_backup and auto_lock_delay_ms
+		old_storage_size = OLD_STORAGE_SIZE(auto_lock_delay_ms);
 	}
 
 	// erase newly added fields
@@ -335,6 +343,7 @@ static void storage_commit_locked(bool update)
 	uint32_t flash = FLASH_META_START;
 	flash = storage_flash_words(flash, meta_backup, FLASH_META_DESC_LEN / sizeof(uint32_t));
 
+	_Static_assert( FLASH_META_START + FLASH_META_DESC_LEN == FLASH_STORAGE_START, "magic is written at a wrong address");
 	// copy storage
 	flash = storage_flash_words(flash, &storage_magic, sizeof(storage_magic) / sizeof(uint32_t));
 	flash = storage_flash_words(flash, storage_uuid, sizeof(storage_uuid) / sizeof(uint32_t));
@@ -730,6 +739,7 @@ void storage_applyFlags(uint32_t flags)
 	}
 	storageUpdate.has_flags = true;
 	storageUpdate.flags |= flags;
+	storage_update();
 }
 
 uint32_t storage_getFlags(void)
@@ -744,8 +754,7 @@ void storage_wipe(void)
 
 	svc_flash_unlock();
 	storage_commit_locked(false);
-	svc_flash_lock();
-	storage_check_flash_errors(0);
+	storage_check_flash_errors(svc_flash_lock());
 
 	storage_clearPinArea();
 }
