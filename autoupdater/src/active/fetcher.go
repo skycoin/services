@@ -8,10 +8,12 @@ type Fetcher interface {
 	Stop()
 }
 
-func New(name, url string) Fetcher{
+func New(name, url string) Fetcher {
 	switch name {
 	case "git":
 		return newGit(url)
+	case "dockerhub":
+		return newDockerHub(url)
 	}
-	return newGit(url)
+	return newDockerHub(url)
 }
