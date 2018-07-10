@@ -5,12 +5,19 @@ import (
 	"os"
 	"github.com/sirupsen/logrus"
 	"time"
+	"github.com/skycoin/services/autoupdater/src/passive/subscriber"
+	"github.com/skycoin/services/autoupdater/src/updater"
+	"github.com/skycoin/services/autoupdater/src/active"
 )
 
 type config struct {
 	mode string
 
 }
+
+const DEFAULT_URL = "http://localhost:4222"
+const DEFAULT_GIT = "/skycoin/skycoin"
+const DEFAULT_TOPIC = "top"
 
 func cmd() *cli.App{
 	app := cli.NewApp()
@@ -44,6 +51,14 @@ func cmd() *cli.App{
 func passiveAction(c *cli.Context){
 	logrus.Info("passive -> updater: ",c.GlobalString("updater"),
 		" broker: ",c.String("message-broker"))
+
+	subConfig := &subscriber.Config{
+		Urls: []string{DEFAULT_URL},
+		Updater: updater.New(c.String("updater")),
+		Name: c.String("message-broker"),
+	}
+	sub := subscriber.New(subConfig)
+	sub.Subscribe(DEFAULT_TOPIC)
 }
 
 func passiveFlags() []cli.Flag {
@@ -60,6 +75,9 @@ func passiveFlags() []cli.Flag {
 func activeAction(c *cli.Context){
 	logrus.Info("active -> updater: ",c.GlobalString("updater"),
 		" interval: ",c.Duration("interval").String())
+	fetcher := active.New(c.String("updater"),DEFAULT_GIT)
+	fetcher.SetInterval(c.Duration("interval"))
+	fetcher.Start()
 }
 
 func activeFlags() []cli.Flag {
