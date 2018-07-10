@@ -24,6 +24,7 @@ CFLAGS   += $(OPTFLAGS) \
             -Werror
 
 INC=-I$(CHECK_PATH)/src
+INC+=-I$(CHECK_PATH)
 INC+=-Itools/
 CFLAGS += -I. $(INC)
 
