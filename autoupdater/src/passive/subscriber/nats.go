@@ -4,26 +4,35 @@ import (
 	gonats "github.com/nats-io/go-nats"
 	"github.com/sirupsen/logrus"
 	"fmt"
+	"github.com/skycoin/services/autoupdater/src/updater"
 )
 
 type nats struct {
+	updater updater.Updater
 	url string
 	connection *gonats.Conn
+	closer chan int
 }
 
-func newNats(url string) *nats{
+func newNats(u updater.Updater, url string) *nats{
 	connection, err := gonats.Connect(url)
 	if err != nil {
-		logrus.Error("cannot connect to NATS",err)
+		logrus.Fatal("cannot connect to NATS",err)
 	}
-	return &nats{url, connection}
+	return &nats{u, url, connection, make(chan int)}
 }
 
 func (n *nats) Subscribe(topic string) {
-	n.connection.Subscribe(topic, onUpdate)
+	n.connection.Subscribe(topic, n.onUpdate)
+	<- n.closer
 }
 
-func onUpdate(msg *gonats.Msg) {
-	//TODO use function to update a service
-	fmt.Println(string(msg.Data))
+func (n *nats) Stop() {
+	n.closer <- 1
 }
+
+func (n *nats) onUpdate(msg *gonats.Msg) {
+	fmt.Println(string(msg.Data))
+	n.updater.Update(msg.Subject,string(msg.Data))
+}
+

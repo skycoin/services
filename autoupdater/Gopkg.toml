@@ -32,9 +32,9 @@
   name = "github.com/Sirupsen/logrus"
   version = "v1.0.5"
 
-[[constraing]]
-  name = "github.com/docker/docker/client"
-  version = "facad557440a0c955beb615495b8d0175f25e4e3"
+[[constraint]]
+  name = "github.com/fsouza/go-dockerclient"
+  version = "v1.2.2"
 
 [prune]
   go-tests = true
