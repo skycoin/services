@@ -226,7 +226,7 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
     uint8_t digest[32] = {0};
 
     RESP_INIT(Success);
-    compute_sha256sum(msg->message, digest, strlen(msg->message));
+    compute_sha256sum((const uint8_t *)msg->message, digest, strlen(msg->message));
     size_sign = sizeof(sign);
     b58tobin(sign, &size_sign, msg->signature);
     recover_pubkey_from_signed_message((char*)digest, sign, pubkey);
@@ -254,11 +254,11 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
     {
         return -1;
     }
-	generate_deterministic_key_pair_iterator(mnemo, nextSeed, seckey, pubkey);
+	generate_deterministic_key_pair_iterator((const uint8_t *)mnemo, strlen(mnemo), nextSeed, seckey, pubkey);
 	memcpy(seed, nextSeed, 32);
-	for (uint8_t i = 1; i < index; ++i)
+	for (uint8_t i = 0; i < index; ++i)
 	{
-		generate_deterministic_key_pair_iterator((char*)seed, nextSeed, seckey, pubkey);
+		generate_deterministic_key_pair_iterator(seed, 32, nextSeed, seckey, pubkey);
 		memcpy(seed, nextSeed, 32);
 		seed[32] = 0;
 	}
@@ -277,7 +277,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	RESP_INIT(Success);
     fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey);
 	if (is_digest(msg->message) == false) {
-    	compute_sha256sum(msg->message, digest, strlen(msg->message));
+    	compute_sha256sum((const uint8_t *)msg->message, digest, strlen(msg->message));
 	} else {
 		writebuf_fromhexstr(msg->message, digest);
 	}
