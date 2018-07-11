@@ -9,7 +9,7 @@ import (
 )
 
 type git struct {
-	// url should be in the format /:owner/:repository
+	// Url should be in the format /:owner/:Repository
 	url      string
 	interval time.Duration
 	ticker   *time.Ticker
@@ -63,7 +63,7 @@ func (g *git) Stop() {
 }
 
 type ReleaseJSON struct {
-	Url string `json:"url"`
+	Url string `json:"Url"`
 	PublishedAt string `json:"published_at"`
 }
 

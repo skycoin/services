@@ -8,28 +8,30 @@ import (
 	"sync"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
 	"github.com/sirupsen/logrus"
 	"github.com/skycoin/services/autoupdater/src/updater"
+	"github.com/fsouza/go-dockerclient"
 )
 
 const SCHEMA_VERSION_HEADER = "application/vnd.docker.distribution.manifest.v2+json"
 const URI = "/manifests/latest"
+const TOKEN_TEMPLATE  = "https://auth.docker.io/token?Service=registry.docker.io&scope=Repository:%s:pull"
 
-type dockerhub struct {
-	// url should be in the format /:owner/:repository
-	url         string
-	repository  string
-	service string
-	client      *http.Client
-	interval    time.Duration
-	ticker      *time.Ticker
+type Dockerhub struct {
+	// Url should be in the format /:owner/:Repository
+	Url         string
+	Repository  string
+	Service     string
+	Client      *http.Client
+	Interval    time.Duration
+	Ticker      *time.Ticker
 	lock        sync.Mutex
-	tag         string
+	Tag         string
 	localDigest string
 	exit        chan int
 	token       *DockerHubToken
-	updater updater.Updater
+	TokenTemplate string
+	updater     updater.Updater
 }
 
 type DockerHubToken struct {
@@ -49,55 +51,49 @@ type DockerConfigJSON struct {
 	Digest string `json:"digest"`
 }
 
-func newDockerHub(updater updater.Updater, repository, tag, service string) *dockerhub {
+func NewDockerHub(updater updater.Updater, repository, tag, service, currentDigest string) *Dockerhub {
+	if currentDigest == "" {
+		imageName := repository + ":" + tag
+		currentDigest = getCurrentDockerImageDigest(imageName)
+	}
 	parsedRepo := strings.Replace(repository, "/", "", 1)
-	imageName := repository + ":" + tag
-	endpoint := "unix:///var/run/docker.sock"
-	client, err := docker.NewClient(endpoint)
-	if err != nil {
-		logrus.Fatal("Cannot connect to docker daemon: ", err)
-	}
+	logrus.Infof("Retrieved ID is: %s", currentDigest)
 
-	image, err := client.InspectImage(imageName)
-	if err != nil {
-		logrus.Fatal("Cannot inspect local image ", imageName, " err: ", err)
-	}
-	logrus.Infof("Retrieved ID is: %s", image.ID)
-
-	return &dockerhub{
-		url:         "https://registry.hub.docker.com/v2" + repository,
-		repository:  parsedRepo,
-		client:      &http.Client{},
-		tag:         tag,
-		localDigest: image.ID,
+	return &Dockerhub{
+		Url:         "https://registry.hub.docker.com/v2" + repository,
+		Repository:  parsedRepo,
+		Client:      &http.Client{},
+		Tag:         tag,
+		localDigest: currentDigest,
 		exit:        make(chan int),
 		token:       &DockerHubToken{},
-		updater: updater,
-		service: service,
+		updater:     updater,
+		Service:     service,
+		TokenTemplate: TOKEN_TEMPLATE,
 	}
 }
 
-func (g *dockerhub) SetLastRelease(tag string, date *time.Time) {
-	g.tag = tag
+func (g *Dockerhub) SetLastRelease(tag string, date *time.Time) {
+	g.Tag = tag
 }
 
-func (g *dockerhub) SetInterval(t time.Duration) {
-	g.interval = t
+func (g *Dockerhub) SetInterval(t time.Duration) {
+	g.Interval = t
 
 	g.lock.Lock()
-	if g.ticker != nil {
-		g.ticker = time.NewTicker(g.interval)
+	if g.Ticker != nil {
+		g.Ticker = time.NewTicker(g.Interval)
 	}
 	g.lock.Unlock()
 }
 
-func (g *dockerhub) Start() {
-	g.ticker = time.NewTicker(g.interval)
+func (g *Dockerhub) Start() {
+	g.Ticker = time.NewTicker(g.Interval)
 	g.getToken()
 	go func() {
 		for {
 			select {
-			case t := <-g.ticker.C:
+			case t := <-g.Ticker.C:
 				g.checkUpdate(t)
 			}
 		}
@@ -105,17 +101,17 @@ func (g *dockerhub) Start() {
 	<-g.exit
 }
 
-func (g *dockerhub) Stop() {
-	g.ticker.Stop()
+func (g *Dockerhub) Stop() {
+	g.Ticker.Stop()
 	g.exit <- 1
 }
 
-func (g *dockerhub) checkUpdate(t time.Time) {
+func (g *Dockerhub) checkUpdate(t time.Time) {
 	logrus.Info("Looking for new version at: ", t)
 	// Try to fetch new version
 	err := g.checkIfNew()
 	if err != nil {
-		logrus.Info("Cannot contact dockerhub api: ", err)
+		logrus.Info("Cannot contact Dockerhub api: ", err)
 		if time.Now().After(g.token.ExpirationDate) {
 			logrus.Info("Token expired. Requesting new token...")
 			g.getToken()
@@ -123,10 +119,9 @@ func (g *dockerhub) checkUpdate(t time.Time) {
 	}
 }
 
-
-// We need to get a token with pull access to the repository
-func (g *dockerhub) getToken() {
-	tokenRequest := fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", g.repository)
+// We need to get a token with pull access to the Repository
+func (g *Dockerhub) getToken() {
+	tokenRequest := fmt.Sprintf(g.TokenTemplate, g.Repository)
 	resp, err := http.Get(tokenRequest)
 	if err != nil {
 		logrus.Fatal("Cannot request a token to: ", tokenRequest, " err: ", err)
@@ -153,18 +148,51 @@ func (g *dockerhub) getToken() {
 }
 
 // We are looking that the latest image digest is different from the local one
-func (g *dockerhub) checkIfNew() error {
-	url := g.url + URI
-	logrus.Info("Performing request to ", url)
+func (g *Dockerhub) checkIfNew() error {
+	url := g.Url + URI
+	logrus.Info("Looking for new versions at ", url)
+
+	release, err := getLatestDigest(g.Client, g.token.Token, url)
+	if err != nil {
+		return err
+	}
+	if release.Config.Digest == "" {
+		return fmt.Errorf("Response doesn't contains a digest")
+	}
+	if g.localDigest != release.Config.Digest {
+		logrus.Info("New version: ", release.Config.Digest)
+		g.updater.Update(g.Service, g.Repository+":"+g.Tag)
+		g.localDigest = release.Config.Digest
+	}
+
+	return nil
+}
+
+func getCurrentDockerImageDigest(imageName string) string{
+	endpoint := "unix:///var/run/docker.sock"
+	client, err := docker.NewClient(endpoint)
+	if err != nil {
+		logrus.Fatal("Cannot connect to docker daemon: ", err)
+	}
+	image, err := client.InspectImage(imageName)
+	if err != nil {
+		logrus.Fatal("Cannot inspect local image ", imageName, " err: ", err)
+	}
+	return image.ID
+}
+
+func getLatestDigest(client *http.Client, token, url string) (*DockerReleaseJSON, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		logrus.Fatal("Cannot create request object, err: ", err)
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", g.token.Token))
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Add("Accept", SCHEMA_VERSION_HEADER)
-	resp, err := g.client.Do(req)
+
+	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -173,14 +201,6 @@ func (g *dockerhub) checkIfNew() error {
 	if err != nil {
 		logrus.Fatal("Cannot unmarshal to a release object, err: ", err)
 	}
-	if release.Config.Digest == "" {
-		return fmt.Errorf("Response doesn't contains a digest")
-	}
-	if g.localDigest != release.Config.Digest {
-		logrus.Info("New version: ", release.Config.Digest)
-		g.updater.Update(g.service, g.repository+":"+g.tag)
-		g.localDigest = release.Config.Digest
-	}
 
-	return nil
+	return release, nil
 }

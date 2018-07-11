@@ -6,13 +6,13 @@ import (
 )
 
 type Config struct {
-	// Fetcher name: dockerhub or git
+	// Fetcher name: Dockerhub or git
 	Name string
 
-	// Repository name in the format /:owner/:image, without tag
+	// Repository name in the format /:owner/:image, without Tag
 	Repository string
 
-	// Image tag in which to look for updates
+	// Image Tag in which to look for updates
 	Tag string
 
 	// Service updater
@@ -20,6 +20,9 @@ type Config struct {
 
 	// Service name to update
 	Service string
+
+	// Current version of the service
+	CurrentVersion string
 }
 
 type Fetcher interface {
@@ -33,7 +36,8 @@ func New(c *Config) Fetcher {
 	case "git":
 		return newGit(c.Repository)
 	case "dockerhub":
-		return newDockerHub(c.Updater, c.Repository, c.Tag, c.Service)
+		return NewDockerHub(c.Updater, c.Repository, c.Tag, c.Service, c.CurrentVersion)
 	}
-	return newDockerHub(c.Updater, c.Repository, c.Tag, c.Service)
+	return NewDockerHub(c.Updater, c.Repository, c.Tag, c.Service, c.CurrentVersion)
 }
+
