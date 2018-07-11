@@ -6,6 +6,7 @@ CFLAGS += -DAPPVER=$(APPVER)
 OBJS += startup.o
 OBJS += timer.o
 OBJS += setup.o
+OBJS += supervise.o
 else
 OBJS += emulator/setup.o
 LDFLAGS  += -L$(TOP_DIR)emulator
