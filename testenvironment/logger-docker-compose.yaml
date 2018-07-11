@@ -1,0 +1,101 @@
+version: "3.6"
+
+services:
+  # Database to perform queries on.
+  # Stateful service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
+    ports:
+      - 9200:9200
+    networks:
+      - log
+    environment:
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - cluster.name=docker-cluster
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.es1 == true
+      resources:
+        limits:
+          memory: 2g
+
+  # UI that allows to perform queries on ElasticSearch
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.3.0
+    networks:
+      - log
+    ports:
+      - '8082:5601'
+    environment:
+      SERVER_NAME: kibana.example.org
+      ELASTICSEARCH_URL: 'http://elasticsearch:9200'
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.kibana == true
+
+  # Ingestor. Allows to perform transformations on the incoming data
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.3.0
+    environment:
+      - "ES_JAVA_OPTS=-XX:-AssumeMP"
+    networks:
+      - log
+    volumes:
+      - ./logger/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    deploy:
+      placement:
+        constraints:
+          - node.labels.logstash == true
+      replicas: 1
+
+  # Tiny service that sends docker logs to logstash
+  logspout:
+    image: bekt/logspout-logstash
+    networks:
+      - log
+    environment:
+      ROUTE_URIS: 'logstash://logstash:5000'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+
+  # Tiny service that report host metrics to elasticsearch
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:6.3.0
+    command: metricbeat -system.hostfs=/hostfs
+    user: root
+    networks:
+      - log
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    configs:
+      - source: metricbeatyml
+        target: /usr/share/metricbeat/metricbeat.yml
+    deploy:
+      mode: global
+
+volumes:
+  esdata:
+    driver: local
+
+networks:
+  log:
+    driver: overlay
+    attachable: true
+
+configs:
+  metricbeatyml:
+    file: "./logger/metricbeat/metricbeat.yml"
