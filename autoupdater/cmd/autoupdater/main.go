@@ -11,12 +11,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-type config struct {
-	mode string
-}
-
 const DEFAULT_URL = "http://localhost:4222"
-const DEFAULT_GIT = "/library/mariadb"
 const DEFAULT_TOPIC = "top"
 
 func cmd() *cli.App {
@@ -69,13 +64,22 @@ func passiveFlags() []cli.Flag {
 			Usage:  "supported brokers: nats",
 			EnvVar: "MESSAGE_BROKER",
 		},
+
 	}
 }
 
 func activeAction(c *cli.Context) {
 	logrus.Info("active -> updater: ", c.GlobalString("updater"),
 		" interval: ", c.Duration("interval").String())
-	fetcher := active.New(c.String("updater"), DEFAULT_GIT)
+
+	config := &active.Config{
+		Tag: c.String("version"),
+		Repository: c.String("repository"),
+		Name: c.String("fetcher"),
+		Updater: updater.New(c.String("updater")),
+		Service: c.String("service"),
+	}
+	fetcher := active.New(config)
 	fetcher.SetInterval(c.Duration("interval"))
 	fetcher.Start()
 }
@@ -87,6 +91,30 @@ func activeFlags() []cli.Flag {
 			Value:  1 * time.Hour,
 			Usage:  "time interval to check for new version",
 			EnvVar: "INTERVAL",
+		},
+		cli.StringFlag{
+			Name:   "repository, r",
+			Value:  "/skycoin/skycoin",
+			Usage:  "repository to fetch updates from",
+			EnvVar: "ACTIVE_REPOSITORY",
+		},
+		cli.StringFlag{
+			Name:   "version, v",
+			Value:  "latest",
+			Usage:  "software version to look for updates",
+			EnvVar: "ACTIVE_VERSION",
+		},
+		cli.StringFlag{
+			Name:   "fetcher, f",
+			Value:  "dockerhub",
+			Usage:  "fetcher used to look for updates: dockerhub or git",
+			EnvVar: "ACTIVE_FETCHER",
+		},
+		cli.StringFlag{
+			Name:   "service, s",
+			Value:  "skycoin-node",
+			Usage:  "service name to be updated",
+			EnvVar: "ACTIVE_SERVICE",
 		},
 	}
 }

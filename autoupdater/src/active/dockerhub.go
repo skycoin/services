@@ -10,6 +10,7 @@ import (
 
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/sirupsen/logrus"
+	"github.com/skycoin/services/autoupdater/src/updater"
 )
 
 const SCHEMA_VERSION_HEADER = "application/vnd.docker.distribution.manifest.v2+json"
@@ -19,6 +20,7 @@ type dockerhub struct {
 	// url should be in the format /:owner/:repository
 	url         string
 	repository  string
+	service string
 	client      *http.Client
 	interval    time.Duration
 	ticker      *time.Ticker
@@ -27,6 +29,7 @@ type dockerhub struct {
 	localDigest string
 	exit        chan int
 	token       *DockerHubToken
+	updater updater.Updater
 }
 
 type DockerHubToken struct {
@@ -46,9 +49,9 @@ type DockerConfigJSON struct {
 	Digest string `json:"digest"`
 }
 
-func newDockerHub(url string) *dockerhub {
-	latest := "latest"
-	imageName := url + ":" + latest
+func newDockerHub(updater updater.Updater, repository, tag, service string) *dockerhub {
+	parsedRepo := strings.Replace(repository, "/", "", 1)
+	imageName := repository + ":" + tag
 	endpoint := "unix:///var/run/docker.sock"
 	client, err := docker.NewClient(endpoint)
 	if err != nil {
@@ -59,15 +62,18 @@ func newDockerHub(url string) *dockerhub {
 	if err != nil {
 		logrus.Fatal("Cannot inspect local image ", imageName, " err: ", err)
 	}
+	logrus.Infof("Retrieved ID is: %s", image.ID)
 
 	return &dockerhub{
-		url:         "https://registry.hub.docker.com/v2" + url,
-		repository:  strings.Replace(url, "/", "", 1),
+		url:         "https://registry.hub.docker.com/v2" + repository,
+		repository:  parsedRepo,
 		client:      &http.Client{},
-		tag:         latest,
+		tag:         tag,
 		localDigest: image.ID,
 		exit:        make(chan int),
 		token:       &DockerHubToken{},
+		updater: updater,
+		service: service,
 	}
 }
 
@@ -92,16 +98,7 @@ func (g *dockerhub) Start() {
 		for {
 			select {
 			case t := <-g.ticker.C:
-				logrus.Info("Looking for new version at: ", t)
-				// Try to fetch new version
-				err := g.checkIfNew()
-				if err != nil {
-					logrus.Info("Cannot contact dockerhub api: ", err)
-					if time.Now().After(g.token.ExpirationDate) {
-						logrus.Info("Token expired. Requesting new token...")
-						g.getToken()
-					}
-				}
+				g.checkUpdate(t)
 			}
 		}
 	}()
@@ -113,10 +110,21 @@ func (g *dockerhub) Stop() {
 	g.exit <- 1
 }
 
+func (g *dockerhub) checkUpdate(t time.Time) {
+	logrus.Info("Looking for new version at: ", t)
+	// Try to fetch new version
+	err := g.checkIfNew()
+	if err != nil {
+		logrus.Info("Cannot contact dockerhub api: ", err)
+		if time.Now().After(g.token.ExpirationDate) {
+			logrus.Info("Token expired. Requesting new token...")
+			g.getToken()
+		}
+	}
+}
+
+
 // We need to get a token with pull access to the repository
-// How do we make sure our token is still valid?
-// 1) On request to the API we can check if we were unauthorized. In that case
-// we can request a new token
 func (g *dockerhub) getToken() {
 	tokenRequest := fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", g.repository)
 	resp, err := http.Get(tokenRequest)
@@ -165,12 +173,13 @@ func (g *dockerhub) checkIfNew() error {
 	if err != nil {
 		logrus.Fatal("Cannot unmarshal to a release object, err: ", err)
 	}
-	logrus.Infof("Unmarshaled %+v", release)
 	if release.Config.Digest == "" {
 		return fmt.Errorf("Response doesn't contains a digest")
 	}
 	if g.localDigest != release.Config.Digest {
 		logrus.Info("New version: ", release.Config.Digest)
+		g.updater.Update(g.service, g.repository+":"+g.tag)
+		g.localDigest = release.Config.Digest
 	}
 
 	return nil
