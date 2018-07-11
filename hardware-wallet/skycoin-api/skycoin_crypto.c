@@ -53,7 +53,7 @@ void generate_pubkey_from_seckey(const uint8_t* seckey, uint8_t* pubkey)
 
 void generate_deterministic_key_pair(const uint8_t* seed, const size_t seed_length, uint8_t* seckey, uint8_t* pubkey)
 {
-    compute_sha256sum((const char * )seed, seckey, seed_length);
+    compute_sha256sum(seed, seckey, seed_length);
     generate_pubkey_from_seckey(seckey, pubkey);
 }
 
@@ -79,10 +79,10 @@ void ecdh_shared_secret(const uint8_t* secret_key, const uint8_t* remote_public_
 {
     uint8_t ecdh_key[33] = {0};
     ecdh(secret_key, remote_public_key, ecdh_key);
-    compute_sha256sum((char*)(ecdh_key), shared_secret, 33);
+    compute_sha256sum(ecdh_key, shared_secret, 33);
 }
 
-void secp256k1Hash(const char* seed, uint8_t* secp256k1Hash_digest)
+void secp256k1Hash(const uint8_t* seed, const size_t seed_length, uint8_t* secp256k1Hash_digest)
 {
     uint8_t seckey[32] = {0};
     uint8_t dummy_seckey[32] = {0};
@@ -91,25 +91,23 @@ void secp256k1Hash(const char* seed, uint8_t* secp256k1Hash_digest)
     uint8_t hash2[SHA256_DIGEST_LENGTH] = {0};
     uint8_t ecdh_key[33] = {0};
     uint8_t secp256k1Hash[SHA256_DIGEST_LENGTH + 33] = {0};
-    compute_sha256sum(seed, hash, strlen(seed));
-    compute_sha256sum((const char*)hash, seckey, sizeof(hash));
-    compute_sha256sum((const char*)hash, hash2, sizeof(hash));
+    compute_sha256sum(seed, hash, seed_length);
+    compute_sha256sum(hash, seckey, sizeof(hash));
+    compute_sha256sum(hash, hash2, sizeof(hash));
     generate_deterministic_key_pair(hash2, SHA256_DIGEST_LENGTH, dummy_seckey, pubkey);
     ecdh(seckey, pubkey, ecdh_key);
     memcpy(secp256k1Hash, hash, sizeof(hash));
     memcpy(&secp256k1Hash[SHA256_DIGEST_LENGTH], ecdh_key, sizeof(ecdh_key));
-    compute_sha256sum((const char *)secp256k1Hash, secp256k1Hash_digest, sizeof(secp256k1Hash));
+    compute_sha256sum(secp256k1Hash, secp256k1Hash_digest, sizeof(secp256k1Hash));
 }
 
 // nextSeed should be 32 bytes (size of a secp256k1Hash digest)
-void generate_deterministic_key_pair_iterator(const char* seed, uint8_t* nextSeed, uint8_t* seckey, uint8_t* pubkey)
+void generate_deterministic_key_pair_iterator(const uint8_t* seed, const size_t seed_length, uint8_t* nextSeed, uint8_t* seckey, uint8_t* pubkey)
 {
-    size_t seed_length = 0;
     uint8_t seed1[SHA256_DIGEST_LENGTH] = {0};
     uint8_t seed2[SHA256_DIGEST_LENGTH] = {0};
-    char keypair_seed[256] = {0};
-    secp256k1Hash(seed, seed1);
-    seed_length = strlen(seed);
+    uint8_t keypair_seed[256] = {0};
+    secp256k1Hash(seed, seed_length, seed1);
     memcpy(keypair_seed, seed, seed_length);
     memcpy(&keypair_seed[seed_length], seed1, SHA256_DIGEST_LENGTH);
     memcpy(nextSeed, seed1, SHA256_DIGEST_LENGTH);
@@ -117,11 +115,11 @@ void generate_deterministic_key_pair_iterator(const char* seed, uint8_t* nextSee
     generate_deterministic_key_pair(seed2, SHA256_DIGEST_LENGTH, seckey, pubkey);
 }
 
-void compute_sha256sum(const char *seed, uint8_t* digest /*size SHA256_DIGEST_LENGTH*/, size_t seed_lenght)
+void compute_sha256sum(const uint8_t *seed, uint8_t* digest /*size SHA256_DIGEST_LENGTH*/, size_t seed_lenght)
 {
     SHA256_CTX ctx;
     sha256_Init(&ctx);
-    sha256_Update(&ctx, (const uint8_t*) seed, seed_lenght);
+    sha256_Update(&ctx, seed, seed_lenght);
     sha256_Final(&ctx, digest);
 }
 
@@ -131,13 +129,13 @@ void generate_base58_address_from_pubkey(const uint8_t* pubkey, char* address, s
     uint8_t pubkey_hash[25] = {0};
     uint8_t r1[SHA256_DIGEST_LENGTH] = {0};
     uint8_t r2[SHA256_DIGEST_LENGTH] = {0};
-    compute_sha256sum((char *)pubkey, r1, 33);
-    compute_sha256sum((char *)r1, r2, sizeof(r1));
+    compute_sha256sum(pubkey, r1, 33);
+    compute_sha256sum(r1, r2, sizeof(r1));
     ripemd160(r2, SHA256_DIGEST_LENGTH, pubkey_hash);
     // compute base58 address
     uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
     pubkey_hash[20] = 0;
-    compute_sha256sum((char *)pubkey_hash, digest, 21);
+    compute_sha256sum(pubkey_hash, digest, 21);
     memcpy(&pubkey_hash[21], digest, 4);
     b58enc(address, size_address, pubkey_hash, sizeof(pubkey_hash));
 }
@@ -148,10 +146,10 @@ void generate_bitcoin_address_from_pubkey(const uint8_t* pubkey, char* address, 
     uint8_t b2[25] = {0};
     uint8_t h1[SHA256_DIGEST_LENGTH] = {0};
     uint8_t b4[SHA256_DIGEST_LENGTH] = {0};
-    compute_sha256sum((char *)pubkey, b1, 33);
+    compute_sha256sum(pubkey, b1, 33);
     ripemd160(b1, SHA256_DIGEST_LENGTH, &b2[1]);
-    compute_sha256sum((char *)b2, h1, 21);
-    compute_sha256sum((char *)h1, b4, SHA256_DIGEST_LENGTH);
+    compute_sha256sum(b2, h1, 21);
+    compute_sha256sum(h1, b4, SHA256_DIGEST_LENGTH);
     memcpy(&b2[21], b4, 4);
     b58enc(address, size_address, b2, sizeof(b2));
 }
@@ -165,8 +163,8 @@ void generate_bitcoin_private_address_from_seckey(const uint8_t* seckey, char* a
     memcpy(&b2[1], seckey, 32);
     b2[0] = 0x80;
     b2[33] = 0x01;
-    compute_sha256sum((char *)b2, h1, 34);
-    compute_sha256sum((char *)h1, b3, SHA256_DIGEST_LENGTH);
+    compute_sha256sum(b2, h1, 34);
+    compute_sha256sum(h1, b3, SHA256_DIGEST_LENGTH);
     memcpy(&b2[34], b3, 4);
     b58enc(address, size_address, b2, sizeof(b2));
 }
