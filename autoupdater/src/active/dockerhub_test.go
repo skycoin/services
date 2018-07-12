@@ -28,34 +28,48 @@ const MOCK_REPOSITORY_RESPONSE = `{
 }`
 
 func TestToken(t *testing.T) {
+	// Arrange
+	updaterMock, dockerhubFetcher, tokenIssuer, repository := arrange()
+	defer tokenIssuer.Close()
+	defer repository.Close()
+
+	// Action
+	go dockerhubFetcher.Start()
+
+	// Assert
+	time.Sleep(time.Second * 10)
+	updaterMock.AssertExpectations(t)
+	dockerhubFetcher.Stop()
+}
+
+func arrange() (*UpdaterMock, active.Fetcher, *httptest.Server, *httptest.Server) {
+	// Mock for the Updater service, so it does not try to contact swarm
 	updaterMock := &UpdaterMock{}
+
+	// Mocks for the token issuer server and the dockerhub server
 	tokenIssuer := httptest.NewServer(http.HandlerFunc(mockTokenIssuer))
-	defer tokenIssuer.Close()
-
 	repository := httptest.NewServer(http.HandlerFunc(mockDockerRepository))
-	defer tokenIssuer.Close()
 
+	// Config and set response for Update method on the mock
 	dockerHubConfig := &active.Config{
-		Service: "service",
-		Name: "dockerhub",
-		Updater: updaterMock,
-		Repository: "/test/service",
-		Tag: "latest",
+		Service:        "service",
+		Name:           "dockerhub",
+		Updater:        updaterMock,
+		Repository:     "/test/service",
+		Tag:            "latest",
 		CurrentVersion: "0",
 	}
 	updaterMock.On("Update",
 		dockerHubConfig.Service,
 		"test/service:latest")
 
+	// Create a dockerhub fetcher instance and setup server mocks
 	dockerhubFetcher := active.New(dockerHubConfig)
-	dockerhubFetcher.(*active.Dockerhub).TokenTemplate=tokenIssuer.URL+"/%s"
-	dockerhubFetcher.(*active.Dockerhub).Url=repository.URL
-	dockerhubFetcher.SetInterval(time.Second*5)
-	go dockerhubFetcher.Start()
+	dockerhubFetcher.(*active.Dockerhub).TokenTemplate = tokenIssuer.URL + "/%s"
+	dockerhubFetcher.(*active.Dockerhub).Url = repository.URL
+	dockerhubFetcher.SetInterval(time.Second * 5)
 
-	time.Sleep(time.Second*10)
-	updaterMock.AssertExpectations(t)
-	dockerhubFetcher.Stop()
+	return updaterMock, dockerhubFetcher, tokenIssuer, repository
 }
 
 type UpdaterMock struct {

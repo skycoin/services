@@ -20,9 +20,6 @@ func newSwarmUpdater() *swarmUpdater{
 }
 
 func (s *swarmUpdater) Update(service string, version string) {
-	// TODO we need to set a default service name in the client side.
-	// The service name from our side can map to a different name defined by the user
-	// so it will match their own service name in the swarm
 	serviceInfo, err := s.client.InspectService(service)
 	if err != nil{
 		logrus.Fatal("Failed to inspect service: ", service, " err: ", err)

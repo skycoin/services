@@ -1,0 +1,5 @@
+[services]
+"skycoin/skycoin" = "library/mariadb"
+"top" = "skywire"
+"sky-node" = "skycoin"
+"skywire" = "mystack_skywire"
