@@ -304,7 +304,6 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
     uint8_t pubkey[33] = {0};
 
 	RESP_INIT(ResponseSkycoinAddress);
-	// reset_entropy((const uint8_t*)msg->seed, strlen(msg->seed));
 	if (msg->has_address_type)
 	{
 		if (fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) != 0) 
@@ -442,8 +441,8 @@ void fsm_msgSetMnemonic(SetMnemonic* msg)
 	}
 	storage_setMnemonic(msg->mnemonic);
 	storage_update();
-	storage_setMnemonic(msg->mnemonic);
 	fsm_sendSuccess(_(msg->mnemonic));
+	storage_setNeedsBackup(true);
 	layoutHome();
 }
 

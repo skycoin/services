@@ -3,7 +3,7 @@ package main
 import (
     "fmt"
     "time"
-    
+    "strings"
     wallet "./emulator-wallet"
 
     messages "./protob"
@@ -228,6 +228,16 @@ func MessageRecoveryDevice(words uint32) [][64]byte {
     return chunks
 }
 
+
+func MessageBackupDevice() [][64]byte {
+    msg := &messages.BackupDevice{
+    }
+    data, _ := proto.Marshal(msg)
+
+    chunks := wallet.MakeTrezorMessage(data, messages.MessageType_MessageType_BackupDevice)
+    return chunks
+}
+
 func MessageWordAck(word string) [][64]byte {
     msg := &messages.WordAck{
         Word: proto.String(word),
@@ -266,20 +276,26 @@ func DeviceConnected(dev wallet.TrezorDevice) bool {
     if err != nil {
         return false
     }
-    return true
+    return msg.Kind == uint16(messages.MessageType_MessageType_Success)
 }
 
 func main() {
     dev, _ := wallet.GetTrezorDevice()
     var msg wire.Message
     var chunks [][64]byte
+    var inputWord string
     var pinEnc string
+    var err error
+    
     if DeviceConnected(dev) {
         fmt.Printf("%s\n", "Connected")
     } else {
         fmt.Printf("%s\n", "Not Connected")
         return
     }
+    
+    WipeDevice(dev)
+
     // Make sure device is on home screen
     Initialize(dev)
     // Send ChangePin message
@@ -325,4 +341,67 @@ func main() {
         proto.Unmarshal(msg.Data, failMsg)
         fmt.Printf("Code: %d\nMessage: %s\n", failMsg.GetCode(), failMsg.GetMessage());
     }
+    
+    chunks = MessageRecoveryDevice(12)
+    msg = SendToDevice(dev, chunks)
+    if msg.Kind == uint16(messages.MessageType_MessageType_ButtonRequest) {
+        chunks = MessageButtonAck()
+        msg = SendToDevice(dev, chunks)
+    }
+    for msg.Kind == uint16(messages.MessageType_MessageType_WordRequest) {
+        fmt.Print("Word request: ")
+        fmt.Scanln(&inputWord)
+        chunks = MessageWordAck(strings.TrimSpace(inputWord))
+        msg = SendToDevice(dev, chunks)
+    }
+    fmt.Printf("Response: %s\n", messages.MessageType_name[int32(msg.Kind)])
+    if msg.Kind == uint16(messages.MessageType_MessageType_Failure) {
+        failMsg := &messages.Failure{}
+        proto.Unmarshal(msg.Data, failMsg)
+        fmt.Printf("Code: %d\nMessage: %s\n", failMsg.GetCode(), failMsg.GetMessage());
+    }
+
+
+    chunks = MessageSetMnemonic()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    if msg.Kind == uint16(messages.MessageType_MessageType_ButtonRequest) {
+        chunks = MessageButtonAck()
+        msg = SendToDevice(dev, chunks)
+    }
+
+    chunks = MessageSkycoinAddress()
+    msg = SendToDevice(dev, chunks)
+    if (msg.Kind == 117) {
+        responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
+        err = proto.Unmarshal(msg.Data, responseSkycoinAddress)
+        if err != nil {
+            fmt.Printf("unmarshaling error: %s\n", err.Error())
+        }
+        fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, responseSkycoinAddress.GetAddress())
+    } else {
+        failureMsg := &messages.Failure{}
+        err = proto.Unmarshal(msg.Data, failureMsg)
+        if err != nil {
+            fmt.Printf("unmarshaling error: %s\n", err.Error())
+        }
+        fmt.Printf("Failure %d! Answer is: %s\n", failureMsg.GetCode(), failureMsg.GetMessage())
+    }
+
+    chunks = MessageBackupDevice()
+    msg = SendToDevice(dev, chunks)
+    for msg.Kind == uint16(messages.MessageType_MessageType_ButtonRequest) {
+        chunks = MessageButtonAck()
+        msg = SendToDevice(dev, chunks)
+    }
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    chunks = MessageSkycoinSignMessage()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
+    chunks = MessageCheckMessageSignature()
+    msg = SendToDevice(dev, chunks)
+    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+
 }
