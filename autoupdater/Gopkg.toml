@@ -44,6 +44,10 @@
   name = "github.com/spf13/viper"
   version = "v1.0.2"
 
+[[override]]
+  name = "github.com/docker/libnetwork"
+  revision = "19279f0492417475b6bfbd0aa529f73e8f178fb5"
+
 [[prune.project]]
     name = "github.com/docker/docker"
     non-go = false

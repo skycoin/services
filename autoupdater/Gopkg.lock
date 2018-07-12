@@ -259,7 +259,7 @@
     "unix",
     "windows"
   ]
-  revision = "151529c776cdc58ddbe7963ba9af779f3577b419"
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
 [[projects]]
   name = "golang.org/x/text"

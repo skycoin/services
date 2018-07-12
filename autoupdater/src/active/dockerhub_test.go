@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/http"
 	"fmt"
+	"github.com/skycoin/services/autoupdater/config"
 )
 
 const MOCK_TOKEN_RESPONSE = `{
@@ -51,16 +52,20 @@ func arrange() (*UpdaterMock, active.Fetcher, *httptest.Server, *httptest.Server
 	repository := httptest.NewServer(http.HandlerFunc(mockDockerRepository))
 
 	// Config and set response for Update method on the mock
-	dockerHubConfig := &active.Config{
-		Service:        "service",
-		Name:           "dockerhub",
-		Updater:        updaterMock,
-		Repository:     "/test/service",
-		Tag:            "latest",
-		CurrentVersion: "0",
+	dockerHubConfig := &config.Config{
+		Global: &config.Global{
+			Updater:        updaterMock,
+		},
+		Active: &config.Active{
+			Service:        "service",
+			Name:           "dockerhub",
+			Repository:     "/test/service",
+			Tag:            "latest",
+			CurrentVersion: "0",
+		},
 	}
 	updaterMock.On("Update",
-		dockerHubConfig.Service,
+		dockerHubConfig.Active.Service,
 		"test/service:latest")
 
 	// Create a dockerhub fetcher instance and setup server mocks

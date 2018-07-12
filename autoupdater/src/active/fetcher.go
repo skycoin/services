@@ -2,28 +2,9 @@ package active
 
 import (
 	"time"
-	"github.com/skycoin/services/autoupdater/src/updater"
+
+	"github.com/skycoin/services/autoupdater/config"
 )
-
-type Config struct {
-	// Fetcher name: Dockerhub or git
-	Name string
-
-	// Repository name in the format /:owner/:image, without Tag
-	Repository string
-
-	// Image Tag in which to look for updates
-	Tag string
-
-	// Service updater
-	Updater updater.Updater
-
-	// Service name to update
-	Service string
-
-	// Current version of the service
-	CurrentVersion string
-}
 
 type Fetcher interface {
 	SetInterval(duration time.Duration)
@@ -31,13 +12,12 @@ type Fetcher interface {
 	Stop()
 }
 
-func New(c *Config) Fetcher {
-	switch c.Name{
+func New(c *config.Config) Fetcher {
+	switch c.Active.Name {
 	case "git":
-		return newGit(c.Repository)
+		return newGit(c.Active.Repository)
 	case "dockerhub":
-		return NewDockerHub(c.Updater, c.Repository, c.Tag, c.Service, c.CurrentVersion)
+		return NewDockerHub(c.Global.Updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
 	}
-	return NewDockerHub(c.Updater, c.Repository, c.Tag, c.Service, c.CurrentVersion)
+	return NewDockerHub(c.Global.Updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
 }
-

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/skycoin/services/autoupdater/config"
 	"github.com/skycoin/services/autoupdater/src/active"
 	"github.com/skycoin/services/autoupdater/src/passive/subscriber"
 	"github.com/skycoin/services/autoupdater/src/updater"
@@ -23,6 +24,12 @@ func cmd() *cli.App {
 			Usage:  "defines how to update the software",
 			Value:  "swarm",
 			EnvVar: "UPDATER",
+		},
+		cli.StringFlag{
+			Name:   "config, c",
+			Usage:  "path to toml configuration file",
+			Value:  "",
+			EnvVar: "CONFIG",
 		},
 	}
 
@@ -47,12 +54,14 @@ func passiveAction(c *cli.Context) {
 	logrus.Info("passive -> updater: ", c.GlobalString("updater"),
 		" broker: ", c.String("message-broker"))
 
-	subConfig := &subscriber.Config{
+	conf := config.NewConfig(c.GlobalString("config"))
+	conf.Global.UpdaterName = c.String("updater")
+	conf.Global.Updater = updater.New(conf.Global.UpdaterName)
+	conf.Passive = &config.Passive{
 		Urls:    []string{DEFAULT_URL},
-		Updater: updater.New(c.String("updater")),
-		Name:    c.String("message-broker"),
+		MessageBroker:    c.String("message-broker"),
 	}
-	sub := subscriber.New(subConfig)
+	sub := subscriber.New(conf)
 	sub.Subscribe(DEFAULT_TOPIC)
 }
 
@@ -64,7 +73,6 @@ func passiveFlags() []cli.Flag {
 			Usage:  "supported brokers: nats",
 			EnvVar: "MESSAGE_BROKER",
 		},
-
 	}
 }
 
@@ -72,15 +80,18 @@ func activeAction(c *cli.Context) {
 	logrus.Info("active -> updater: ", c.GlobalString("updater"),
 		" interval: ", c.Duration("interval").String())
 
-	config := &active.Config{
-		Tag: c.String("version"),
+	conf := config.NewConfig(c.GlobalString("config"))
+	conf.Global.Updater = updater.New(c.String("updater"))
+	conf.Active = &config.Active{
+		Interval:	c.Duration("interval"),
+		Tag:        c.String("version"),
 		Repository: c.String("repository"),
-		Name: c.String("fetcher"),
-		Updater: updater.New(c.String("updater")),
-		Service: c.String("service"),
+		Name:       c.String("fetcher"),
+		Service:    c.String("service"),
 	}
-	fetcher := active.New(config)
-	fetcher.SetInterval(c.Duration("interval"))
+
+	fetcher := active.New(conf)
+	fetcher.SetInterval(conf.Active.Interval)
 	fetcher.Start()
 }
 

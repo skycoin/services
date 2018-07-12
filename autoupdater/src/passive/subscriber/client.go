@@ -1,27 +1,22 @@
 package subscriber
 
 import (
-	"github.com/skycoin/services/autoupdater/src/updater"
 	"strings"
-)
 
-type Config struct {
-	Name string
-	Urls []string
-	Updater updater.Updater
-}
+	"github.com/skycoin/services/autoupdater/config"
+)
 
 type Subscriber interface {
 	Subscribe(topic string)
 	Stop()
 }
 
-func New(config *Config) Subscriber {
-	config.Name = strings.ToLower(config.Name)
-	switch config.Name {
+func New(config *config.Config) Subscriber {
+	config.Passive.MessageBroker = strings.ToLower(config.Passive.MessageBroker)
+	switch config.Passive.MessageBroker{
 	case "nats":
-		return newNats(config.Updater, config.Urls[0])
+		return newNats(config.Global.Updater, config.Passive.Urls[0])
 	}
 
-	return newNats(config.Updater, config.Urls[0])
+	return newNats(config.Global.Updater, config.Passive.Urls[0])
 }
