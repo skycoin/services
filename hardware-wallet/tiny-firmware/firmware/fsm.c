@@ -239,22 +239,32 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
 	layoutHome();
 }
 
-int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey)
+int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey, ResponseSkycoinAddress* respSkycoinAddress, uint32_t start_index)
 {
     const char* mnemo = storage_getMnemonic();
     uint8_t seed[33] = {0};
     uint8_t nextSeed[SHA256_DIGEST_LENGTH] = {0};
+	size_t size_address = 36;
     if (mnemo == NULL)
     {
         return -1;
     }
 	generate_deterministic_key_pair_iterator((const uint8_t *)mnemo, strlen(mnemo), nextSeed, seckey, pubkey);
+	if (respSkycoinAddress != NULL && start_index == 0) {
+		generate_base58_address_from_pubkey(pubkey, respSkycoinAddress->addresses[0], &size_address);
+		respSkycoinAddress->addresses_count++;
+	}
 	memcpy(seed, nextSeed, 32);
-	for (uint8_t i = 0; i < index; ++i)
+	for (uint32_t i = 0; i < index + start_index; ++i)
 	{
 		generate_deterministic_key_pair_iterator(seed, 32, nextSeed, seckey, pubkey);
 		memcpy(seed, nextSeed, 32);
 		seed[32] = 0;
+		if (respSkycoinAddress != NULL && ((i + 1) >= start_index)) {
+			size_address = 36;
+			generate_base58_address_from_pubkey(pubkey, respSkycoinAddress->addresses[respSkycoinAddress->addresses_count], &size_address);
+			respSkycoinAddress->addresses_count++;
+		}
 	}
     return 0;
 }
@@ -269,7 +279,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	char sign58[90] = {0};
 	int res = 0;
 	RESP_INIT(Success);
-    fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey);
+    fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey, NULL, 0);
 	if (is_digest(msg->message) == false) {
     	compute_sha256sum((const uint8_t *)msg->message, digest, strlen(msg->message));
 	} else {
@@ -296,36 +306,17 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
 {
     uint8_t seckey[32] = {0};
     uint8_t pubkey[33] = {0};
+	uint32_t start_index = !msg->has_start_index ? 0 : msg->start_index;
 
 	RESP_INIT(ResponseSkycoinAddress);
-	if (msg->has_address_type)
-	{
-		if (fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey) != 0) 
-		{
-			fsm_sendFailure(FailureType_Failure_AddressGeneration, "Key pair generation failed");
-			return;
-		}
-    	char address[256] = {0};
-    	size_t size_address = sizeof(address);
-		switch (msg->address_type)
-		{
-			case SkycoinAddressType_AddressTypeSkycoin:
-				layoutRawMessage("Skycoin address");
-    			generate_base58_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->address, address, size_address);
-				break;
-			case SkycoinAddressType_AddressTypeBitcoin:
-				layoutRawMessage("Bitcoin address");
-				generate_bitcoin_address_from_pubkey(pubkey, address, &size_address);
-				memcpy(resp->address, address, size_address);
-				break;
-			default:
-				fsm_sendFailure(FailureType_Failure_AddressGeneration, "Unknown address type");
-				return;
-		}
+	if (msg->address_n > 99) {
+		fsm_sendFailure(FailureType_Failure_AddressGeneration, "Asking for too much addresses");
+		return;
 	}
-	else {
-		fsm_sendFailure(FailureType_Failure_AddressGeneration, "Could not generate address");
+
+	if (fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey, resp, start_index) != 0) 
+	{
+		fsm_sendFailure(FailureType_Failure_AddressGeneration, "Key pair generation failed");
 		return;
 	}
 	msg_write(MessageType_MessageType_ResponseSkycoinAddress, resp);

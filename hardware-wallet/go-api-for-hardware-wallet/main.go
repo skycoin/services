@@ -81,8 +81,8 @@ func MessageSetMnemonic() [][64]byte {
 
 func MessageSkycoinAddress() [][64]byte {
     skycoinAddress := &messages.SkycoinAddress{
-        AddressN:    proto.Uint32(1),
-        AddressType: messages.SkycoinAddressType_AddressTypeSkycoin.Enum(),
+        AddressN:   proto.Uint32(9),
+        StartIndex: proto.Uint32(15),
     }
     data, _ := proto.Marshal(skycoinAddress)
 
@@ -364,10 +364,11 @@ func main() {
 
     chunks = MessageSetMnemonic()
     msg = SendToDevice(dev, chunks)
-    fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
+    fmt.Printf("MessageSetMnemonic %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
     if msg.Kind == uint16(messages.MessageType_MessageType_ButtonRequest) {
         chunks = MessageButtonAck()
         msg = SendToDevice(dev, chunks)
+        fmt.Printf("MessageButtonAck %d! Answer is: %s\n", msg.Kind, msg.Data[2:])
     }
 
     chunks = MessageSkycoinAddress()
@@ -378,7 +379,10 @@ func main() {
         if err != nil {
             fmt.Printf("unmarshaling error: %s\n", err.Error())
         }
-        fmt.Printf("Success %d! Answer is: %s\n", msg.Kind, responseSkycoinAddress.GetAddress())
+        fmt.Printf("MessageSkycoinAddress %d! array size is %d\n", msg.Kind, len(responseSkycoinAddress.GetAddresses()))
+        for i := 0; i < len(responseSkycoinAddress.GetAddresses()); i++ {
+            fmt.Printf("MessageSkycoinAddress %d! Answer is: %s\n", msg.Kind, responseSkycoinAddress.GetAddresses()[i])
+        }
     } else {
         failureMsg := &messages.Failure{}
         err = proto.Unmarshal(msg.Data, failureMsg)

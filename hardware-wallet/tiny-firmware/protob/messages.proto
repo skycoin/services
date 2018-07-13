@@ -126,8 +126,7 @@ message ChangePin {
  */
 message SkycoinAddress {
 	required uint32 address_n = 1; // address iterator
-	// required string seed = 1; // seed used to generate address
-	optional SkycoinAddressType address_type = 2;
+	optional uint32 start_index = 2; // index of the first address - if not provided the device will assume 0
 }
 
 
@@ -136,7 +135,7 @@ message SkycoinAddress {
  * @prev SkycoinAddress
  */
  message ResponseSkycoinAddress {
-	required string address = 1; //generated address in base58 format
+	repeated string addresses = 1; // generated addresses in base58 format
 }
 
 /**
