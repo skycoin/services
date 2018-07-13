@@ -1,11 +1,13 @@
 package active
 
 import (
-	"time"
-	"github.com/sirupsen/logrus"
-	"sync"
-	"net/http"
 	"encoding/json"
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/skycoin/services/autoupdater/src/updater"
 )
 
 type git struct {
@@ -13,18 +15,19 @@ type git struct {
 	url      string
 	interval time.Duration
 	ticker   *time.Ticker
-	lock sync.Mutex
-	tag string
-	date *time.Time
-	exit chan int
+	lock     sync.Mutex
+	tag      string
+	date     *time.Time
+	updater  updater.Updater
+	exit     chan int
 }
 
 func newGit(url string) *git {
-	date := time.Date(1999,10,1,1,1,1,1, time.UTC)
-	return &git{url: "https://api.github.com/repos"+url,tag: "0.0.0",date: &date,exit: make(chan int),}
+	date := time.Date(1999, 10, 1, 1, 1, 1, 1, time.UTC)
+	return &git{url: "https://api.github.com/repos" + url, tag: "0.0.0", date: &date, exit: make(chan int)}
 }
 
-func (g *git) SetLastRelease(tag string,  date *time.Time) {
+func (g *git) SetLastRelease(tag string, date *time.Time) {
 	g.tag = tag
 
 	if date != nil {
@@ -54,7 +57,7 @@ func (g *git) Start() {
 			}
 		}
 	}()
-	<- g.exit
+	<-g.exit
 }
 
 func (g *git) Stop() {
@@ -63,12 +66,12 @@ func (g *git) Stop() {
 }
 
 type ReleaseJSON struct {
-	Url string `json:"Url"`
+	Url         string `json:"Url"`
 	PublishedAt string `json:"published_at"`
 }
 
 func (g *git) checkIfNew() {
-	resp, err := http.Get(g.url+"/releases/latest")
+	resp, err := http.Get(g.url + "/releases/latest")
 	if err != nil {
 		logrus.Fatal("cannot contact api ", g.url+"/releases/latest", " err ", err)
 	}
@@ -86,6 +89,7 @@ func (g *git) checkIfNew() {
 	}
 
 	if g.date.Before(publishedTime) {
-		logrus.Info("New version: ",release.Url,". Published at: ", release.PublishedAt)
+		logrus.Info("New version: ", release.Url, ". Published at: ", release.PublishedAt)
+		g.updater.Update(g.url, release.Url)
 	}
 }
