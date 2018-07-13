@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/skycoin/services/autoupdater/src/updater"
 	"github.com/spf13/viper"
 )
 
@@ -14,15 +13,18 @@ const CONFIG_TYPE = "toml"
 const SERVICES_KEY = "services"
 
 type Config struct {
-	Global *Global
+	Global   *Global
 	Active   *Active
 	Passive  *Passive
 	Services map[string]string
 }
 
 type Global struct {
-	Updater updater.Updater
-	UpdaterName string
+	UpdaterName     string
+	Interpreter     string
+	Script          string
+	ScriptArguments []string
+	Timeout         time.Duration
 }
 
 type Passive struct {
@@ -60,9 +62,9 @@ func NewConfig(path string) *Config {
 }
 
 func (c *Config) loadConfigFromFile(path string) {
-	c.Global=&Global{}
-	c.Active=&Active{}
-	c.Passive=&Passive{}
+	c.Global = &Global{}
+	c.Active = &Active{}
+	c.Passive = &Passive{}
 
 	dir, file := filepath.Split(path)
 	cleanFile := strings.TrimSuffix(file, filepath.Ext(file))
@@ -80,7 +82,6 @@ func (c *Config) loadConfigFromFile(path string) {
 	c.parsePassive()
 	c.parseServices()
 }
-
 
 func (c *Config) parseGlobal() {
 	c.Global.UpdaterName = viper.GetString("global.updater")

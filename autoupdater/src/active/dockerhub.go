@@ -31,7 +31,7 @@ type Dockerhub struct {
 	exit        chan int
 	token       *DockerHubToken
 	TokenTemplate string
-	updater     updater.Updater
+	Updater     updater.Updater
 }
 
 type DockerHubToken struct {
@@ -67,7 +67,7 @@ func NewDockerHub(updater updater.Updater, repository, tag, service, currentDige
 		localDigest: currentDigest,
 		exit:        make(chan int),
 		token:       &DockerHubToken{},
-		updater:     updater,
+		Updater:     updater,
 		Service:     service,
 		TokenTemplate: TOKEN_TEMPLATE,
 	}
@@ -161,7 +161,10 @@ func (g *Dockerhub) checkIfNew() error {
 	}
 	if g.localDigest != release.Config.Digest {
 		logrus.Info("New version: ", release.Config.Digest)
-		g.updater.Update(g.Service, g.Repository+":"+g.Tag)
+		err := g.Updater.Update(g.Service, g.Repository+":"+g.Tag)
+		if err != nil {
+			return err
+		}
 		g.localDigest = release.Config.Digest
 	}
 

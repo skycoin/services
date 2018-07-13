@@ -3,6 +3,7 @@ package updater
 import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/sirupsen/logrus"
+	"fmt"
 )
 
 type swarmUpdater struct {
@@ -19,10 +20,10 @@ func newSwarmUpdater() *swarmUpdater{
 	return &swarmUpdater{client}
 }
 
-func (s *swarmUpdater) Update(service string, version string) {
+func (s *swarmUpdater) Update(service string, version string) error {
 	serviceInfo, err := s.client.InspectService(service)
 	if err != nil{
-		logrus.Fatal("Failed to inspect service: ", service, " err: ", err)
+		return fmt.Errorf("Failed to inspect service %s. %s",service, err)
 	}
 
 	if serviceInfo.Spec.TaskTemplate.ContainerSpec.Image != version {
@@ -35,7 +36,8 @@ func (s *swarmUpdater) Update(service string, version string) {
 		}
 		err = s.client.UpdateService(service, updateOptions)
 		if err != nil {
-			logrus.Fatal("Unable to update service: ", service, " to version: ", version, " err: ", err)
+			return fmt.Errorf("Unable to update service %s to version %s. %s",service,version,err )
 		}
 	}
+	return nil
 }

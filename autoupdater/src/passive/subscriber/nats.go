@@ -33,6 +33,9 @@ func (n *nats) Stop() {
 
 func (n *nats) onUpdate(msg *gonats.Msg) {
 	fmt.Println(string(msg.Data))
-	n.updater.Update(msg.Subject,string(msg.Data))
+	err := n.updater.Update(msg.Subject,string(msg.Data))
+	if err != nil {
+		logrus.Fatal(err)
+	}
 }
 

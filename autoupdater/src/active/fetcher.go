@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/skycoin/services/autoupdater/config"
+	"github.com/skycoin/services/autoupdater/src/updater"
 )
 
 type Fetcher interface {
@@ -13,11 +14,12 @@ type Fetcher interface {
 }
 
 func New(c *config.Config) Fetcher {
+	updater := updater.New(c)
 	switch c.Active.Name {
 	case "git":
 		return newGit(c.Active.Repository)
 	case "dockerhub":
-		return NewDockerHub(c.Global.Updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
+		return NewDockerHub(updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
 	}
-	return NewDockerHub(c.Global.Updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
+	return NewDockerHub(updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
 }

@@ -8,11 +8,9 @@ import (
 	"github.com/skycoin/services/autoupdater/config"
 	"github.com/skycoin/services/autoupdater/src/active"
 	"github.com/skycoin/services/autoupdater/src/passive/subscriber"
-	"github.com/skycoin/services/autoupdater/src/updater"
 	"github.com/urfave/cli"
 )
 
-const DEFAULT_URL = "http://localhost:4222"
 const DEFAULT_TOPIC = "top"
 
 func cmd() *cli.App {
@@ -56,10 +54,9 @@ func passiveAction(c *cli.Context) {
 
 	conf := config.NewConfig(c.GlobalString("config"))
 	conf.Global.UpdaterName = c.String("updater")
-	conf.Global.Updater = updater.New(conf.Global.UpdaterName)
 	conf.Passive = &config.Passive{
-		Urls:    []string{DEFAULT_URL},
-		MessageBroker:    c.String("message-broker"),
+		Urls:          c.StringSlice("urls"),
+		MessageBroker: c.String("message-broker"),
 	}
 	sub := subscriber.New(conf)
 	sub.Subscribe(DEFAULT_TOPIC)
@@ -73,6 +70,12 @@ func passiveFlags() []cli.Flag {
 			Usage:  "supported brokers: nats",
 			EnvVar: "MESSAGE_BROKER",
 		},
+		cli.StringSliceFlag{
+			Name:   "urls, u",
+			Value:  &cli.StringSlice{"http://localhost:2222"},
+			Usage:  "urls for the message broker",
+			EnvVar: "PASSIVE_URLS",
+		},
 	}
 }
 
@@ -81,9 +84,8 @@ func activeAction(c *cli.Context) {
 		" interval: ", c.Duration("interval").String())
 
 	conf := config.NewConfig(c.GlobalString("config"))
-	conf.Global.Updater = updater.New(c.String("updater"))
 	conf.Active = &config.Active{
-		Interval:	c.Duration("interval"),
+		Interval:   c.Duration("interval"),
 		Tag:        c.String("version"),
 		Repository: c.String("repository"),
 		Name:       c.String("fetcher"),

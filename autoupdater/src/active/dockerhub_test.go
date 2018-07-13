@@ -38,7 +38,7 @@ func TestToken(t *testing.T) {
 	go dockerhubFetcher.Start()
 
 	// Assert
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 2)
 	updaterMock.AssertExpectations(t)
 	dockerhubFetcher.Stop()
 }
@@ -54,7 +54,7 @@ func arrange() (*UpdaterMock, active.Fetcher, *httptest.Server, *httptest.Server
 	// Config and set response for Update method on the mock
 	dockerHubConfig := &config.Config{
 		Global: &config.Global{
-			Updater:        updaterMock,
+			UpdaterName: "swarm",
 		},
 		Active: &config.Active{
 			Service:        "service",
@@ -66,13 +66,14 @@ func arrange() (*UpdaterMock, active.Fetcher, *httptest.Server, *httptest.Server
 	}
 	updaterMock.On("Update",
 		dockerHubConfig.Active.Service,
-		"test/service:latest")
+		"test/service:latest").Return(nil)
 
 	// Create a dockerhub fetcher instance and setup server mocks
 	dockerhubFetcher := active.New(dockerHubConfig)
+	dockerhubFetcher.(*active.Dockerhub).Updater = updaterMock
 	dockerhubFetcher.(*active.Dockerhub).TokenTemplate = tokenIssuer.URL + "/%s"
 	dockerhubFetcher.(*active.Dockerhub).Url = repository.URL
-	dockerhubFetcher.SetInterval(time.Second * 5)
+	dockerhubFetcher.SetInterval(time.Second * 1)
 
 	return updaterMock, dockerhubFetcher, tokenIssuer, repository
 }
@@ -81,8 +82,9 @@ type UpdaterMock struct {
 	mock.Mock
 }
 
-func (u *UpdaterMock) Update(service, version string) {
+func (u *UpdaterMock) Update(service, version string) error {
 	u.Called(service,version)
+	return nil
 }
 
 func mockTokenIssuer (w http.ResponseWriter, r *http.Request) {
