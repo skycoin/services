@@ -13,16 +13,12 @@ import (
 
 const DEFAULT_TOPIC = "top"
 
+var updaterNameAux string
+
 func cmd() *cli.App {
 	app := cli.NewApp()
 
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "updater, u",
-			Usage:  "defines how to update the software",
-			Value:  "swarm",
-			EnvVar: "UPDATER",
-		},
 		cli.StringFlag{
 			Name:   "config, c",
 			Usage:  "path to toml configuration file",
@@ -33,19 +29,79 @@ func cmd() *cli.App {
 
 	app.Commands = []cli.Command{
 		{
-			Name:   "passive",
-			Usage:  "waits for update notification",
-			Action: passiveAction,
-			Flags:  passiveFlags(),
+			Name:  "swarm",
+			Usage: "autoupdates swarm",
+			Subcommands: []cli.Command{
+				activeCommand("swarm"),
+				passiveCommand("swarm"),
+			},
 		},
 		{
-			Name:   "active",
-			Usage:  "periodically checks if there is a new version",
-			Action: activeAction,
-			Flags:  activeFlags(),
+			Name:  "custom",
+			Usage: "on update notification launches an user provided custom script",
+			Flags: customFlags(),
+			Subcommands: []cli.Command{
+				activeCommand("custom"),
+				passiveCommand("custom"),
+			},
 		},
 	}
 	return app
+}
+
+func customFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:   "interpreter, i",
+			Value:  "/bin/bash",
+			Usage:  "interpreter for the custom script",
+			EnvVar: "INTERPRETER",
+		},
+		cli.StringFlag{
+			Name:   "script, s",
+			Value:  "/etc/skycoin/autoupdater/update.sh",
+			Usage:  "custom script to launch on update notification",
+			EnvVar: "SCRIPT",
+		},
+		cli.StringSliceFlag{
+			Name:   "arguments,a",
+			Value:  &cli.StringSlice{},
+			Usage:  "arguments for the script",
+			EnvVar: "SCRIPT_ARGUMENTS",
+		},
+		cli.DurationFlag{
+			Name:   "timeout,t",
+			Value:  time.Second * 10,
+			Usage:  "timeout for the custom script, after which to retry",
+			EnvVar: "SCRIPT_TIMEOUT",
+		},
+	}
+}
+
+func passiveCommand(updaterName string) cli.Command {
+	return cli.Command{
+		Name:  "passive",
+		Usage: "waits for update notification",
+		Before: func(c *cli.Context) error {
+			updaterNameAux = updaterName
+			return nil
+		},
+		Action: passiveAction,
+		Flags:  passiveFlags(),
+	}
+}
+
+func activeCommand(updaterName string) cli.Command {
+	return cli.Command{
+		Name:  "active",
+		Usage: "periodically checks if there is a new version",
+		Before: func(c *cli.Context) error {
+			updaterNameAux = updaterName
+			return nil
+		},
+		Action: activeAction,
+		Flags:  activeFlags(),
+	}
 }
 
 func passiveAction(c *cli.Context) {
@@ -53,11 +109,16 @@ func passiveAction(c *cli.Context) {
 		" broker: ", c.String("message-broker"))
 
 	conf := config.NewConfig(c.GlobalString("config"))
-	conf.Global.UpdaterName = c.String("updater")
-	conf.Passive = &config.Passive{
-		Urls:          c.StringSlice("urls"),
-		MessageBroker: c.String("message-broker"),
-	}
+
+	conf.Global.UpdaterName = updaterNameAux
+	conf.Global.Interpreter = c.Parent().String("interpreter")
+	conf.Global.Script = c.Parent().String("script")
+	conf.Global.ScriptArguments = c.Parent().StringSlice("arguments")
+	conf.Global.Timeout = c.Parent().Duration("timeout")
+
+	conf.Passive.Urls = c.StringSlice("urls")
+	conf.Passive.MessageBroker = c.String("message-broker")
+
 	sub := subscriber.New(conf)
 	sub.Subscribe(DEFAULT_TOPIC)
 }
@@ -84,13 +145,18 @@ func activeAction(c *cli.Context) {
 		" interval: ", c.Duration("interval").String())
 
 	conf := config.NewConfig(c.GlobalString("config"))
-	conf.Active = &config.Active{
-		Interval:   c.Duration("interval"),
-		Tag:        c.String("version"),
-		Repository: c.String("repository"),
-		Name:       c.String("fetcher"),
-		Service:    c.String("service"),
-	}
+
+	conf.Global.UpdaterName = updaterNameAux
+	conf.Global.Interpreter = c.Parent().String("interpreter")
+	conf.Global.Script = c.Parent().String("script")
+	conf.Global.ScriptArguments = c.Parent().StringSlice("arguments")
+	conf.Global.Timeout = c.Parent().Duration("timeout")
+
+	conf.Active.Interval = c.Duration("interval")
+	conf.Active.Tag = c.String("version")
+	conf.Active.Repository = c.String("repository")
+	conf.Active.Name = c.String("fetcher")
+	conf.Active.Service = c.String("service")
 
 	fetcher := active.New(conf)
 	fetcher.SetInterval(conf.Active.Interval)
