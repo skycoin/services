@@ -27,8 +27,10 @@ func (c *Custom) Update(service, version string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.services[service].ScriptTimeout)
 	defer cancel()
 
+	logrus.Warn("point a")
 	command := buildCommand(c, service, version)
 
+	logrus.Warn("point b - command is: ", command)
 	err := exec.CommandContext(ctx, c.services[service].ScriptInterpreter, command...).Run()
 	if err != nil {
 		return err

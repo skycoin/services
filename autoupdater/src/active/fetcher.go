@@ -23,7 +23,7 @@ func New(c *config.Config) Fetcher {
 
 	switch c.Active.Name {
 	case "git":
-		return newGit(c.Active.Repository)
+		return newGit(updater, c.Active.Service, c.Active.Repository)
 	case "dockerhub":
 		return NewDockerHub(updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
 	}

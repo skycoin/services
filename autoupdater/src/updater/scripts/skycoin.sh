@@ -1,21 +1,21 @@
 #!/bin/bash
 # We hardcode the service and just care about the version
-echo "hey"
-
-service_github_url="https://github.com/me/my_service"
-github_service_name="my_service"
-process_name="my_service"
+service_github_url="https://downloads.skycoin.net/wallet/skycoin-"
+process_name="skycoin"
 binary_directory=$GOBIN
-release_compilation_tag="-darwin-amd64"
+release_compilation_tag="-bin-osx-darwin-x64.zip"
 
-service_location="$GOPATH/src/$service_github_name"
 version=$2
+version=$(echo $version | sed s/v//)
 
 echo "fetching" > tmp.txt
-echo "$service_github_url/releases/download/$version/${github_service_name}${release_compilation_tag} -O $process_name" > tmp.txt  
+echo "${service_github_url}${version}${release_compilation_tag} -O $process_name.zip" > tmp.txt  
 # fetch new version
 cd $binary_directory
-wget $service_github_url/releases/download/$version/${github_service_name}${release_compilation_tag} -O $process_name
+wget ${service_github_url}${version}${release_compilation_tag} -O $process_name.zip
+# unzip
+unzip -a $process_name.zip
+
 echo "fetched" > tmp.txt
 # Those are two ways of restarting the service:
 ############################################################################################################

@@ -13,6 +13,7 @@ import (
 type git struct {
 	// Url should be in the format /:owner/:Repository
 	url      string
+	service  string
 	interval time.Duration
 	ticker   *time.Ticker
 	lock     sync.Mutex
@@ -22,9 +23,9 @@ type git struct {
 	exit     chan int
 }
 
-func newGit(url string) *git {
+func newGit(u updater.Updater, service, url string) *git {
 	date := time.Date(1999, 10, 1, 1, 1, 1, 1, time.UTC)
-	return &git{url: "https://api.github.com/repos" + url, tag: "0.0.0", date: &date, exit: make(chan int)}
+	return &git{url: "https://api.github.com/repos" + url, tag: "0.0.0", date: &date, exit: make(chan int), updater: u, service: service}
 }
 
 func (g *git) SetLastRelease(tag string, date *time.Time) {
@@ -66,7 +67,9 @@ func (g *git) Stop() {
 }
 
 type ReleaseJSON struct {
-	Url         string `json:"Url"`
+	Url string `json:"Url"`
+	//Name encodes the name of the release, or its version
+	Name        string `json:"Name"`
 	PublishedAt string `json:"published_at"`
 }
 
@@ -90,6 +93,6 @@ func (g *git) checkIfNew() {
 
 	if g.date.Before(publishedTime) {
 		logrus.Info("New version: ", release.Url, ". Published at: ", release.PublishedAt)
-		g.updater.Update(g.url, release.Url)
+		g.updater.Update(g.service, release.Name)
 	}
 }
