@@ -1,30 +1,31 @@
 package subscriber
 
 import (
+	"fmt"
+
 	gonats "github.com/nats-io/go-nats"
 	"github.com/sirupsen/logrus"
-	"fmt"
 	"github.com/skycoin/services/autoupdater/src/updater"
 )
 
 type nats struct {
-	updater updater.Updater
-	url string
+	updater    updater.Updater
+	url        string
 	connection *gonats.Conn
-	closer chan int
+	closer     chan int
 }
 
-func newNats(u updater.Updater, url string) *nats{
+func newNats(u updater.Updater, url string) *nats {
 	connection, err := gonats.Connect(url)
 	if err != nil {
-		logrus.Fatal("cannot connect to NATS",err)
+		logrus.Fatal("cannot connect to NATS", err)
 	}
 	return &nats{u, url, connection, make(chan int)}
 }
 
 func (n *nats) Subscribe(topic string) {
 	n.connection.Subscribe(topic, n.onUpdate)
-	<- n.closer
+	<-n.closer
 }
 
 func (n *nats) Stop() {
@@ -33,9 +34,8 @@ func (n *nats) Stop() {
 
 func (n *nats) onUpdate(msg *gonats.Msg) {
 	fmt.Println(string(msg.Data))
-	err := n.updater.Update(msg.Subject,string(msg.Data))
+	err := n.updater.Update(msg.Subject, string(msg.Data))
 	if err != nil {
 		logrus.Fatal(err)
 	}
 }
-

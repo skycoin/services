@@ -23,10 +23,16 @@ func TestCustom(t *testing.T) {
 	customConfig := &config.Config{
 		Global: &config.Global{
 			UpdaterName:     "custom",
-			Interpreter:     "/bin/bash",
-			Script:          "-s",
-			ScriptArguments: []string{"<<<", TEST_SCRIPT, "arg2"},
-			Timeout:         time.Second * 5,
+		},
+		Services: map[string]config.Service{
+			"myservice": config.Service{
+				LocalName: "myservice",
+				OfficialName: "myservice",
+				ScriptInterpreter:     "/bin/bash",
+				UpdateScript:          "-s",
+				ScriptExtraArguments: []string{"<<<", TEST_SCRIPT, "arg2"},
+				ScriptTimeout:         time.Second * 5,
+			},
 		},
 	}
 	customUpdater := updater.New(customConfig)
@@ -40,10 +46,16 @@ func TestTimeout(t *testing.T) {
 	customConfig := &config.Config{
 		Global: &config.Global{
 			UpdaterName:     "custom",
-			Interpreter:     "top",
-			Script:          "",
-			ScriptArguments: []string{},
-			Timeout:         time.Second * 1,
+		},
+		Services: map[string]config.Service{
+			"myservice": config.Service{
+				LocalName: "myservice",
+				OfficialName: "myservice",
+				ScriptInterpreter:     "top",
+				UpdateScript:          "",
+				ScriptExtraArguments: []string{},
+				ScriptTimeout:         time.Second * 1,
+			},
 		},
 	}
 	customUpdater := updater.New(customConfig)

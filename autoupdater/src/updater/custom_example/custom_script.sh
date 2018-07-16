@@ -13,9 +13,18 @@ version=$2
 cd $binary_directory
 wget $service_github_name/releases/download/$version/${github_service_name}${release_compilation_tag} -O $process_name
 
+# Those are two ways of restarting the service:
+############################################################################################################
+# 1) Launching process from bash and disowning him, so it keeps running after the script exits
+############################################################################################################
 # kill running previous version
 pid=pgrep -x $process_name 
 kill $pid
 
 # start new version
-$process_name &
+nohup $process_name &
+
+############################################################################################################
+# 2) Configure the service to run under systemctl
+############################################################################################################
+systemctl restart $process_name

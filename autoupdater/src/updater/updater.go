@@ -3,6 +3,8 @@ package updater
 import (
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/skycoin/services/autoupdater/config"
 )
 
@@ -12,13 +14,14 @@ type Updater interface {
 
 func New(conf *config.Config) Updater {
 	normalized := strings.ToLower(conf.Global.UpdaterName)
+	logrus.Warnf("UpdaterName: %s", normalized)
 
 	switch normalized {
 	case "swarm":
-		return newSwarmUpdater()
+		return newSwarmUpdater(conf)
 	case "custom":
-		return newCustomUpdater(conf.Global)
+		return newCustomUpdater(conf)
 	}
 
-	return newSwarmUpdater()
+	return newSwarmUpdater(conf)
 }

@@ -15,7 +15,7 @@ type Subscriber interface {
 func New(config *config.Config) Subscriber {
 	config.Passive.MessageBroker = strings.ToLower(config.Passive.MessageBroker)
 	updater := updater.New(config)
-	switch config.Passive.MessageBroker{
+	switch config.Passive.MessageBroker {
 	case "nats":
 		return newNats(updater, config.Passive.Urls[0])
 	}

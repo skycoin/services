@@ -48,15 +48,15 @@
   name = "github.com/docker/libnetwork"
   revision = "19279f0492417475b6bfbd0aa529f73e8f178fb5"
 
-[[prune.project]]
-    name = "github.com/docker/docker"
-    non-go = false
-    unused-packages = false
+#[[prune.project]]
+#    name = "github.com/docker/docker"
+#    non-go = false
+#    unused-packages = false
 
-[[prune.project]]
-    name = "github.com/docker/libnetwork"
-    non-go = false
-    unused-packages = false
+#[[prune.project]]
+#    name = "github.com/docker/libnetwork"
+#    non-go = false
+#    unused-packages = false
 
 [prune]
   go-tests = true

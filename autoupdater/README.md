@@ -14,6 +14,7 @@
 - [ ] Add .travis.yml for CI testing
 - [ ] Add releases to github
 - [ ] Test vendoring is correct: Have trouble downloading with dep through VPN, the connection drops before completion 90% of the times.
+- [ ] CircuitBreaker with incremental backoff when contacting external services
 
 ### Task List future releases
 - [ ] Unit testing for docker services (complicated)

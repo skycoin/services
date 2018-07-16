@@ -8,30 +8,30 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fsouza/go-dockerclient"
 	"github.com/sirupsen/logrus"
 	"github.com/skycoin/services/autoupdater/src/updater"
-	"github.com/fsouza/go-dockerclient"
 )
 
 const SCHEMA_VERSION_HEADER = "application/vnd.docker.distribution.manifest.v2+json"
 const URI = "/manifests/latest"
-const TOKEN_TEMPLATE  = "https://auth.docker.io/token?Service=registry.docker.io&scope=Repository:%s:pull"
+const TOKEN_TEMPLATE = "https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull"
 
 type Dockerhub struct {
 	// Url should be in the format /:owner/:Repository
-	Url         string
-	Repository  string
-	Service     string
-	Client      *http.Client
-	Interval    time.Duration
-	Ticker      *time.Ticker
-	lock        sync.Mutex
-	Tag         string
-	localDigest string
-	exit        chan int
-	token       *DockerHubToken
+	Url           string
+	Repository    string
+	Service       string
+	Client        *http.Client
+	Interval      time.Duration
+	Ticker        *time.Ticker
+	lock          sync.Mutex
+	Tag           string
+	localDigest   string
+	exit          chan int
+	token         *DockerHubToken
 	TokenTemplate string
-	Updater     updater.Updater
+	Updater       updater.Updater
 }
 
 type DockerHubToken struct {
@@ -60,15 +60,15 @@ func NewDockerHub(updater updater.Updater, repository, tag, service, currentDige
 	logrus.Infof("Retrieved ID is: %s", currentDigest)
 
 	return &Dockerhub{
-		Url:         "https://registry.hub.docker.com/v2" + repository,
-		Repository:  parsedRepo,
-		Client:      &http.Client{},
-		Tag:         tag,
-		localDigest: currentDigest,
-		exit:        make(chan int),
-		token:       &DockerHubToken{},
-		Updater:     updater,
-		Service:     service,
+		Url:           "https://registry.hub.docker.com/v2" + repository,
+		Repository:    parsedRepo,
+		Client:        &http.Client{},
+		Tag:           tag,
+		localDigest:   currentDigest,
+		exit:          make(chan int),
+		token:         &DockerHubToken{},
+		Updater:       updater,
+		Service:       service,
 		TokenTemplate: TOKEN_TEMPLATE,
 	}
 }
@@ -122,6 +122,8 @@ func (g *Dockerhub) checkUpdate(t time.Time) {
 // We need to get a token with pull access to the Repository
 func (g *Dockerhub) getToken() {
 	tokenRequest := fmt.Sprintf(g.TokenTemplate, g.Repository)
+	logrus.Infof("Requesting token to %s", tokenRequest)
+
 	resp, err := http.Get(tokenRequest)
 	if err != nil {
 		logrus.Fatal("Cannot request a token to: ", tokenRequest, " err: ", err)
@@ -171,7 +173,7 @@ func (g *Dockerhub) checkIfNew() error {
 	return nil
 }
 
-func getCurrentDockerImageDigest(imageName string) string{
+func getCurrentDockerImageDigest(imageName string) string {
 	endpoint := "unix:///var/run/docker.sock"
 	client, err := docker.NewClient(endpoint)
 	if err != nil {

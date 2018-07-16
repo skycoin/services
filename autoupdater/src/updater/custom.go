@@ -3,7 +3,8 @@ package updater
 import (
 	"context"
 	"os/exec"
-	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/skycoin/services/autoupdater/config"
 )
@@ -12,32 +13,23 @@ import (
 // update notify. Two arguments would always be passed to the script: Name of the service + version.
 
 type Custom struct {
-	// /bin/bash, /bin/sh, whatever
-	Interpreter string
-	// path to the script
-	Script string
-	// extra arguments for the script
-	ScriptArguments []string
-	// timeout
-	Timeout time.Duration
+	services map[string]config.Service
 }
 
-func newCustomUpdater(c *config.Global) *Custom {
+func newCustomUpdater(c *config.Config) *Custom {
 	return &Custom{
-		Interpreter:     c.Interpreter,
-		Script:          c.Script,
-		ScriptArguments: c.ScriptArguments,
-		Timeout:         c.Timeout,
+		services: c.Services,
 	}
 }
 
 func (c *Custom) Update(service, version string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
+	logrus.Warn("Update")
+	ctx, cancel := context.WithTimeout(context.Background(), c.services[service].ScriptTimeout)
 	defer cancel()
 
 	command := buildCommand(c, service, version)
 
-	err := exec.CommandContext(ctx, c.Interpreter, command...).Run()
+	err := exec.CommandContext(ctx, c.services[service].ScriptInterpreter, command...).Run()
 	if err != nil {
 		return err
 	}
@@ -46,9 +38,9 @@ func (c *Custom) Update(service, version string) error {
 
 func buildCommand(c *Custom, service, version string) []string {
 	command := []string{
-		c.Script,
-		service,
+		c.services[service].UpdateScript,
+		c.services[service].LocalName,
 		version,
 	}
-	return append(command, c.ScriptArguments...)
+	return append(command, c.services[service].ScriptExtraArguments...)
 }

@@ -12,11 +12,15 @@ import (
 const CONFIG_TYPE = "toml"
 const SERVICES_KEY = "services"
 
+var DEFAULT_TIMEOUT time.Duration = 10 * time.Second
+
+const DEFAULT_TIMEOUT_STRING = "10s"
+
 type Config struct {
 	Global   *Global
 	Active   *Active
 	Passive  *Passive
-	Services map[string]string
+	Services map[string]Service
 }
 
 type Global struct {
@@ -32,27 +36,37 @@ type Passive struct {
 	Urls          []string
 }
 
-type Active struct {
-	Interval time.Duration
+type Service struct {
+	OfficialName         string   `mapstructure:"official_name"`
+	LocalName            string   `mapstructure:"local_name"`
+	UpdateScript         string   `mapstructure:"update_script"`
+	ScriptTimeoutString  string   `mapstructure:"script_timeout"`
+	ScriptInterpreter    string   `mapstructure:"script_interpreter"`
+	ScriptExtraArguments []string `mapstructure:"script_extra_arguments"`
+	ScriptTimeout        time.Duration
+}
 
+type Active struct {
+	// Interval in which to look for updates
+	Interval time.Duration
 	// Fetcher name: Dockerhub or git
 	Name string
-
 	// Repository name in the format /:owner/:image, without Tag
 	Repository string
-
 	// Image Tag in which to look for updates
 	Tag string
-
 	// Service name to update
 	Service string
-
 	// Current version of the service
 	CurrentVersion string
 }
 
 func NewConfig(path string) *Config {
-	c := &Config{}
+	c := &Config{
+		Global:  &Global{},
+		Active:  &Active{},
+		Passive: &Passive{},
+	}
 
 	if path != "" {
 		c.loadConfigFromFile(path)
@@ -62,10 +76,6 @@ func NewConfig(path string) *Config {
 }
 
 func (c *Config) loadConfigFromFile(path string) {
-	c.Global = &Global{}
-	c.Active = &Active{}
-	c.Passive = &Passive{}
-
 	dir, file := filepath.Split(path)
 	cleanFile := strings.TrimSuffix(file, filepath.Ext(file))
 	viper.SetConfigType(CONFIG_TYPE)
@@ -88,7 +98,25 @@ func (c *Config) parseGlobal() {
 }
 
 func (c *Config) parseServices() {
-	c.Services = viper.GetStringMapString(SERVICES_KEY)
+	var services []Service
+	c.Services = make(map[string]Service)
+
+	err := viper.UnmarshalKey("service", &services)
+	if err != nil {
+		logrus.Fatalf("Cannot unmarshal toml services configuration %s", err)
+	}
+
+	for _, service := range services {
+		if service.ScriptTimeoutString == "" {
+			service.ScriptTimeoutString = DEFAULT_TIMEOUT_STRING
+		}
+		service.ScriptTimeout, err = time.ParseDuration(service.ScriptTimeoutString)
+		if err != nil {
+			logrus.Fatalf("Unable to parse script timeout %s", err)
+		}
+
+		c.Services[service.OfficialName] = service
+	}
 }
 
 func (c *Config) parseActive() {

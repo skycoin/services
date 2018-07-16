@@ -71,7 +71,7 @@ func customFlags() []cli.Flag {
 		},
 		cli.DurationFlag{
 			Name:   "timeout,t",
-			Value:  time.Second * 10,
+			Value:  config.DEFAULT_TIMEOUT,
 			Usage:  "timeout for the custom script, after which to retry",
 			EnvVar: "SCRIPT_TIMEOUT",
 		},
@@ -111,13 +111,13 @@ func passiveAction(c *cli.Context) {
 	conf := config.NewConfig(c.GlobalString("config"))
 
 	conf.Global.UpdaterName = updaterNameAux
-	conf.Global.Interpreter = c.Parent().String("interpreter")
-	conf.Global.Script = c.Parent().String("script")
-	conf.Global.ScriptArguments = c.Parent().StringSlice("arguments")
-	conf.Global.Timeout = c.Parent().Duration("timeout")
+	conf.Global.Interpreter = stringPickNonZero(conf.Global.Interpreter, c.Parent().String("interpreter"))
+	conf.Global.Script = stringPickNonZero(conf.Global.Script, c.Parent().String("script"))
+	conf.Global.ScriptArguments = stringSlicePickNonZero(conf.Global.ScriptArguments, c.Parent().StringSlice("arguments"))
+	conf.Global.Timeout = durationPickNonZero(conf.Global.Timeout, c.Parent().Duration("timeout"))
 
-	conf.Passive.Urls = c.StringSlice("urls")
-	conf.Passive.MessageBroker = c.String("message-broker")
+	conf.Passive.Urls = stringSlicePickNonZero(conf.Passive.Urls, c.StringSlice("urls"))
+	conf.Passive.MessageBroker = stringPickNonZero(conf.Passive.MessageBroker, c.String("message-broker"))
 
 	sub := subscriber.New(conf)
 	sub.Subscribe(DEFAULT_TOPIC)
@@ -141,24 +141,28 @@ func passiveFlags() []cli.Flag {
 }
 
 func activeAction(c *cli.Context) {
-	logrus.Info("active -> updater: ", c.GlobalString("updater"),
-		" interval: ", c.Duration("interval").String())
 
 	conf := config.NewConfig(c.GlobalString("config"))
 
 	conf.Global.UpdaterName = updaterNameAux
-	conf.Global.Interpreter = c.Parent().String("interpreter")
-	conf.Global.Script = c.Parent().String("script")
-	conf.Global.ScriptArguments = c.Parent().StringSlice("arguments")
-	conf.Global.Timeout = c.Parent().Duration("timeout")
 
-	conf.Active.Interval = c.Duration("interval")
-	conf.Active.Tag = c.String("version")
-	conf.Active.Repository = c.String("repository")
-	conf.Active.Name = c.String("fetcher")
-	conf.Active.Service = c.String("service")
+	conf.Services[c.String("service")] = config.Service{
+		LocalName:            c.String("service"),
+		OfficialName:         c.String("service"),
+		ScriptInterpreter:    c.Parent().String("script"),
+		ScriptTimeout:        c.Parent().Duration("timeout"),
+		ScriptExtraArguments: c.Parent().StringSlice("arguments"),
+	}
+
+	conf.Active.Interval = durationPickNonZero(conf.Active.Interval, c.Duration("interval"))
+	conf.Active.Tag = stringPickNonZero(conf.Active.Tag, c.String("version"))
+	conf.Active.Repository = stringPickNonZero(conf.Active.Repository, c.String("repository"))
+	conf.Active.Name = stringPickNonZero(conf.Active.Name, c.String("fetcher"))
+	conf.Active.Service = stringPickNonZero(conf.Active.Service, c.String("service"))
 
 	fetcher := active.New(conf)
+	logrus.Info("active -> updater: ", c.GlobalString("updater"),
+		" interval: ", conf.Active.Interval)
 	fetcher.SetInterval(conf.Active.Interval)
 	fetcher.Start()
 }
@@ -202,4 +206,28 @@ func main() {
 	if err != nil {
 		logrus.Fatal("error running cmd", err)
 	}
+}
+
+func stringPickNonZero(confValue, flagValue string) string {
+	if confValue == "" {
+		return flagValue
+	}
+
+	return confValue
+}
+
+func stringSlicePickNonZero(confValue, flagValue []string) []string {
+	if confValue == nil {
+		return flagValue
+	}
+
+	return confValue
+}
+
+func durationPickNonZero(confValue, flagValue time.Duration) time.Duration {
+	if confValue == 0 {
+		return flagValue
+	}
+
+	return confValue
 }
