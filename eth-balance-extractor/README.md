@@ -6,9 +6,10 @@ Node >10.0.0
 
 ### Configuration
 There is the 'Parameters' section in the index.js that contains configuration of the scanner.
+For the first run install npm packages using ```npm i``` command from the ```events-scanner``` folder.
 
 ### Scanning process
-To start scanning process use following command:
+To start scanning process use following command from the ```events-scanner``` folder:
 ```sh
 npm run run
 ```
@@ -29,4 +30,5 @@ To start extraction process run following command:
 ```sh
 eth-public-keys-extractor extractWalletsKeys http://url_of_eth_node_api ./path_to_wallets.csv # path to the file that contains wallets obtained by events-scanner utility
 ./path_to_dest_folder # path to folder where result file wallets.csv will be saved
+start_block # first block of the pub keys extraction process
 ```

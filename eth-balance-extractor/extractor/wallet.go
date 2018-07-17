@@ -2,9 +2,12 @@ package extractor
 
 import (
 	"fmt"
+	"log"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+	"github.com/golang-collections/go-datastructures/queue"
 	"github.com/onrik/ethrpc"
 )
 
@@ -29,14 +32,24 @@ type WalletScanner struct {
 	nodeAPIURL         string
 	Wallets            map[string]*Wallet
 	TransactionWallets map[string]*TransactionWallet
+	TransactionsQueue  *queue.RingBuffer
+
+	Stop       chan int
+	IsStopped  bool
+	IsDisposed bool
 }
 
 // NewWalletScanner creates a new instance of the WalletScanner
-func NewWalletScanner(nodeAPIURL string, transactionWallets map[string]*TransactionWallet) *WalletScanner {
+func NewWalletScanner(nodeAPIURL string, transactionsQueue *queue.RingBuffer, transactionWallets map[string]*TransactionWallet) *WalletScanner {
 	return &WalletScanner{
 		nodeAPIURL:         nodeAPIURL,
 		Wallets:            make(map[string]*Wallet),
 		TransactionWallets: transactionWallets,
+		TransactionsQueue:  transactionsQueue,
+
+		IsStopped:  false,
+		IsDisposed: false,
+		Stop:       make(chan int, 10),
 	}
 }
 
@@ -122,7 +135,6 @@ func (w *WalletScanner) RestoreKeys() {
 				}
 				fmt.Println("WalletScanner > RestoreKeys", err)
 			} else {
-
 				if tx.From != tw.WalletHash {
 					w.Wallets[key] = &Wallet{
 						Balance:           tw.Balance,
@@ -152,6 +164,55 @@ func (w *WalletScanner) RestoreKeys() {
 					WalletHash:        key,
 				}
 			}
+		}
+	}
+}
+
+// StartScanning starts scanning process
+func (w *WalletScanner) StartScanning() {
+	for {
+		select {
+		case msg := <-w.Stop:
+			if msg == 0 {
+				w.IsStopped = true
+			}
+		default:
+		}
+
+		if w.IsStopped && w.TransactionsQueue.Len() == 0 {
+			w.IsDisposed = true
+			return
+		}
+		item, err := w.TransactionsQueue.Get()
+		if item == nil {
+			continue
+		}
+		if err != nil {
+			log.Fatalln(err)
+			continue
+		}
+		t := item.(ethrpc.Transaction)
+
+		from := strings.ToLower(t.From)
+
+		if w.Wallets[from] == nil {
+			continue
+		}
+
+		publicKey, _ := recoverPublicKey(t.Hash, t.V, t.R, t.S)
+		w.Wallets[from].PublicKey = publicKey
+	}
+}
+
+// StopScanning stops scanning process
+func (w *WalletScanner) StopScanning() {
+	fmt.Println("Wallet > Wallet scanner is stopping")
+	w.Stop <- 0
+	w.TransactionsQueue.Put(nil)
+	for {
+		if w.IsDisposed {
+			fmt.Println("Wallet > Wallet scanner is stopped")
+			return
 		}
 	}
 }

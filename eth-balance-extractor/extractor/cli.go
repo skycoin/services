@@ -2,6 +2,7 @@ package extractor
 
 import (
 	"fmt"
+	"strconv"
 
 	gcli "github.com/urfave/cli"
 )
@@ -43,7 +44,7 @@ func extractWalletsPublicKeys() gcli.Command {
 	return gcli.Command{
 		Name:         name,
 		Usage:        "Extracts wallets public keys by provided tx hashes",
-		ArgsUsage:    "[node_api_url] [wallets_file] [dest_dir]",
+		ArgsUsage:    "[node_api_url] [wallets_file] [dest_dir] [start_block]",
 		Description:  fmt.Sprintf(`Extracts wallets public keys by provided tx hashes`),
 		OnUsageError: onCommandUsageError(name),
 
@@ -51,14 +52,14 @@ func extractWalletsPublicKeys() gcli.Command {
 			nodeAPIUrl := c.Args().Get(0)
 			walletsFile := c.Args().Get(1)
 			destDir := c.Args().Get(2)
+			startBlock, err := strconv.Atoi(c.Args().Get(3))
+			if err != nil {
+				fmt.Println("cli > ", err)
+				return gcli.ShowSubcommandHelp(c)
+			}
 
-			s := NewStorage(destDir)
-			wallets := s.LoadTransactionWallets(walletsFile)
-
-			scanner := NewWalletScanner(nodeAPIUrl, wallets)
-			scanner.RestoreKeys()
-
-			s.StoreSnapshot("wallets", scanner.Wallets)
+			o := NewOrchestrator(nodeAPIUrl, destDir, startBlock, 5)
+			o.StartScanning(walletsFile)
 
 			return nil
 		},
