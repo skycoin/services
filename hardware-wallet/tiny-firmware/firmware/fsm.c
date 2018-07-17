@@ -241,7 +241,7 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
 	layoutHome();
 }
 
-int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey, ResponseSkycoinAddress* respSkycoinAddress, uint32_t start_index)
+int fsm_getKeyPairAtIndex(uint32_t nbAddress, uint8_t* pubkey, uint8_t* seckey, ResponseSkycoinAddress* respSkycoinAddress, uint32_t start_index)
 {
     const char* mnemo = storage_getMnemonic();
     uint8_t seed[33] = {0};
@@ -257,7 +257,7 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey, Resp
 		respSkycoinAddress->addresses_count++;
 	}
 	memcpy(seed, nextSeed, 32);
-	for (uint32_t i = 0; i < index + start_index; ++i)
+	for (uint32_t i = 0; i < nbAddress + start_index - 1; ++i)
 	{
 		generate_deterministic_key_pair_iterator(seed, 32, nextSeed, seckey, pubkey);
 		memcpy(seed, nextSeed, 32);
@@ -284,7 +284,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	CHECK_PIN
 
 	RESP_INIT(Success);
-    fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey, NULL, 0);
+    fsm_getKeyPairAtIndex(1, pubkey, seckey, NULL, msg->address_n);
 	if (is_digest(msg->message) == false) {
     	compute_sha256sum((const uint8_t *)msg->message, digest, strlen(msg->message));
 	} else {

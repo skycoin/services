@@ -1,24 +1,30 @@
-# Before use
+# Go lang api for skycoin hardware wallet
 
-# Install golang:
+## Installation
+
+### Install golang
 
     https://github.com/golang/go/wiki/Ubuntu
 
-# Install google protobuf:
+### Install google protobuf
 
     sudo apt-get install protobuf-compiler python-protobuf golang-goprotobuf-dev
-    go get -u github.com/golang/protobuf/protoc-gen-go
+    go get -u github.com/golang/protobuf
+    go get -u github.com/stretchr/testify/require
 
-# Compile the protobuf project dependencies
+## Compile the protobuf project dependencies
 
     make -C vendor/nanopb/generator/proto/
     make -C protob/
 
+## Usage
 
-The you can generate protobuf files (only once each time the messages change)
+### Generate protobuf files
 
-    protoc -I../tiny-firmware/vendor/nanopb/generator/proto/ -I ./protob  --go_out=./protob protob/messages.proto protob/types.proto 
+Only once each time the messages change:
 
-# Usage
+    protoc -I../tiny-firmware/vendor/nanopb/generator/proto/ -I ./protob  --go_out=./protob protob/messages.proto protob/types.proto
 
-    go run main.go #code example in main.go
+### Run
+
+    go test -run TestMain
