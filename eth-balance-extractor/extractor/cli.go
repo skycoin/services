@@ -1,10 +1,7 @@
 package extractor
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strconv"
 
 	gcli "github.com/urfave/cli"
 )
@@ -19,8 +16,7 @@ func NewApp() *App {
 	gcliApp := gcli.NewApp()
 
 	commands := []gcli.Command{
-		extractWallets(),
-		continueExtraction(),
+		extractWalletsPublicKeys(),
 	}
 
 	gcliApp.Commands = commands
@@ -42,82 +38,27 @@ func onCommandUsageError(command string) gcli.OnUsageErrorFunc {
 	}
 }
 
-func extractWallets() gcli.Command {
-	name := "extractWallets"
+func extractWalletsPublicKeys() gcli.Command {
+	name := "extractWalletsKeys"
 	return gcli.Command{
 		Name:         name,
-		Usage:        "Starts extraction process",
-		ArgsUsage:    "[node_api_url] [smart_contract_address] [smart_contract_transfer_method_hash] [smart_contract_transfer_from_method_hash] [dest_dir] [start_block] [threads_count]",
-		Description:  fmt.Sprintf(`Starts extraction process`),
+		Usage:        "Extracts wallets public keys by provided tx hashes",
+		ArgsUsage:    "[node_api_url] [wallets_file] [dest_dir]",
+		Description:  fmt.Sprintf(`Extracts wallets public keys by provided tx hashes`),
 		OnUsageError: onCommandUsageError(name),
+
 		Action: func(c *gcli.Context) error {
 			nodeAPIUrl := c.Args().Get(0)
-			smartContractAddress := c.Args().Get(1)
-			transferHash := c.Args().Get(2)
-			transferFromHash := c.Args().Get(3)
-			destDir := c.Args().Get(4)
-			startBlock, err := strconv.Atoi(c.Args().Get(5))
-			if err != nil {
-				fmt.Println("cli > ", err)
-				return gcli.ShowSubcommandHelp(c)
-			}
-			threadsCount, err := strconv.Atoi(c.Args().Get(6))
-			if err != nil {
-				fmt.Println("cli > ", err)
-				return gcli.ShowSubcommandHelp(c)
-			}
+			walletsFile := c.Args().Get(1)
+			destDir := c.Args().Get(2)
 
-			o := NewOrchestrator(nodeAPIUrl, smartContractAddress, transferHash, transferFromHash, destDir, startBlock, threadsCount)
+			s := NewStorage(destDir)
+			wallets := s.LoadTransactionWallets(walletsFile)
 
-			go o.StartScanning()
+			scanner := NewWalletScanner(nodeAPIUrl, wallets)
+			scanner.RestoreKeys()
 
-			reader := bufio.NewReader(os.Stdin)
-			for {
-				reader.ReadString('\n')
-			}
-
-			return nil
-		},
-	}
-}
-
-func continueExtraction() gcli.Command {
-	name := "continueExtraction"
-	return gcli.Command{
-		Name:         name,
-		Usage:        "Continue extraction process",
-		ArgsUsage:    "[wallets_file] [node_api_url] [smart_contract_address] [smart_contract_transfer_method_hash] [smart_contract_transfer_from_method_hash] [dest_dir] [start_block] [threads_count]",
-		Description:  fmt.Sprintf(`Starts extraction process`),
-		OnUsageError: onCommandUsageError(name),
-		Action: func(c *gcli.Context) error {
-			walletsFile := c.Args().Get(0)
-			nodeAPIUrl := c.Args().Get(1)
-			smartContractAddress := c.Args().Get(2)
-			transferHash := c.Args().Get(3)
-			transferFromHash := c.Args().Get(4)
-			destDir := c.Args().Get(5)
-			startBlock, err := strconv.Atoi(c.Args().Get(6))
-			if err != nil {
-				fmt.Println("cli > ", err)
-				return gcli.ShowSubcommandHelp(c)
-			}
-			threadsCount, err := strconv.Atoi(c.Args().Get(7))
-			if err != nil {
-				fmt.Println("cli > ", err)
-				return gcli.ShowSubcommandHelp(c)
-			}
-
-			storage := NewStorage(destDir)
-			wallets := storage.LoadSnapshot(walletsFile)
-			o := NewOrchestrator(nodeAPIUrl, smartContractAddress, transferHash, transferFromHash, destDir, startBlock, threadsCount)
-			o.scanner.Wallets = wallets
-
-			go o.StartScanning()
-
-			reader := bufio.NewReader(os.Stdin)
-			for {
-				reader.ReadString('\n')
-			}
+			s.StoreSnapshot("wallets", scanner.Wallets)
 
 			return nil
 		},

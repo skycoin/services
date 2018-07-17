@@ -1,22 +1,32 @@
 # Ethereum tokens holders balance extractor
 
-## To start extraction process from scratch run following command:
+## events-scanner
+Required software:
+Node >10.0.0
+
+### Configuration
+There is the 'Parameters' section in the index.js that contains configuration of the scanner.
+
+### Scanning process
+To start scanning process use following command:
 ```sh
-eth-scan extractWallets 
-http://url_of_eth_node_api  "0xaddress_of_token_smart_contract" "0xcode_of_transfer_method" 
-"0xcode_of_transfer_from_method" ./path_to_snapshots_folder block_number_where_smart_contract_was_deployed threads_count
+npm run run
 ```
 
-1. address_of_token_smart_contract - address of smart contract wallet
-2. code_of_transfer_method - to find this code find any token transfer transaction (see [this](https://etherscan.io/tx/0x7767e8e4710bde871ecc2081fabb412f242d75b272e29c94c750ee444016f934) example: Input data - MethodID, "0xa9059cbb"). 
-3. code_of_transfer_from_method - the same as for code_of_transfer_method but a transaction with transferFrom method is necessary
-4. block_number_where_smart_contract_was_deployed - can be found in the transaction where smart contract was deployed ([example](https://etherscan.io/address/0xf230b790e05390fc8295f4d3f60332c93bed42e2) Contract Creator at tnx -> Block Height: 4212165)
-5. threads_count - number of threads that extract blocks and transaction from the Ethereum node API.
+Result of scanning process will be 3 files:
+1. negative_balance_wallets.csv
+2. positive_balance_wallets.csv
+3. zero_wallets.csv
 
-## To continue extraction process run following command:
+These files have following structure:
+1. Wallet address
+2. Hash of any transaction, performed by wallet (that can be used for restoring wallet public key)
+3. Balance
+4. Transactions count
+
+## eth-public-keys-extractor:
+To start extraction process run following command:
 ```sh
-./eth-scan continueExtraction ./path_to_snapshot.csv http://url_of_eth_node_api  "0xaddress_of_token_smart_contract" "0xcode_of_transfer_method" 
-"0xcode_of_transfer_from_method" ./path_to_snapshots_folder block_number_where_smart_contract_was_deployed threads_count
+eth-public-keys-extractor extractWalletsKeys http://url_of_eth_node_api ./path_to_wallets.csv # path to the file that contains wallets obtained by events-scanner utility
+./path_to_dest_folder # path to folder where result file wallets.csv will be saved
 ```
-
-path_to_snapshot - path to any snapshot created before 
