@@ -219,6 +219,8 @@ void fsm_msgSkycoinCheckMessageSignature(SkycoinCheckMessageSignature* msg)
     uint8_t pubkey[33] = {0};
     uint8_t digest[32] = {0};
 
+	CHECK_PIN
+
     RESP_INIT(Success);
     compute_sha256sum((const uint8_t *)msg->message, digest, strlen(msg->message));
     size_sign = sizeof(sign);
@@ -245,7 +247,7 @@ int fsm_getKeyPairAtIndex(uint32_t index, uint8_t* pubkey, uint8_t* seckey, Resp
     uint8_t seed[33] = {0};
     uint8_t nextSeed[SHA256_DIGEST_LENGTH] = {0};
 	size_t size_address = 36;
-    if (mnemo == NULL)
+    if (mnemo == NULL || nbAddress == 0)
     {
         return -1;
     }
@@ -278,6 +280,9 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
     uint8_t signature[65];
 	char sign58[90] = {0};
 	int res = 0;
+	
+	CHECK_PIN
+
 	RESP_INIT(Success);
     fsm_getKeyPairAtIndex(msg->address_n, pubkey, seckey, NULL, 0);
 	if (is_digest(msg->message) == false) {
@@ -307,6 +312,8 @@ void fsm_msgSkycoinAddress(SkycoinAddress* msg)
     uint8_t seckey[32] = {0};
     uint8_t pubkey[33] = {0};
 	uint32_t start_index = !msg->has_start_index ? 0 : msg->start_index;
+
+	CHECK_PIN
 
 	RESP_INIT(ResponseSkycoinAddress);
 	if (msg->address_n > 99) {
