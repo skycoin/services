@@ -240,6 +240,9 @@ func DeviceAddressGen(deviceType DeviceType, addressN int, startIndex int) (uint
 			return msg.Kind, make([]string, 0)
 		}
 		return msg.Kind, responseSkycoinAddress.GetAddresses()
+	} else if msg.Kind == uint16(messages.MessageType_MessageType_PinMatrixRequest) {
+		log.Println("This operation requires a PIN code")
+		return msg.Kind, make([]string, 0)
 	}
 	failureMsg := &messages.Failure{}
 	err = proto.Unmarshal(msg.Data, failureMsg)
