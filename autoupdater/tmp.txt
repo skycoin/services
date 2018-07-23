@@ -1,1 +1,0 @@
-https://downloads.skycoin.net/wallet/skycoin-0.23.0-bin-osx-darwin-x64.zip -O skycoin.zip
