@@ -281,7 +281,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	char sign58[90] = {0};
 	int res = 0;
 	
-	CHECK_PIN
+	CHECK_PIN_UNCACHED
 
 	RESP_INIT(Success);
     fsm_getKeyPairAtIndex(1, pubkey, seckey, NULL, msg->address_n);
