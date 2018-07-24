@@ -14,13 +14,13 @@ const SERVICES_KEY = "services"
 
 var DEFAULT_TIMEOUT time.Duration = 10 * time.Second
 
-const DEFAULT_TIMEOUT_STRING = "10s"
+const DEFAULT_TIMEOUT_STRING = "10m"
 
 type Config struct {
 	Global   *Global
 	Active   *Active
 	Passive  *Passive
-	Services map[string]Service
+	Services map[string]*Service
 }
 
 type Global struct {
@@ -44,6 +44,7 @@ type Service struct {
 	ScriptInterpreter    string   `mapstructure:"script_interpreter"`
 	ScriptExtraArguments []string `mapstructure:"script_extra_arguments"`
 	ScriptTimeout        time.Duration
+	CustomLock
 }
 
 type Active struct {
@@ -99,7 +100,7 @@ func (c *Config) parseGlobal() {
 
 func (c *Config) parseServices() {
 	var services []Service
-	c.Services = make(map[string]Service)
+	c.Services = make(map[string]*Service)
 
 	err := viper.UnmarshalKey("service", &services)
 	if err != nil {
@@ -115,7 +116,7 @@ func (c *Config) parseServices() {
 			logrus.Fatalf("Unable to parse script timeout %s", err)
 		}
 
-		c.Services[service.OfficialName] = service
+		c.Services[service.OfficialName] = &service
 	}
 }
 

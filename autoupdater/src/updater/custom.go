@@ -1,11 +1,11 @@
 package updater
 
 import (
-	"context"
-	"os/exec"
+	"fmt"
+	"time"
 
+	"github.com/go-cmd/cmd"
 	"github.com/sirupsen/logrus"
-
 	"github.com/skycoin/services/autoupdater/config"
 )
 
@@ -13,7 +13,7 @@ import (
 // update notify. Two arguments would always be passed to the script: Name of the service + version.
 
 type Custom struct {
-	services map[string]config.Service
+	services map[string]*config.Service
 }
 
 func newCustomUpdater(c *config.Config) *Custom {
@@ -23,19 +23,29 @@ func newCustomUpdater(c *config.Config) *Custom {
 }
 
 func (c *Custom) Update(service, version string) error {
-	logrus.Warn("Update")
-	ctx, cancel := context.WithTimeout(context.Background(), c.services[service].ScriptTimeout)
-	defer cancel()
-
-	logrus.Warn("point a")
-	command := buildCommand(c, service, version)
-
-	logrus.Warn("point b - command is: ", command)
-	err := exec.CommandContext(ctx, c.services[service].ScriptInterpreter, command...).Run()
-	if err != nil {
-		return err
+	if c.services[service].IsLock() {
+		return fmt.Errorf("service %s is already being updated", service)
 	}
+	c.services[service].Lock()
+
+	customCmd, statusChan := createAndLaunch(c, service, version)
+	ticker := time.NewTicker(time.Second * 2)
+
+	go logStdout(ticker, customCmd)
+
+	go timeoutCmd(c, service, customCmd)
+
+	go waitForExit(statusChan, c, service)
+
 	return nil
+}
+
+func createAndLaunch(c *Custom, service string, version string) (*cmd.Cmd, <-chan cmd.Status) {
+	command := buildCommand(c, service, version)
+	logrus.Info("running command: ", command)
+	customCmd := cmd.NewCmd(c.services[service].ScriptInterpreter, command...)
+	statusChan := customCmd.Start()
+	return customCmd, statusChan
 }
 
 func buildCommand(c *Custom, service, version string) []string {
@@ -45,4 +55,30 @@ func buildCommand(c *Custom, service, version string) []string {
 		version,
 	}
 	return append(command, c.services[service].ScriptExtraArguments...)
+}
+
+func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd) {
+	var previousLastLine int
+	for range ticker.C {
+		status := customCmd.Status()
+		currentLastLine := len(status.Stdout)
+
+		if currentLastLine != previousLastLine {
+			for _, line := range status.Stdout[previousLastLine:] {
+				logrus.Infof("script stdout: %s", line)
+			}
+			previousLastLine = currentLastLine
+		}
+	}
+}
+
+func timeoutCmd(c *Custom, service string, customCmd *cmd.Cmd) {
+	<-time.After(c.services[service].ScriptTimeout)
+	customCmd.Stop()
+}
+
+func waitForExit(statusChan <-chan cmd.Status, c *Custom, service string) {
+	finalStatus := <-statusChan
+	logrus.Infof("%s exited with: %d", finalStatus.Cmd, finalStatus.Exit)
+	c.services[service].Unlock()
 }

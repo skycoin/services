@@ -93,6 +93,9 @@ func (g *git) checkIfNew() {
 
 	if g.date.Before(publishedTime) {
 		logrus.Info("New version: ", release.Url, ". Published at: ", release.PublishedAt)
-		g.updater.Update(g.service, release.Name)
+		err := g.updater.Update(g.service, release.Name)
+		if err!= nil {
+			logrus.Error(err)
+		}
 	}
 }
