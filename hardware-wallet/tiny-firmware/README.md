@@ -19,6 +19,12 @@ This code aims at tranforming the cipher library from [this repository](https://
 
 Follow the steps [here](https://github.com/texane/stlink/blob/master/doc/compiling.md).
 
+### Install google protobuf
+
+```
+sudo apt-get install protobuf-compiler python-protobuf golang-goprotobuf-dev
+```
+
 ### Configure your usb module
 
 We need to tell your kernel to use the [hidraw module](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) to communicate with the hardware device. If you don't your kernel will treat the device as a mouse or a keyboard.
@@ -78,7 +84,7 @@ You can check the device is seen by your ST-LINK using this command:
 
 To flash the device on a microcontroller of STM32f2xx family the command is:
 
-    st-flash write combined.bin 0x08000000; 
+    st-flash write combined.bin 0x08000000;
 
 If you sourced the make_firmware.sh file as recommended. You can use the alias st-trezor to burn the device.
 
