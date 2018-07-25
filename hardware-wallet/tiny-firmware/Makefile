@@ -84,6 +84,9 @@ OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/secp256k1.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/trezor-tools/bip39.o
 #end trezor-crypto
 
+ifeq ($(REVERSE_SCREEN),1)
+CFLAGS   += -DREVERSE_SCREEN=1
+endif
 
 ifeq ($(EMULATOR),1)
 CFLAGS   += -DEMULATOR=1
