@@ -99,7 +99,7 @@ func (c *Config) parseGlobal() {
 }
 
 func (c *Config) parseServices() {
-	var services []Service
+	var services []*Service
 	c.Services = make(map[string]*Service)
 
 	err := viper.UnmarshalKey("service", &services)
@@ -116,7 +116,7 @@ func (c *Config) parseServices() {
 			logrus.Fatalf("Unable to parse script timeout %s", err)
 		}
 
-		c.Services[service.OfficialName] = &service
+		c.Services[service.OfficialName] = service
 	}
 }
 

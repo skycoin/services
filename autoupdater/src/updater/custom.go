@@ -23,42 +23,44 @@ func newCustomUpdater(c *config.Config) *Custom {
 }
 
 func (c *Custom) Update(service, version string) error {
-	if c.services[service].IsLock() {
-		return fmt.Errorf("service %s is already being updated", service)
+	localService := c.services[service]
+	if localService.IsLock() {
+		return fmt.Errorf("service %s is already being updated... waiting for it to finish", service)
 	}
-	c.services[service].Lock()
+	localService.Lock()
 
-	customCmd, statusChan := createAndLaunch(c, service, version)
+	customCmd, statusChan := createAndLaunch(localService, version)
 	ticker := time.NewTicker(time.Second * 2)
 
 	go logStdout(ticker, customCmd)
 
-	go timeoutCmd(c, service, customCmd)
+	go timeoutCmd( localService, customCmd)
 
-	go waitForExit(statusChan, c, service)
+	go waitForExit(statusChan,  localService)
 
 	return nil
 }
 
-func createAndLaunch(c *Custom, service string, version string) (*cmd.Cmd, <-chan cmd.Status) {
-	command := buildCommand(c, service, version)
+func createAndLaunch(service *config.Service, version string) (*cmd.Cmd, <-chan cmd.Status) {
+	command := buildCommand(service, version)
 	logrus.Info("running command: ", command)
-	customCmd := cmd.NewCmd(c.services[service].ScriptInterpreter, command...)
+	customCmd := cmd.NewCmd(service.ScriptInterpreter, command...)
 	statusChan := customCmd.Start()
 	return customCmd, statusChan
 }
 
-func buildCommand(c *Custom, service, version string) []string {
+func buildCommand(service *config.Service, version string) []string {
 	command := []string{
-		c.services[service].UpdateScript,
-		c.services[service].LocalName,
+		service.UpdateScript,
+		service.LocalName,
 		version,
 	}
-	return append(command, c.services[service].ScriptExtraArguments...)
+	return append(command, service.ScriptExtraArguments...)
 }
 
 func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd) {
 	var previousLastLine int
+
 	for range ticker.C {
 		status := customCmd.Status()
 		currentLastLine := len(status.Stdout)
@@ -69,16 +71,17 @@ func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd) {
 			}
 			previousLastLine = currentLastLine
 		}
+
 	}
 }
 
-func timeoutCmd(c *Custom, service string, customCmd *cmd.Cmd) {
-	<-time.After(c.services[service].ScriptTimeout)
+func timeoutCmd( service *config.Service, customCmd *cmd.Cmd) {
+	<-time.After(service.ScriptTimeout)
 	customCmd.Stop()
 }
 
-func waitForExit(statusChan <-chan cmd.Status, c *Custom, service string) {
+func waitForExit(statusChan <-chan cmd.Status,  service *config.Service) {
 	finalStatus := <-statusChan
 	logrus.Infof("%s exited with: %d", finalStatus.Cmd, finalStatus.Exit)
-	c.services[service].Unlock()
+	service.Unlock()
 }

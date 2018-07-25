@@ -10,7 +10,7 @@ import (
 
 type swarmUpdater struct {
 	client   *docker.Client
-	services map[string]config.Service
+	services map[string]*config.Service
 }
 
 func newSwarmUpdater(c *config.Config) *swarmUpdater {
@@ -27,7 +27,7 @@ func (s *swarmUpdater) Update(service string, version string) error {
 	localService := s.services[service].LocalName
 	serviceInfo, err := s.client.InspectService(localService)
 	if err != nil {
-		return fmt.Errorf("Failed to inspect service %s. %s", localService, err)
+		return fmt.Errorf("failed to inspect service %s. %s", localService, err)
 	}
 
 	if serviceInfo.Spec.TaskTemplate.ContainerSpec.Image != version {
@@ -40,7 +40,7 @@ func (s *swarmUpdater) Update(service string, version string) error {
 		}
 		err = s.client.UpdateService(localService, updateOptions)
 		if err != nil {
-			return fmt.Errorf("Unable to update service %s to version %s. %s", localService, version, err)
+			return fmt.Errorf("unable to update service %s to version %s. %s", localService, version, err)
 		}
 	}
 	return nil

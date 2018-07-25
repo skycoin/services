@@ -146,7 +146,7 @@ func activeAction(c *cli.Context) {
 
 	conf.Global.UpdaterName = updaterNameAux
 
-	conf.Services[c.String("service")] = config.Service{
+	conf.Services[c.String("service")] = &config.Service{
 		LocalName:            c.String("service"),
 		OfficialName:         c.String("service"),
 		ScriptInterpreter:    c.Parent().String("script"),
