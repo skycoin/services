@@ -3,6 +3,7 @@ package deviceWallet
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -125,6 +126,9 @@ func getDevice(deviceType DeviceType) (io.ReadWriteCloser, error) {
 	case DeviceTypeUsb:
 		dev, err = getUsbDevice()
 		break
+	}
+	if (dev == nil && err == nil) {
+		err = errors.New("No device connected")
 	}
 	return dev, err
 }
