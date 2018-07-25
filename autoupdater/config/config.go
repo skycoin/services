@@ -9,12 +9,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-const CONFIG_TYPE = "toml"
-const SERVICES_KEY = "services"
-
-var DEFAULT_TIMEOUT time.Duration = 10 * time.Second
-
-const DEFAULT_TIMEOUT_STRING = "10m"
+const configType = "toml"
+const defaultTimeoutString = "10m"
+var DefaultTimeout = 10 * time.Second
 
 type Config struct {
 	Global   *Global
@@ -79,7 +76,7 @@ func NewConfig(path string) *Config {
 func (c *Config) loadConfigFromFile(path string) {
 	dir, file := filepath.Split(path)
 	cleanFile := strings.TrimSuffix(file, filepath.Ext(file))
-	viper.SetConfigType(CONFIG_TYPE)
+	viper.SetConfigType(configType)
 	viper.SetConfigName(cleanFile)
 	viper.AddConfigPath(dir)
 
@@ -109,7 +106,7 @@ func (c *Config) parseServices() {
 
 	for _, service := range services {
 		if service.ScriptTimeoutString == "" {
-			service.ScriptTimeoutString = DEFAULT_TIMEOUT_STRING
+			service.ScriptTimeoutString = defaultTimeoutString
 		}
 		service.ScriptTimeout, err = time.ParseDuration(service.ScriptTimeoutString)
 		if err != nil {

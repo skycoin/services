@@ -52,7 +52,7 @@ func (g *git) Start() {
 		for {
 			select {
 			case t := <-g.ticker.C:
-				logrus.Info("Looking for new version at: ", t)
+				logrus.Info("looking for new version at: ", t)
 				// Try to fetch new version
 				g.checkIfNew()
 			}
@@ -88,14 +88,19 @@ func (g *git) checkIfNew() {
 
 	publishedTime, err := time.Parse(time.RFC3339, release.PublishedAt)
 	if err != nil {
-		logrus.Fatal("Cannot parse git release date: ", release.PublishedAt, " err: ", err)
+		logrus.Fatal("cannot parse git release date: ", release.PublishedAt, " err: ", err)
 	}
 
 	if g.date.Before(publishedTime) {
-		logrus.Info("New version: ", release.Url, ". Published at: ", release.PublishedAt)
+		logrus.Info("new version: ", release.Url, ". Published at: ", release.PublishedAt)
 		err := g.updater.Update(g.service, release.Name)
 		if err!= nil {
 			logrus.Error(err)
 		}
+
+		// set last version time
+		g.date = &publishedTime
+	} else {
+		logrus.Info("no new version")
 	}
 }

@@ -14,7 +14,7 @@ type Updater interface {
 
 func New(conf *config.Config) Updater {
 	normalized := strings.ToLower(conf.Global.UpdaterName)
-	logrus.Warnf("UpdaterName: %s", normalized)
+	logrus.Info("updater: %s", normalized)
 
 	switch normalized {
 	case "swarm":

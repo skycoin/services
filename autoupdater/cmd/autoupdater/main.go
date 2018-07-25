@@ -71,7 +71,7 @@ func customFlags() []cli.Flag {
 		},
 		cli.DurationFlag{
 			Name:   "timeout,t",
-			Value:  config.DEFAULT_TIMEOUT,
+			Value:  config.DefaultTimeout,
 			Usage:  "timeout for the custom script, after which to retry",
 			EnvVar: "SCRIPT_TIMEOUT",
 		},
