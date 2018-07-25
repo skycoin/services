@@ -112,16 +112,16 @@ ifneq ($(EMULATOR),1)
 
 all: libopencm3 proto $(NAME).bin
 else
-.PHONY: proto 
+.PHONY: proto
 
 all: proto $(NAME).bin
 endif
 
 
-proto: 
+proto:
 	cd protob && make
 
-libopencm3: 
+libopencm3:
 	cd vendor/libopencm3 && make
 
 sign: $(NAME).bin
