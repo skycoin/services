@@ -215,6 +215,36 @@ func DeviceSetMnemonic(deviceType DeviceType, mnemonic string) {
 	log.Printf("MessageButtonAck Answer is: %d / %s\n", msg.Kind, msg.Data)
 }
 
+// DecodeFailMsg convert byte data into string containing the failure returned by the device
+func DecodeFailMsg(kind uint16, data []byte) (uint16, string) {
+	if kind == uint16(messages.MessageType_MessageType_Failure) {
+		failure := &messages.Failure{}
+		err := proto.Unmarshal(data, failure)
+		if err != nil {
+			log.Panicf("unmarshaling error: %s\n", err.Error())
+			return kind, ""
+		}
+		return kind, failure.GetMessage()
+	}
+	log.Panic("Calling DecodeFailMsg with wrong message type")
+	return kind, ""
+}
+
+// DecodeResponseSkycoinAddress convert byte data into list of addresses, meant to be used after DevicePinMatrixAck
+func DecodeResponseSkycoinAddress(kind uint16, data []byte) (uint16, []string) {
+	if kind == uint16(messages.MessageType_MessageType_ResponseSkycoinAddress) {
+		responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
+		err := proto.Unmarshal(data, responseSkycoinAddress)
+		if err != nil {
+			log.Panicf("unmarshaling error: %s\n", err.Error())
+			return kind, make([]string, 0)
+		}
+		return kind, responseSkycoinAddress.GetAddresses()
+	}
+	log.Panic("Calling DecodeResponseSkycoinAddress with wrong message type")
+	return kind, make([]string, 0)
+}
+
 // DeviceAddressGen Ask the device to generate an address
 func DeviceAddressGen(deviceType DeviceType, addressN int, startIndex int) (uint16, []string) {
 
@@ -237,13 +267,7 @@ func DeviceAddressGen(deviceType DeviceType, addressN int, startIndex int) (uint
 		log.Panicf("sendToDevice error: %s\n", err.Error())
 	}
 	if msg.Kind == uint16(messages.MessageType_MessageType_ResponseSkycoinAddress) {
-		responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
-		err = proto.Unmarshal(msg.Data, responseSkycoinAddress)
-		if err != nil {
-			log.Panicf("unmarshaling error: %s\n", err.Error())
-			return msg.Kind, make([]string, 0)
-		}
-		return msg.Kind, responseSkycoinAddress.GetAddresses()
+		return DecodeResponseSkycoinAddress(msg.Kind, msg.Data)
 	} else if msg.Kind == uint16(messages.MessageType_MessageType_PinMatrixRequest) {
 		log.Println("This operation requires a PIN code")
 		return msg.Kind, make([]string, 0)

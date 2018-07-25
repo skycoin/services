@@ -4,7 +4,6 @@ import(
     "fmt"
     "log"
     deviceWallet "./device-wallet"
-	proto "github.com/golang/protobuf/proto"
 	messages "./device-wallet/protob"
 )
 
@@ -49,14 +48,9 @@ func main() {
         kind, data = deviceWallet.DevicePinMatrixAck(deviceType, pinEnc)
 
         if kind == uint16(messages.MessageType_MessageType_ResponseSkycoinAddress) {
-            responseSkycoinAddress := &messages.ResponseSkycoinAddress{}
-            err := proto.Unmarshal(data, responseSkycoinAddress)
-            if err != nil {
-                log.Panicf("unmarshaling error: %s\n", err.Error())
-                return 
-            }
+            _ , addresses := deviceWallet.DecodeResponseSkycoinAddress(kind, data)
             log.Print("Successfully got address")
-            log.Print(responseSkycoinAddress.GetAddresses())
+            log.Print(addresses)
         }
     } else {
         log.Println("Got addresses without pin code")
