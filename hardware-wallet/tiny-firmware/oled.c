@@ -80,7 +80,11 @@ void oledDrawPixel(int x, int y)
 	if ((x < 0) || (y < 0) || (x >= OLED_WIDTH) || (y >= OLED_HEIGHT)) {
 		return;
 	}
-	_oledbuffer[OLED_OFFSET(x, y)] |= OLED_MASK(x, y);
+#if REVERSE_SCREEN
+	_oledbuffer[OLED_OFFSET(127-x, 63-y)] |= OLED_MASK(127-x, 63-y);
+#else
+	_oledbuffer[OLED_OFFSET(x,y)] |= OLED_MASK(x, y);
+#endif
 }
 
 /*
@@ -91,7 +95,11 @@ void oledClearPixel(int x, int y)
 	if ((x < 0) || (y < 0) || (x >= OLED_WIDTH) || (y >= OLED_HEIGHT)) {
 		return;
 	}
-	_oledbuffer[OLED_OFFSET(x, y)] &= ~OLED_MASK(x, y);
+#if REVERSE_SCREEN
+	_oledbuffer[OLED_OFFSET(127-x, 63-y)] &= ~OLED_MASK(127-x, 63-y);
+#else
+	_oledbuffer[OLED_OFFSET(x,y)] &= ~OLED_MASK(x, y);
+#endif
 }
 
 /*
