@@ -8,6 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/skycoin/services/autoupdater/src/updater"
+	"github.com/skycoin/services/autoupdater/store/services"
 )
 
 type git struct {
@@ -24,7 +25,9 @@ type git struct {
 }
 
 func newGit(u updater.Updater, service, url string) *git {
-	date := time.Date(1999, 10, 1, 1, 1, 1, 1, time.UTC)
+	retrievedStatus := services.GetStore().Get(service)
+	logrus.Info("retrieved status %+v",retrievedStatus)
+	date := retrievedStatus.LastUpdated.Time
 	return &git{url: "https://api.github.com/repos" + url, tag: "0.0.0", date: &date, exit: make(chan int), updater: u, service: service}
 }
 
@@ -100,6 +103,12 @@ func (g *git) checkIfNew() {
 
 		// set last version time
 		g.date = &publishedTime
+		storeService := services.Service{
+			Name: g.service,
+			LastUpdated: services.NewTimeJSON(publishedTime),
+		}
+
+		services.GetStore().Store(&storeService)
 	} else {
 		logrus.Info("no new version")
 	}

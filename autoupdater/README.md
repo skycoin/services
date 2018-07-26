@@ -9,11 +9,12 @@
 - [x] Update standalone applications
 - [x] Cli configuration
 - [x] File configuration
-- [ ] Refactor configuration adding updaters as commands instead of as flags
+- [x] Save status
+- [x] Refactor configuration adding updaters as commands instead of as flags
 - [ ] Write actual documentation
 - [ ] Add .travis.yml for CI testing
 - [ ] Add releases to github
-- [ ] Test vendoring is correct: Have trouble downloading with dep through VPN, the connection drops before completion 90% of the times.
+- [x] Test vendoring is correct: Have trouble downloading with dep through VPN, the connection drops before completion 90% of the times.
 - [ ] CircuitBreaker with incremental backoff when contacting external services
 
 ### Task List future releases

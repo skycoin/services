@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/skycoin/services/autoupdater/config"
+	"github.com/skycoin/services/autoupdater/store/services"
 )
 
 type Updater interface {
@@ -13,6 +14,8 @@ type Updater interface {
 }
 
 func New(conf *config.Config) Updater {
+	services.InitStorer("json")
+
 	normalized := strings.ToLower(conf.Global.UpdaterName)
 	logrus.Info("updater: %s", normalized)
 
