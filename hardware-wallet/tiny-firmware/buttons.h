@@ -39,7 +39,7 @@ void buttonUpdate(void);
 #define BTN_PORT	GPIOC
 #endif
 
-#if REVERSE_SCREEN
+#if REVERSE_BUTTONS
 	#ifndef BTN_PIN_YES
 	#define BTN_PIN_YES	GPIO5
 	#endif

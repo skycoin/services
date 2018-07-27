@@ -98,6 +98,12 @@ else
 CFLAGS   += -DREVERSE_SCREEN=0
 endif
 
+ifeq ($(REVERSE_BUTTONS),1)
+CFLAGS   += -DREVERSE_BUTTONS=1
+else
+CFLAGS   += -DREVERSE_BUTTONS=0
+endif
+
 ifeq ($(EMULATOR),1)
 CFLAGS   += -DEMULATOR=1
 else
