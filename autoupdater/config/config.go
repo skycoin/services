@@ -41,7 +41,6 @@ type Service struct {
 	ScriptInterpreter    string   `mapstructure:"script_interpreter"`
 	ScriptExtraArguments []string `mapstructure:"script_extra_arguments"`
 	ScriptTimeout        time.Duration
-	CustomLock
 }
 
 type Active struct {
@@ -57,6 +56,10 @@ type Active struct {
 	Service string
 	// Current version of the service
 	CurrentVersion string
+	// Number of update retries before desist
+	Retries int
+	// Time between retries
+	RetryTime time.Duration
 }
 
 func NewConfig(path string) *Config {
@@ -123,6 +126,8 @@ func (c *Config) parseActive() {
 	c.Active.Repository = viper.GetString("active.repository")
 	c.Active.Service = viper.GetString("active.service")
 	c.Active.Tag = viper.GetString("active.tag")
+	c.Active.Retries = viper.GetInt("active.retries")
+	c.Active.RetryTime = viper.GetDuration("active.retry_time")
 }
 
 func (c *Config) parsePassive() {

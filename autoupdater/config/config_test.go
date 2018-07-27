@@ -9,8 +9,8 @@ import (
 )
 
 func TestServices(t *testing.T) {
-	var EXPECTED_SERVICE_MAP = map[string]config.Service{
-		"skycoin/skycoin": config.Service{
+	var expectedServiceMaps = map[string]*config.Service{
+		"skycoin/skycoin": &config.Service{
 			LocalName:            "library/mariadb",
 			OfficialName:         "skycoin/skycoin",
 			UpdateScript:         "./updater/custom_example/custom_script.sh",
@@ -19,7 +19,7 @@ func TestServices(t *testing.T) {
 			ScriptTimeout:        5 * time.Second,
 			ScriptExtraArguments: []string{"-a 1"},
 		},
-		"top": config.Service{
+		"top": &config.Service{
 			LocalName:            "skywire",
 			OfficialName:         "top",
 			UpdateScript:         "./updater/custom_example/custom_script.sh",
@@ -28,7 +28,7 @@ func TestServices(t *testing.T) {
 			ScriptTimeout:        5 * time.Second,
 			ScriptExtraArguments: []string{""},
 		},
-		"sky-node": config.Service{
+		"sky-node": &config.Service{
 			LocalName:            "skycoin",
 			OfficialName:         "sky-node",
 			UpdateScript:         "./updater/custom_example/custom_script.sh",
@@ -37,34 +37,34 @@ func TestServices(t *testing.T) {
 			ScriptTimeout:        7 * time.Second,
 			ScriptExtraArguments: []string{"-a 1", "-b 2"},
 		},
-		"skywire": config.Service{
+		"skywire": &config.Service{
 			LocalName:            "mystack_skywire",
 			OfficialName:         "skywire",
 			UpdateScript:         "./updater/custom_example/custom_script.sh",
 			ScriptInterpreter:    "/bin/bash",
-			ScriptTimeoutString:  "10s",
-			ScriptTimeout:        10 * time.Second,
+			ScriptTimeoutString:  "10m",
+			ScriptTimeout:        10 * time.Minute,
 			ScriptExtraArguments: []string{""},
 		},
 	}
 
-	c := config.NewConfig("../configuration.toml")
+	c := config.NewConfig("../configuration.example.toml")
 
-	assert.Equal(t, EXPECTED_SERVICE_MAP, c.Services)
+	assert.Equal(t, expectedServiceMaps, c.Services)
 }
 
 func TestGlobal(t *testing.T) {
-	EXPECTED_GLOBAL := &config.Global{
+	expectedGlobal := &config.Global{
 		UpdaterName: "swarm",
 	}
 
 	c := config.NewConfig("../configuration.example.toml")
 
-	assert.Equal(t, EXPECTED_GLOBAL, c.Global)
+	assert.Equal(t, expectedGlobal, c.Global)
 }
 
 func TestActive(t *testing.T) {
-	EXPECTED_ACTIVE := &config.Active{
+	expectedActive := &config.Active{
 		Interval:   time.Duration(time.Hour),
 		Tag:        "latest",
 		Repository: "library/mariadb",
@@ -74,16 +74,16 @@ func TestActive(t *testing.T) {
 
 	c := config.NewConfig("../configuration.example.toml")
 
-	assert.Equal(t, EXPECTED_ACTIVE, c.Active)
+	assert.Equal(t, expectedActive, c.Active)
 }
 
 func TestPassive(t *testing.T) {
-	EXPECTED_PASSIVE := &config.Passive{
+	expectedPassive := &config.Passive{
 		MessageBroker: "nats",
 		Urls:          []string{"url1", "url2"},
 	}
 
 	c := config.NewConfig("../configuration.example.toml")
 
-	assert.Equal(t, EXPECTED_PASSIVE, c.Passive)
+	assert.Equal(t, expectedPassive, c.Passive)
 }

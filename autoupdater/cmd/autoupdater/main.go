@@ -8,10 +8,11 @@ import (
 	"github.com/skycoin/services/autoupdater/config"
 	"github.com/skycoin/services/autoupdater/src/active"
 	"github.com/skycoin/services/autoupdater/src/passive/subscriber"
+	"github.com/skycoin/services/autoupdater/src/updater"
 	"github.com/urfave/cli"
 )
 
-const DEFAULT_TOPIC = "top"
+const defaultTopic = "top"
 
 var updaterNameAux string
 
@@ -119,8 +120,9 @@ func passiveAction(c *cli.Context) {
 	conf.Passive.Urls = stringSlicePickNonZero(conf.Passive.Urls, c.StringSlice("urls"))
 	conf.Passive.MessageBroker = stringPickNonZero(conf.Passive.MessageBroker, c.String("message-broker"))
 
-	sub := subscriber.New(conf)
-	sub.Subscribe(DEFAULT_TOPIC)
+	updaterInstance := updater.New(conf)
+	sub := subscriber.New(conf, updaterInstance)
+	sub.Subscribe(defaultTopic)
 }
 
 func passiveFlags() []cli.Flag {
@@ -159,8 +161,11 @@ func activeAction(c *cli.Context) {
 	conf.Active.Repository = stringPickNonZero(conf.Active.Repository, c.String("repository"))
 	conf.Active.Name = stringPickNonZero(conf.Active.Name, c.String("fetcher"))
 	conf.Active.Service = stringPickNonZero(conf.Active.Service, c.String("service"))
+	conf.Active.Retries = intPickNonZero(conf.Active.Retries, c.Int("retries"))
+	conf.Active.RetryTime = durationPickNonZero(conf.Active.RetryTime, c.Duration("retry-time"))
 
-	fetcher := active.New(conf)
+	updaterInstance := updater.New(conf)
+	fetcher := active.New(conf,updaterInstance)
 	logrus.Info("active -> updater: ", c.GlobalString("updater"),
 		" interval: ", conf.Active.Interval)
 	fetcher.SetInterval(conf.Active.Interval)
@@ -199,6 +204,18 @@ func activeFlags() []cli.Flag {
 			Usage:  "service name to be updated",
 			EnvVar: "ACTIVE_SERVICE",
 		},
+		cli.IntFlag{
+			Name:   "retries",
+			Value:  3,
+			Usage:  "number of retries to fetch updates",
+			EnvVar: "RETRIES",
+		},
+		cli.DurationFlag{
+			Name: "retry-time",
+			Value: time.Minute * 5,
+			Usage: "time between retries",
+			EnvVar: "RETRY_TIME",
+		},
 	}
 }
 func main() {
@@ -218,6 +235,14 @@ func stringPickNonZero(confValue, flagValue string) string {
 
 func stringSlicePickNonZero(confValue, flagValue []string) []string {
 	if confValue == nil {
+		return flagValue
+	}
+
+	return confValue
+}
+
+func intPickNonZero(confValue, flagValue int) int{
+	if confValue == 0 && flagValue != 0 {
 		return flagValue
 	}
 

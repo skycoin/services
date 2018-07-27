@@ -23,11 +23,13 @@ func newSwarmUpdater(c *config.Config) *swarmUpdater {
 	return &swarmUpdater{client, c.Services}
 }
 
-func (s *swarmUpdater) Update(service string, version string) error {
+func (s *swarmUpdater) Update(service string, version string) chan error {
+	errCh := make(chan error)
 	localService := s.services[service].LocalName
 	serviceInfo, err := s.client.InspectService(localService)
 	if err != nil {
-		return fmt.Errorf("failed to inspect service %s. %s", localService, err)
+		errCh <-fmt.Errorf("failed to inspect service %s. %s", localService, err)
+		return errCh
 	}
 
 	if serviceInfo.Spec.TaskTemplate.ContainerSpec.Image != version {
@@ -40,8 +42,10 @@ func (s *swarmUpdater) Update(service string, version string) error {
 		}
 		err = s.client.UpdateService(localService, updateOptions)
 		if err != nil {
-			return fmt.Errorf("unable to update service %s to version %s. %s", localService, version, err)
+			errCh <- fmt.Errorf("unable to update service %s to version %s. %s", localService, version, err)
+			return errCh
 		}
 	}
-	return nil
+	errCh <- nil
+	return errCh
 }

@@ -8,6 +8,8 @@ release_compilation_tag="-bin-osx-darwin-x64"
 version=$2
 version=$(echo ${version} | sed s/v//)
 
+exit 2
+
 echo "fetching" 
 echo "${service_github_url}${version}${release_compilation_tag}.zip -O $process_name.zip"   
 # fetch new version

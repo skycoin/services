@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const TEST_SCRIPT = `
+const testScript = `
 #!/bin/bash
 
 echo "service {$1}"
@@ -24,20 +24,20 @@ func TestCustom(t *testing.T) {
 		Global: &config.Global{
 			UpdaterName:     "custom",
 		},
-		Services: map[string]config.Service{
-			"myservice": config.Service{
+		Services: map[string]*config.Service{
+			"myservice": &config.Service{
 				LocalName: "myservice",
 				OfficialName: "myservice",
 				ScriptInterpreter:     "/bin/bash",
 				UpdateScript:          "-s",
-				ScriptExtraArguments: []string{"<<<", TEST_SCRIPT, "arg2"},
+				ScriptExtraArguments: []string{"<<<", testScript, "arg2"},
 				ScriptTimeout:         time.Second * 5,
 			},
 		},
 	}
 	customUpdater := updater.New(customConfig)
 
-	err := customUpdater.Update("myservice", "thisversion")
+	err := <- customUpdater.Update("myservice", "thisversion")
 
 	assert.NoError(t, err)
 }
@@ -47,8 +47,8 @@ func TestTimeout(t *testing.T) {
 		Global: &config.Global{
 			UpdaterName:     "custom",
 		},
-		Services: map[string]config.Service{
-			"myservice": config.Service{
+		Services: map[string]*config.Service{
+			"myservice": &config.Service{
 				LocalName: "myservice",
 				OfficialName: "myservice",
 				ScriptInterpreter:     "top",
@@ -60,7 +60,7 @@ func TestTimeout(t *testing.T) {
 	}
 	customUpdater := updater.New(customConfig)
 
-	err := customUpdater.Update("myservice", "thisversion")
+	err := <- customUpdater.Update("myservice", "thisversion")
 
 	assert.Error(t, err)
 }

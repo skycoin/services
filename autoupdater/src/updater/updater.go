@@ -10,14 +10,14 @@ import (
 )
 
 type Updater interface {
-	Update(service, version string) error
+	Update(service, version string) chan error
 }
 
 func New(conf *config.Config) Updater {
 	services.InitStorer("json")
 
 	normalized := strings.ToLower(conf.Global.UpdaterName)
-	logrus.Info("updater: %s", normalized)
+	logrus.Infof("updater: %s", normalized)
 
 	switch normalized {
 	case "swarm":

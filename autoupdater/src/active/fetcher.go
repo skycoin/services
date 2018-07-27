@@ -14,8 +14,7 @@ type Fetcher interface {
 	Stop()
 }
 
-func New(c *config.Config) Fetcher {
-	updater := updater.New(c)
+func New(c *config.Config, updater updater.Updater) Fetcher {
 	if c.Global.UpdaterName == "swarm" {
 		logrus.Info("Swarm mode cannot fetch from Git, falling back to Dockerhub")
 		c.Active.Name = "dockerhub"
@@ -23,7 +22,7 @@ func New(c *config.Config) Fetcher {
 
 	switch c.Active.Name {
 	case "git":
-		return newGit(updater, c.Active.Service, c.Active.Repository)
+		return newGit(updater, c.Active.Service, c.Active.Repository, c.Active.Retries, c.Active.RetryTime)
 	case "dockerhub":
 		return NewDockerHub(updater, c.Active.Repository, c.Active.Tag, c.Active.Service, c.Active.CurrentVersion)
 	}

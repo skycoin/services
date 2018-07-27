@@ -15,6 +15,19 @@ type Storer interface {
 	Store(*Service)
 }
 
+func InitStorer(store string) {
+	switch store {
+	case "json":
+		storePath := filepath.Join(file.UserHome(), ".autoupdater", "services.json")
+		storeSingleton = newJsonStore(storePath)
+	}
+}
+
+func GetStore() Storer {
+	return storeSingleton
+}
+
+
 type Services map[string]*Service
 
 func (s Services) get(name string) *Service {
@@ -48,17 +61,6 @@ func (s *Service) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func InitStorer(store string) {
-	switch store {
-	case "json":
-		storePath := filepath.Join(file.UserHome(), ".autoupdater", "services.json")
-		storeSingleton = newJsonStore(storePath)
-	}
-}
-
-func GetStore() Storer {
-	return storeSingleton
-}
 
 type TimeJSON struct {
 	time.Time

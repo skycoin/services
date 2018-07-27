@@ -22,23 +22,20 @@ func newCustomUpdater(c *config.Config) *Custom {
 	}
 }
 
-func (c *Custom) Update(service, version string) error {
+func (c *Custom) Update(service, version string) chan error {
+	errCh := make(chan error)
 	localService := c.services[service]
-	if localService.IsLock() {
-		return fmt.Errorf("service %s is already being updated... waiting for it to finish", service)
-	}
-	localService.Lock()
 
 	customCmd, statusChan := createAndLaunch(localService, version)
 	ticker := time.NewTicker(time.Second * 2)
 
 	go logStdout(ticker, customCmd)
 
-	go timeoutCmd( localService, customCmd)
+	go timeoutCmd(localService, customCmd, errCh)
 
-	go waitForExit(statusChan,  localService)
+	go waitForExit(statusChan, errCh)
 
-	return nil
+	return errCh
 }
 
 func createAndLaunch(service *config.Service, version string) (*cmd.Cmd, <-chan cmd.Status) {
@@ -75,13 +72,17 @@ func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd) {
 	}
 }
 
-func timeoutCmd( service *config.Service, customCmd *cmd.Cmd) {
+func timeoutCmd( service *config.Service, customCmd *cmd.Cmd, errCh chan error) {
 	<-time.After(service.ScriptTimeout)
 	customCmd.Stop()
+	errCh <- fmt.Errorf("update script for service %s timed out", service.OfficialName)
 }
 
-func waitForExit(statusChan <-chan cmd.Status,  service *config.Service) {
+func waitForExit(statusChan <-chan cmd.Status, errCh chan error) {
 	finalStatus := <-statusChan
 	logrus.Infof("%s exited with: %d", finalStatus.Cmd, finalStatus.Exit)
-	service.Unlock()
+	if finalStatus.Exit != 0 {
+		errCh <- fmt.Errorf("exit with non-zero status %d", finalStatus.Exit)
+	}
+	errCh <- nil
 }
