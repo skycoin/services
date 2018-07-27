@@ -9,7 +9,7 @@ fi
 
 if [ -z "$EMULATOR" ]; then
     EMULATOR=0
-fi  
+fi
 
 if [ "$EMULATOR" == "0" ]; then
     make -C vendor/libopencm3/

@@ -80,7 +80,11 @@ void oledDrawPixel(int x, int y)
 	if ((x < 0) || (y < 0) || (x >= OLED_WIDTH) || (y >= OLED_HEIGHT)) {
 		return;
 	}
-	_oledbuffer[OLED_OFFSET(x, y)] |= OLED_MASK(x, y);
+#if REVERSE_SCREEN
+	_oledbuffer[OLED_OFFSET(127-x, 63-y)] |= OLED_MASK(127-x, 63-y);
+#else
+	_oledbuffer[OLED_OFFSET(x,y)] |= OLED_MASK(x, y);
+#endif
 }
 
 /*
@@ -91,7 +95,11 @@ void oledClearPixel(int x, int y)
 	if ((x < 0) || (y < 0) || (x >= OLED_WIDTH) || (y >= OLED_HEIGHT)) {
 		return;
 	}
-	_oledbuffer[OLED_OFFSET(x, y)] &= ~OLED_MASK(x, y);
+#if REVERSE_SCREEN
+	_oledbuffer[OLED_OFFSET(127-x, 63-y)] &= ~OLED_MASK(127-x, 63-y);
+#else
+	_oledbuffer[OLED_OFFSET(x,y)] &= ~OLED_MASK(x, y);
+#endif
 }
 
 /*
@@ -102,7 +110,11 @@ void oledInvertPixel(int x, int y)
 	if ((x < 0) || (y < 0) || (x >= OLED_WIDTH) || (y >= OLED_HEIGHT)) {
 		return;
 	}
-	_oledbuffer[OLED_OFFSET(x, y)] ^= OLED_MASK(x, y);
+	#if REVERSE_SCREEN
+		_oledbuffer[OLED_OFFSET(127-x, 63-y)] ^= OLED_MASK(127-x, 63-y);
+	#else
+		_oledbuffer[OLED_OFFSET(x, y)] ^= OLED_MASK(x, y);
+	#endif
 }
 
 #if !EMULATOR
@@ -184,7 +196,7 @@ void oledInvertDebugLink()
 {
 	if (is_debug_link) {
 		oledInvertPixel(OLED_WIDTH - 5, 0); oledInvertPixel(OLED_WIDTH - 4, 0); oledInvertPixel(OLED_WIDTH - 3, 0); oledInvertPixel(OLED_WIDTH - 2, 0); oledInvertPixel(OLED_WIDTH - 1, 0);
-		oledInvertPixel(OLED_WIDTH - 4, 1); oledInvertPixel(OLED_WIDTH - 3, 1); oledInvertPixel(OLED_WIDTH - 2, 1); oledInvertPixel(OLED_WIDTH - 1, 1); 
+		oledInvertPixel(OLED_WIDTH - 4, 1); oledInvertPixel(OLED_WIDTH - 3, 1); oledInvertPixel(OLED_WIDTH - 2, 1); oledInvertPixel(OLED_WIDTH - 1, 1);
 		oledInvertPixel(OLED_WIDTH - 3, 2); oledInvertPixel(OLED_WIDTH - 2, 2); oledInvertPixel(OLED_WIDTH - 1, 2);
 		oledInvertPixel(OLED_WIDTH - 2, 3); oledInvertPixel(OLED_WIDTH - 1, 3);
 		oledInvertPixel(OLED_WIDTH - 1, 4);
