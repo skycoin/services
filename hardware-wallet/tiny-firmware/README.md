@@ -59,6 +59,7 @@ Then for the actual compilation source make_firmware.sh script:
     cd tiny-firmware
     . make_firmware.sh
 
+
 If you want to compile on PC target set EMULATOR environment variable to 1:
 
     cd tiny-firmware
@@ -66,6 +67,11 @@ If you want to compile on PC target set EMULATOR environment variable to 1:
     . make_firmware.sh
     ./skycoin.elf
 
+[Optional] If you want to compile with a inverted screen and inverted buttons set REVERSE_SCREEN and REVERSE_BUTTONS environment variable to 1 :
+
+    export REVERSE_SCREEN=1
+    export REVERSE_BUTTONS=1
+    
 If you get SDL errors you might want to install these:
 
     sudo apt-get install libsdl2-dev libsdl2-image-dev
