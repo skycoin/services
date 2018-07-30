@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/skycoin/services/autoupdater/config"
+	"github.com/skycoin/services/autoupdater/src/logger"
 	"github.com/skycoin/services/autoupdater/src/updater"
 	"github.com/skycoin/services/autoupdater/store/services"
 )
@@ -26,12 +27,13 @@ type git struct {
 	exit      chan int
 	retryTime time.Duration
 	retries   int
+	log *logger.Logger
 	config.CustomLock
 }
 
-func newGit(u updater.Updater, service, url string, retries int, retryTime time.Duration) *git {
+func newGit(u updater.Updater, service, url string, retries int, retryTime time.Duration, log *logger.Logger) *git {
 	retrievedStatus := services.GetStore().Get(service)
-	logrus.Infof("retrieved status %+v", retrievedStatus)
+	log.Infof("retrieved status %+v", retrievedStatus)
 	date := retrievedStatus.LastUpdated.Time
 
 	return &git{
@@ -43,6 +45,7 @@ func newGit(u updater.Updater, service, url string, retries int, retryTime time.
 		service:   service,
 		retries:   retries,
 		retryTime: retryTime,
+		log: log,
 	}
 }
 
@@ -70,7 +73,7 @@ func (g *git) Start() {
 		for {
 			select {
 			case t := <-g.ticker.C:
-				logrus.Info("looking for new version at: ", t)
+				g.log.Info("looking for new version at: ", t)
 				// Try to fetch new version
 				go g.checkIfNew()
 			}
@@ -93,16 +96,16 @@ type ReleaseJSON struct {
 
 func (g *git) checkIfNew() {
 	if g.IsLock() {
-		logrus.Warnf("service %s is already being updated... waiting for it to finish", g.service)
+		g.log.Warnf("service %s is already being updated... waiting for it to finish", g.service)
 	}
 	g.Lock()
 	defer g.Unlock()
 
 	release := g.fetchGithubRelease()
-	publishedTime := parsePublishedTime(release)
+	publishedTime := parsePublishedTime(release, g.log)
 
 	if g.date.Before(publishedTime) {
-		logrus.Info("new version: ", release.Url, ". Published at: ", release.PublishedAt)
+		g.log.Info("new version: ", release.Url, ". Published at: ", release.PublishedAt)
 		err := g.tryUpdate(release)
 
 		if err != nil {
@@ -111,42 +114,47 @@ func (g *git) checkIfNew() {
 			g.storeLastUpdated(publishedTime)
 		}
 	} else {
-		logrus.Info("no new version")
+		g.log.Info("no new version")
 	}
 }
 
 func (g *git) fetchGithubRelease() *ReleaseJSON {
 	resp, err := http.Get(g.url + "/releases/latest")
 	if err != nil {
-		logrus.Fatal("cannot contact api, err ", err)
+		g.log.Fatal("cannot contact api, err ", err)
 	}
 	defer resp.Body.Close()
 	release := &ReleaseJSON{}
 	err = json.NewDecoder(resp.Body).Decode(release)
 	if err != nil {
-		logrus.Fatal("cannot unmarshal to a release object, err: ", err)
+		g.log.Fatal("cannot unmarshal to a release object, err: ", err)
 	}
+	if release.PublishedAt == "" {
+		g.log.Fatalf("unable to retrieve published at information from %s",
+			g.url+"/release/latest. Make sure that the configuration repository exists")
+	}
+
 	return release
 }
 
-func parsePublishedTime(release *ReleaseJSON) time.Time {
+func parsePublishedTime(release *ReleaseJSON, log *logger.Logger) time.Time {
 	publishedTime, err := time.Parse(time.RFC3339, release.PublishedAt)
 	if err != nil {
-		logrus.Fatal("cannot parse git release date: ", release.PublishedAt, " err: ", err)
+		log.Fatal("cannot parse git release date: ", release.PublishedAt, " err: ", err)
 	}
 	return publishedTime
 }
 
 func (g *git) tryUpdate(release *ReleaseJSON) error {
 	for i := 0; i < g.retries; i++ {
-		err := <-g.updater.Update(g.service, release.Name)
+		err := <-g.updater.Update(g.service, release.Name, g.log)
 		if err != nil {
-			logrus.Errorf("error on update %s", err)
+			g.log.Errorf("error on update %s", err)
 
 			if i == (g.retries - 1) {
 				return fmt.Errorf("maximum retries attempted, service %s failed to update", g.service)
 			} else {
-				logrus.Infof("retry again in %s", g.retryTime.String())
+				g.log.Infof("retry again in %s", g.retryTime.String())
 			}
 		} else {
 			break

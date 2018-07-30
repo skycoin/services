@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
-	"github.com/sirupsen/logrus"
 	"github.com/skycoin/services/autoupdater/config"
+	"github.com/skycoin/services/autoupdater/src/logger"
 	"github.com/skycoin/services/autoupdater/src/updater"
 )
 
@@ -33,6 +33,7 @@ type Dockerhub struct {
 	token         *DockerHubToken
 	TokenTemplate string
 	Updater       updater.Updater
+	log *logger.Logger
 	config.CustomLock
 }
 
@@ -53,13 +54,13 @@ type DockerConfigJSON struct {
 	Digest string `json:"digest"`
 }
 
-func NewDockerHub(updater updater.Updater, repository, tag, service, currentDigest string) *Dockerhub {
+func NewDockerHub(updater updater.Updater, repository, tag, service, currentDigest string, l *logger.Logger) *Dockerhub {
 	if currentDigest == "" {
 		imageName := repository + ":" + tag
-		currentDigest = getCurrentDockerImageDigest(imageName)
+		currentDigest = getCurrentDockerImageDigest(imageName,l)
 	}
 	parsedRepo := strings.Replace(repository, "/", "", 1)
-	logrus.Infof("retrieved ID is: %s", currentDigest)
+	l.Infof("retrieved ID is: %s", currentDigest)
 
 	return &Dockerhub{
 		Url:           "https://registry.hub.docker.com/v2" + repository,
@@ -72,6 +73,7 @@ func NewDockerHub(updater updater.Updater, repository, tag, service, currentDige
 		Updater:       updater,
 		Service:       service,
 		TokenTemplate: tokenTemplate,
+		log:l,
 	}
 }
 
@@ -110,18 +112,18 @@ func (g *Dockerhub) Stop() {
 
 func (g *Dockerhub) checkUpdate(t time.Time) {
 	if g.IsLock() {
-		logrus.Warn("service %s is already being updated... waiting for it to finish")
+		g.log.Warn("service %s is already being updated... waiting for it to finish")
 	}
 	g.Lock()
 	defer g.Unlock()
-	logrus.Info("looking for new version at: ", t)
+	g.log.Info("looking for new version at: ", t)
 
 	// Try to fetch new version
 	err := g.updateIfNew()
 	if err != nil {
-		logrus.Info("cannot contact Dockerhub api: ", err)
+		g.log.Info("cannot contact Dockerhub api: ", err)
 		if time.Now().After(g.token.ExpirationDate) {
-			logrus.Info("token expired. Requesting new token...")
+			g.log.Info("token expired. Requesting new token...")
 			g.getToken()
 		}
 	}
@@ -130,28 +132,28 @@ func (g *Dockerhub) checkUpdate(t time.Time) {
 // We need to get a token with pull access to the Repository
 func (g *Dockerhub) getToken() {
 	tokenRequest := fmt.Sprintf(g.TokenTemplate, g.Repository)
-	logrus.Infof("requesting token to %s", tokenRequest)
+	g.log.Infof("requesting token to %s", tokenRequest)
 
 	resp, err := http.Get(tokenRequest)
 	if err != nil {
-		logrus.Fatal("cannot request a token to: ", tokenRequest, " err: ", err)
+		g.log.Fatal("cannot request a token to: ", tokenRequest, " err: ", err)
 	}
 	defer resp.Body.Close()
 
 	err = json.NewDecoder(resp.Body).Decode(g.token)
 	if err != nil {
-		logrus.Fatal("cannot parse token, err: ", err)
+		g.log.Fatal("cannot parse token, err: ", err)
 	}
-	logrus.Info(fmt.Sprintf("Got token %s", g.token.Token))
+	g.log.Info(fmt.Sprintf("Got token %s", g.token.Token))
 
 	date, err := time.Parse(time.RFC3339, g.token.IssuedAt)
 	if err != nil {
-		logrus.Fatal("cannot parse token date: ", err)
+		g.log.Fatal("cannot parse token date: ", err)
 	}
 
 	expiresIn, err := time.ParseDuration(fmt.Sprintf("%ds", g.token.ExpiresIn))
 	if err != nil {
-		logrus.Fatal("cannot parse expires in: ", err)
+		g.log.Fatal("cannot parse expires in: ", err)
 	}
 
 	g.token.ExpirationDate = date.Add(expiresIn)
@@ -160,9 +162,9 @@ func (g *Dockerhub) getToken() {
 // We are looking that the latest image digest is different from the local one
 func (g *Dockerhub) updateIfNew() error {
 	url := g.Url + uri
-	logrus.Info("looking for new versions at ", url)
+	g.log.Info("looking for new versions at ", url)
 
-	release, err := getLatestDigest(g.Client, g.token.Token, url)
+	release, err := g.getLatestDigest(g.Client, g.token.Token, url)
 	if err != nil {
 		return err
 	}
@@ -170,34 +172,36 @@ func (g *Dockerhub) updateIfNew() error {
 		return fmt.Errorf("response doesn't contains a digest")
 	}
 	if g.localDigest != release.Config.Digest {
-		logrus.Info("new version: ", release.Config.Digest)
-		err := <- g.Updater.Update(g.Service, g.Repository+":"+g.Tag)
+		g.log.Info("new version: ", release.Config.Digest)
+		err := <- g.Updater.Update(g.Service, g.Repository+":"+g.Tag, g.log)
 		if err != nil {
 			return err
 		}
 		g.localDigest = release.Config.Digest
+	} else {
+		g.log.Info("no new version")
 	}
 
 	return nil
 }
 
-func getCurrentDockerImageDigest(imageName string) string {
+func getCurrentDockerImageDigest(imageName string, log *logger.Logger) string {
 	endpoint := "unix:///var/run/docker.sock"
 	client, err := docker.NewClient(endpoint)
 	if err != nil {
-		logrus.Fatal("cannot connect to docker daemon: ", err)
+		log.Fatal("cannot connect to docker daemon: ", err)
 	}
 	image, err := client.InspectImage(imageName)
 	if err != nil {
-		logrus.Fatal("cannot inspect local image ", imageName, " err: ", err)
+		log.Fatal("cannot inspect local image ", imageName, " err: ", err)
 	}
 	return image.ID
 }
 
-func getLatestDigest(client *http.Client, token, url string) (*DockerReleaseJSON, error) {
+func (g *Dockerhub) getLatestDigest(client *http.Client, token, url string) (*DockerReleaseJSON, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logrus.Fatal("cannot create request object, err: ", err)
+		g.log.Fatal("cannot create request object, err: ", err)
 	}
 
 	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", token))
@@ -212,7 +216,8 @@ func getLatestDigest(client *http.Client, token, url string) (*DockerReleaseJSON
 	release := &DockerReleaseJSON{}
 	err = json.NewDecoder(resp.Body).Decode(release)
 	if err != nil {
-		logrus.Fatal("cannot unmarshal to a release object, err: ", err)
+		unmarshalErr := fmt.Errorf("error %s does the repository exists?", err)
+		return nil, unmarshalErr
 	}
 
 	return release, nil

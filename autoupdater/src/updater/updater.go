@@ -6,25 +6,24 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/skycoin/services/autoupdater/config"
-	"github.com/skycoin/services/autoupdater/store/services"
+	"github.com/skycoin/services/autoupdater/src/logger"
 )
 
 type Updater interface {
-	Update(service, version string) chan error
+	Update(service, version string, log *logger.Logger) chan error
 }
 
-func New(conf *config.Config) Updater {
-	services.InitStorer("json")
+func New(kind string, conf config.Configuration) Updater {
 
-	normalized := strings.ToLower(conf.Global.UpdaterName)
+	normalized := strings.ToLower(kind)
 	logrus.Infof("updater: %s", normalized)
 
 	switch normalized {
 	case "swarm":
-		return newSwarmUpdater(conf)
+		return newSwarmUpdater(conf.Services)
 	case "custom":
-		return newCustomUpdater(conf)
+		return newCustomUpdater(conf.Services)
 	}
 
-	return newSwarmUpdater(conf)
+	return newSwarmUpdater(conf.Services)
 }

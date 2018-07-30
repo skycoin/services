@@ -1,136 +1,80 @@
 package config
 
 import (
+	"io/ioutil"
+	"os"
 	"path/filepath"
-	"strings"
-	"time"
 
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
-const configType = "toml"
-const defaultTimeoutString = "10m"
-var DefaultTimeout = 10 * time.Second
-
-type Config struct {
-	Global   *Global
-	Active   *Active
-	Passive  *Passive
-	Services map[string]*Service
+type Configuration struct {
+	Updaters              map[string]UpdaterConfig    `yaml:"updaters"`
+	ActiveUpdateCheckers  map[string]FetcherConfig    `yaml:"active_update_checkers"`
+	PassiveUpdateCheckers map[string]SubscriberConfig `yaml:"passive_update_checkers"`
+	Services              map[string]ServiceConfig    `yaml:"services"`
 }
 
-type Global struct {
-	UpdaterName     string
-	Interpreter     string
-	Script          string
-	ScriptArguments []string
-	Timeout         time.Duration
+type UpdaterConfig struct {
+	Kind string `yaml:"kind"`
 }
 
-type Passive struct {
-	MessageBroker string
-	Urls          []string
+type FetcherConfig struct {
+	Interval  string `yaml:"interval"`
+	Retries   int    `yaml:"retries"`
+	RetryTime string `yaml:"retry_time"`
+	Kind      string `yaml:"kind"`
 }
 
-type Service struct {
-	OfficialName         string   `mapstructure:"official_name"`
-	LocalName            string   `mapstructure:"local_name"`
-	UpdateScript         string   `mapstructure:"update_script"`
-	ScriptTimeoutString  string   `mapstructure:"script_timeout"`
-	ScriptInterpreter    string   `mapstructure:"script_interpreter"`
-	ScriptExtraArguments []string `mapstructure:"script_extra_arguments"`
-	ScriptTimeout        time.Duration
+type SubscriberConfig struct {
+	MessageBroker string   `yaml:"message-broker"`
+	Topic         string   `yaml:"topic"`
+	Urls          []string `yaml:"urls"`
 }
 
-type Active struct {
-	// Interval in which to look for updates
-	Interval time.Duration
-	// Fetcher name: Dockerhub or git
-	Name string
-	// Repository name in the format /:owner/:image, without Tag
-	Repository string
-	// Image Tag in which to look for updates
-	Tag string
-	// Service name to update
-	Service string
-	// Current version of the service
-	CurrentVersion string
-	// Number of update retries before desist
-	Retries int
-	// Time between retries
-	RetryTime time.Duration
+type ServiceConfig struct {
+	OfficialName         string   `yaml:"official_name"`
+	LocalName            string   `yaml:"local_name"`
+	UpdateScript         string   `yaml:"update_script"`
+	ScriptTimeout        string   `yaml:"script_timeout"`
+	ScriptInterpreter    string   `yaml:"script_interpreter"`
+	ScriptExtraArguments []string `yaml:"script_extra_arguments"`
+	ActiveUpdateChecker  string   `yaml:"active_update_checker"`
+	PassiveUpdateChecker string   `yaml:"passive_update_checker"`
+	CheckTag             string   `yaml:"check_tag"`
+	Updater              string   `yaml:"updater"`
+	Repository           string   `yaml:"repository"`
 }
 
-func NewConfig(path string) *Config {
-	c := &Config{
-		Global:  &Global{},
-		Active:  &Active{},
-		Passive: &Passive{},
-	}
+func New(path string) Configuration {
+	confPath := defaultPathIfNil(path)
 
-	if path != "" {
-		c.loadConfigFromFile(path)
-	}
-
-	return c
-}
-
-func (c *Config) loadConfigFromFile(path string) {
-	dir, file := filepath.Split(path)
-	cleanFile := strings.TrimSuffix(file, filepath.Ext(file))
-	viper.SetConfigType(configType)
-	viper.SetConfigName(cleanFile)
-	viper.AddConfigPath(dir)
-
-	err := viper.ReadInConfig()
+	b, err := ioutil.ReadFile(confPath)
 	if err != nil {
-		logrus.Fatalf("Unable to read configuration file: %s", err)
+		panic(err)
 	}
 
-	c.parseGlobal()
-	c.parseActive()
-	c.parsePassive()
-	c.parseServices()
-}
+	conf := Configuration{
+		ActiveUpdateCheckers:  make(map[string]FetcherConfig),
+		PassiveUpdateCheckers: make(map[string]SubscriberConfig),
+		Services:              make(map[string]ServiceConfig),
+	}
 
-func (c *Config) parseGlobal() {
-	c.Global.UpdaterName = viper.GetString("global.updater")
-}
-
-func (c *Config) parseServices() {
-	var services []*Service
-	c.Services = make(map[string]*Service)
-
-	err := viper.UnmarshalKey("service", &services)
+	err = yaml.Unmarshal(b, &conf)
 	if err != nil {
-		logrus.Fatalf("Cannot unmarshal toml services configuration %s", err)
+		panic(err)
 	}
 
-	for _, service := range services {
-		if service.ScriptTimeoutString == "" {
-			service.ScriptTimeoutString = defaultTimeoutString
-		}
-		service.ScriptTimeout, err = time.ParseDuration(service.ScriptTimeoutString)
-		if err != nil {
-			logrus.Fatalf("Unable to parse script timeout %s", err)
-		}
+	return conf
+}
 
-		c.Services[service.OfficialName] = service
+func defaultPathIfNil(path string) string {
+	if path == "" {
+		gopath := os.Getenv("$GOPATH")
+		confPath := filepath.Join(gopath, "src", "github.com", "skycoin", "services", "autoupdater",
+			"configuration.yml")
+
+		return confPath
 	}
-}
-
-func (c *Config) parseActive() {
-	c.Active.Interval = viper.GetDuration("active.interval")
-	c.Active.Name = viper.GetString("active.name")
-	c.Active.Repository = viper.GetString("active.repository")
-	c.Active.Service = viper.GetString("active.service")
-	c.Active.Tag = viper.GetString("active.tag")
-	c.Active.Retries = viper.GetInt("active.retries")
-	c.Active.RetryTime = viper.GetDuration("active.retry_time")
-}
-
-func (c *Config) parsePassive() {
-	c.Passive.MessageBroker = viper.GetString("passive.message-broker")
-	c.Passive.Urls = viper.GetStringSlice("passive.urls")
+	return path
 }

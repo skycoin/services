@@ -7,55 +7,88 @@ import (
 	"github.com/go-cmd/cmd"
 	"github.com/sirupsen/logrus"
 	"github.com/skycoin/services/autoupdater/config"
+	"github.com/skycoin/services/autoupdater/src/logger"
 )
 
 // This package implements a custom updater. This means, a script that would be launched upon
 // update notify. Two arguments would always be passed to the script: Name of the service + version.
 
+var defaultScriptTimeout = time.Minute*10
+
 type Custom struct {
-	services map[string]*config.Service
+	services map[string]customServiceConfig
 }
 
-func newCustomUpdater(c *config.Config) *Custom {
+type customServiceConfig struct {
+	officialName string
+	localName string
+	scriptInterpreter string
+	scriptExtraArguments []string
+	updateScript string
+	tag string
+	scriptTimeout time.Duration
+}
+
+func newCustomUpdater(services map[string]config.ServiceConfig) *Custom {
+	customServices := make(map[string]customServiceConfig)
+	for officialName, c:= range services{
+		duration, err := time.ParseDuration(c.ScriptTimeout)
+		if err != nil {
+			duration = defaultScriptTimeout
+			logrus.Warnf("cannot parse timeout duration %s of service %s configuration." +
+				" setting default timeout %s", c.ScriptTimeout, c.OfficialName, duration.String())
+		}
+
+		customServices[officialName] = customServiceConfig{
+			officialName: officialName,
+			localName: c.LocalName,
+			scriptExtraArguments: c.ScriptExtraArguments,
+			scriptInterpreter: c.ScriptInterpreter,
+			scriptTimeout: duration,
+			tag: c.CheckTag,
+			updateScript: c.UpdateScript,
+		}
+	}
+
 	return &Custom{
-		services: c.Services,
+		services: customServices,
 	}
 }
 
-func (c *Custom) Update(service, version string) chan error {
+func (c *Custom) Update(service, version string, log *logger.Logger) chan error {
 	errCh := make(chan error)
 	localService := c.services[service]
 
-	customCmd, statusChan := createAndLaunch(localService, version)
+	customCmd, statusChan := createAndLaunch(localService, version, log)
 	ticker := time.NewTicker(time.Second * 2)
 
-	go logStdout(ticker, customCmd)
+	go logStdout(ticker, customCmd, log)
 
 	go timeoutCmd(localService, customCmd, errCh)
 
-	go waitForExit(statusChan, errCh)
+	go waitForExit(statusChan, errCh, log)
 
 	return errCh
 }
 
-func createAndLaunch(service *config.Service, version string) (*cmd.Cmd, <-chan cmd.Status) {
+func createAndLaunch(service customServiceConfig, version string, log *logger.Logger) (*cmd.Cmd, <-chan cmd.Status) {
 	command := buildCommand(service, version)
-	logrus.Info("running command: ", command)
-	customCmd := cmd.NewCmd(service.ScriptInterpreter, command...)
+	log.Info("running command: ", command)
+	customCmd := cmd.NewCmd(service.scriptInterpreter, command...)
 	statusChan := customCmd.Start()
 	return customCmd, statusChan
 }
 
-func buildCommand(service *config.Service, version string) []string {
+func buildCommand(service customServiceConfig, version string) []string {
 	command := []string{
-		service.UpdateScript,
-		service.LocalName,
+		service.updateScript,
+		service.localName,
 		version,
 	}
-	return append(command, service.ScriptExtraArguments...)
+	return append(command, service.scriptExtraArguments...)
 }
 
-func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd) {
+func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd, log *logger.Logger) {
 	var previousLastLine int
 
 	for range ticker.C {
@@ -64,7 +97,7 @@ func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd) {
 
 		if currentLastLine != previousLastLine {
 			for _, line := range status.Stdout[previousLastLine:] {
-				logrus.Infof("script stdout: %s", line)
+				log.Infof("script stdout: %s", line)
 			}
 			previousLastLine = currentLastLine
 		}
@@ -72,15 +105,15 @@ func logStdout(ticker *time.Ticker, customCmd *cmd.Cmd) {
 	}
 }
 
-func timeoutCmd( service *config.Service, customCmd *cmd.Cmd, errCh chan error) {
-	<-time.After(service.ScriptTimeout)
+func timeoutCmd( service customServiceConfig, customCmd *cmd.Cmd, errCh chan error) {
+	<-time.After(service.scriptTimeout)
 	customCmd.Stop()
-	errCh <- fmt.Errorf("update script for service %s timed out", service.OfficialName)
+	errCh <- fmt.Errorf("update script for service %s timed out", service.officialName)
 }
 
-func waitForExit(statusChan <-chan cmd.Status, errCh chan error) {
+func waitForExit(statusChan <-chan cmd.Status, errCh chan error, log *logger.Logger) {
 	finalStatus := <-statusChan
-	logrus.Infof("%s exited with: %d", finalStatus.Cmd, finalStatus.Exit)
+	log.Infof("%s exited with: %d", finalStatus.Cmd, finalStatus.Exit)
 	if finalStatus.Exit != 0 {
 		errCh <- fmt.Errorf("exit with non-zero status %d", finalStatus.Exit)
 	}
