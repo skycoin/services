@@ -12,4 +12,4 @@ language: go
     - cd ./cmd/autoupdater
     - go build
   after_success:
-    - sh .travis/deploy.sh
+    - sh ../travis/deploy.sh
