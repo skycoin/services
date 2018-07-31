@@ -2,45 +2,53 @@ matrix:
   include:
   - language: go
     go_import_path: github.com/skycoin/services
-    before_install:
-    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
-      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     go: 1.9
     sudo: required
     install: true
     script:
     - cd ./otc
     - go build
-    after_success:
-    - sh .travis/deploy.sh
+    deploy:
+    - provider: script
+      script:
+      - sh $TRAVIS_BUILD_DIR/.travis/deploy.sh
+      skip_cleanup: true
+      on:
+        repo: skycoin/services
   - language: node_js
     node_js:
     - '8'
     before_install:
     - npm install -g yarn --cache-min 999999999
-    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
-      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     before_script:
     - cd otc-web
     - yarn install
     script:
     - yarn build
-    after_success:
-    - sh .travis/deploy.sh
+    deploy:
+    - provider: script
+      script:
+      - sh $TRAVIS_BUILD_DIR/.travis/deploy.sh
+      skip_cleanup: true
+      on:
+        repo: skycoin/services
   - language: node_js
     node_js:
     - '8'
     before_install:
-    - openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv
-      -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
     - npm install -g yarn --cache-min 999999999
     before_script:
     - cd otc-web-admin
     - yarn install
     script:
     - yarn build
-    after_success:
-    - sh .travis/deploy.sh
+    deploy:
+    - provider: script
+      script:
+      - sh $TRAVIS_BUILD_DIR/.travis/deploy.sh
+      skip_cleanup: true
+      on:
+        repo: skycoin/services
   - language: c
     os:
     - linux

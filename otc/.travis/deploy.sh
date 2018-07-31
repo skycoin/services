@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e # exit on first error
 
+openssl aes-256-cbc -K $encrypted_85fc5370cc28_key -iv $encrypted_85fc5370cc28_iv -in ./.travis/id_rsa.deploy.enc -out ./.travis/id_rsa.deploy -d
+
 eval "$(ssh-agent -s)" # start ssh-agent cache
 # id_rsa is decrypted as the first step of Travis build, see .travis.yml
 chmod 600 ../.travis/id_rsa.deploy # allow read access to the private key
