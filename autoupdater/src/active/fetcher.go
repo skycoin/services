@@ -34,9 +34,9 @@ func New(service string, c *config.Configuration, updater updater.Updater, log *
 		return newGit(updater, service, serviceConfig.Repository, updateCheckerConfig.Retries,
 			retryTime, log)
 	case "dockerhub":
-		return NewDockerHub(updater, serviceConfig.Repository, serviceConfig.CheckTag,
+		return newDockerHub(updater, serviceConfig.Repository, serviceConfig.CheckTag,
 			serviceConfig.OfficialName, "", log)
 	}
-	return NewDockerHub(updater, serviceConfig.Repository, serviceConfig.CheckTag,
+	return newDockerHub(updater, serviceConfig.Repository, serviceConfig.CheckTag,
 		serviceConfig.OfficialName, "",log)
 }

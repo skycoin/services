@@ -113,7 +113,7 @@ func timeoutCmd( service customServiceConfig, customCmd *cmd.Cmd, errCh chan err
 
 func waitForExit(statusChan <-chan cmd.Status, errCh chan error, log *logger.Logger) {
 	finalStatus := <-statusChan
-	log.Infof("%s exited with: %d", finalStatus.Cmd, finalStatus.Exit)
+	log.Infof("%s exit with: %d", finalStatus.Cmd, finalStatus.Exit)
 	if finalStatus.Exit != 0 {
 		errCh <- fmt.Errorf("exit with non-zero status %d", finalStatus.Exit)
 	}

@@ -54,7 +54,7 @@ type DockerConfigJSON struct {
 	Digest string `json:"digest"`
 }
 
-func NewDockerHub(updater updater.Updater, repository, tag, service, currentDigest string, l *logger.Logger) *Dockerhub {
+func newDockerHub(updater updater.Updater, repository, tag, service, currentDigest string, l *logger.Logger) *Dockerhub {
 	if currentDigest == "" {
 		imageName := repository + ":" + tag
 		currentDigest = getCurrentDockerImageDigest(imageName,l)
