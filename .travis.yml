@@ -97,7 +97,7 @@ matrix:
       - cd bootloader && ./prepare_signature.sh ; cd ..
       - ./make_firmware.sh
   - language: go
-    go_import_path: github.com/skycoin/services/autoupdater
+    go_import_path: github.com/skycoin/services
     go: 1.10.3
     sudo: required
     install: true
@@ -106,5 +106,10 @@ matrix:
     - go test ./...
     - cd ./cmd/autoupdater
     - go build
-    after_success:
-    - sh ../travis/deploy.sh
+    deploy:
+    - provider: script
+      script:
+      - sh $TRAVIS_BUILD_DIR/.travis/deploy.sh
+      skip_cleanup: true
+      on:
+        repo: skycoin/services
