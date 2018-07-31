@@ -42,7 +42,7 @@ services:
     passive_update_checker: "nats"
     updater: "swarm"
 
-  sky_node:
+  sky-node:
     official_name: "sky-node"
     local_name: "skycoin"
     update_script: "/Users/ivan/Desktop/skycoin/src/github.com/skycoin/services/autoupdater/src/updater/scripts/skycoin.sh"

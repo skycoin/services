@@ -97,7 +97,7 @@ The configuration file has 3 sections:
 - [x] File configuration
 - [x] Save status
 - [x] Write actual documentation
-- [ ] Add .travis.yml for CI testing
+- [x] Add .travis.yml for CI testing
 - [ ] Add releases to github
 - [x] Test vendoring is correct: Have trouble downloading with dep through VPN, the connection drops before completion 90% of the times.
 
