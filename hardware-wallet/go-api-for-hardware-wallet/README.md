@@ -9,7 +9,7 @@
 ### Install google protobuf
 
     sudo apt-get install protobuf-compiler python-protobuf golang-goprotobuf-dev
-    go get -u github.com/golang/protobuf
+    go get -u github.com/golang/protobuf/proto/proto
     go get -u github.com/stretchr/testify/require
 
 ## Compile the protobuf project dependencies
@@ -23,7 +23,8 @@
 
 Only once each time the messages change:
 
-    protoc -I../tiny-firmware/vendor/nanopb/generator/proto/ -I ./protob  --go_out=./protob protob/messages.proto protob/types.proto
+    cd device-wallet/ 
+    protoc -I../../tiny-firmware/vendor/nanopb/generator/proto/ -I ./protob  --go_out=./protob protob/messages.proto protob/types.proto
 
 ### Run
 
