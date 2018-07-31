@@ -26,11 +26,9 @@
 
 #include "trezor.h"
 #include "sha2.h"
-#include "aes/aes.h"
 #include "hmac.h"
 #include "bip32.h"
 #include "bip39.h"
-#include "curves.h"
 #include "util.h"
 #include "memory.h"
 #include "rng.h"
@@ -467,15 +465,6 @@ void storage_setHomescreen(const uint8_t *data, uint32_t size)
 		memset(storageUpdate.homescreen.bytes, 0, sizeof(storageUpdate.homescreen.bytes));
 		storageUpdate.homescreen.size = 0;
 	}
-}
-
-static bool storage_loadNode(const StorageHDNode *node, const char *curve, HDNode *out) {
-	return hdnode_from_xprv(node->depth, node->child_num, node->chain_code.bytes, node->private_key.bytes, curve, out);
-}
-
-bool storage_getU2FRoot(HDNode *node)
-{
-	return storageRom->has_u2froot && storage_loadNode(&storageRom->u2froot, NIST256P1_NAME, node);
 }
 
 const char *storage_getLabel(void)

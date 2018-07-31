@@ -88,8 +88,6 @@ void storage_loadDevice(LoadDevice *msg);
 
 const uint8_t *storage_getSeed(bool usePassphrase);
 
-bool storage_getU2FRoot(HDNode *node);
-
 const char *storage_getLabel(void);
 void storage_setLabel(const char *label);
 

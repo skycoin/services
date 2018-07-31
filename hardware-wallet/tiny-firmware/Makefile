@@ -84,6 +84,9 @@ OBJS += $(TOP_DIR)vendor/skycoin-crypto/tools/secp256k1.o
 OBJS += $(TOP_DIR)vendor/skycoin-crypto/trezor-tools/bip39.o
 #end trezor-crypto
 
+ifeq ($(REVERSE_SCREEN),1)
+CFLAGS   += -DREVERSE_SCREEN=1
+endif
 
 ifeq ($(EMULATOR),1)
 CFLAGS   += -DEMULATOR=1
@@ -112,16 +115,16 @@ ifneq ($(EMULATOR),1)
 
 all: libopencm3 proto $(NAME).bin
 else
-.PHONY: proto 
+.PHONY: proto
 
 all: proto $(NAME).bin
 endif
 
 
-proto: 
+proto:
 	cd protob && make
 
-libopencm3: 
+libopencm3:
 	cd vendor/libopencm3 && make
 
 sign: $(NAME).bin
