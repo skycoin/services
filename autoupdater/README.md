@@ -49,7 +49,7 @@ A `configuration.example.yml` file is provided as a reference file.
 
 The configuration file has 3 sections:
 
-    1. `active_update_checkers`:
+    1. active_update_checkers:
         Is a list containing named active checkers configurations, each named item should hold the next configuration:
 
         interval: interval in which to check if there is a new update. Example: "30s"
@@ -57,7 +57,7 @@ The configuration file has 3 sections:
         retry_time: time between tries: "22s"
         kind: which kind of checker is it, git or dockerhub: "git"
 
-    2. `passive_update_checkers`:
+    2. passive_update_checkers:
         Is a list containing named passive checkers configurations, each named item should hold the next configuration:
 
         message-broker: kind of the message-broker to subscribe to. Example: "nats"
@@ -65,12 +65,12 @@ The configuration file has 3 sections:
         urls: urls of message-broker cluster to join to. One or more. Example:
             - "http://localhost:4222"
 
-    3. `updaters`:
+    3. updaters:
         Is a list containing named updaters, each named item should hold the next configuration:
 
         kind: the kind of updater to instantiate, swarm or custom. Example: "custom"
 
-    4. `services`:
+    4. services:
         Is a list containing named services, each named item should hold the next configuration:
 
         official_name: official name for the service, this is how is it named on their documentation, etc. Example "maria"
