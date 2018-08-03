@@ -86,6 +86,16 @@ The configuration file has 3 sections:
         updater: previously defined updater configuration name. Example: "custom"
 
 
+# Running on Docker
+Firstable, you can pull the image: `docker pull skycoin/autoupdater` or you can build it yourself: `docker build . [your-image-name]`.
+
+By default, the docker image doesn't provides any configuration, so you will have to place one inside using the tag `-v [your-configuration]:/autoupdater/configuration.yml`, autoupdater is looking for that file by default, if you use a different one you should tell autoupdater with `-config [path-to-your-config]` flag.
+
+If you want to use the Docker image to update other services running under docker swarm, or maybe even under the docker daemon, you will also need to mount the docker daemon socket inside, again using the tag `-v /var/run/docker.sock:/var/run/docker.sock`.
+
+An example of command to run the docker image would be:
+`docker run -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/configuration.yml:/autoupdater/configuration.yml --rm -it skycoin/autoupdater:0.0.1`.
+
 ### Task List first release
 - [x] Fetch updates passively
 - [x] Fetch updates actively 
