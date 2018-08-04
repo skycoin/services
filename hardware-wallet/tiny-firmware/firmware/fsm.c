@@ -283,7 +283,7 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	
 	CHECK_PIN_UNCACHED
 
-	RESP_INIT(Success);
+	RESP_INIT(ResponseSkycoinSignMessage);
     fsm_getKeyPairAtIndex(1, pubkey, seckey, NULL, msg->address_n);
 	if (is_digest(msg->message) == false) {
     	compute_sha256sum((const uint8_t *)msg->message, digest, strlen(msg->message));
@@ -301,9 +301,8 @@ void fsm_msgSkycoinSignMessage(SkycoinSignMessage* msg)
 	}
 	size_sign = sizeof(sign58);
     b58enc(sign58, &size_sign, signature, sizeof(signature));
-	memcpy(resp->message, sign58, size_sign);
-	resp->has_message = true;
-	msg_write(MessageType_MessageType_Success, resp);
+	memcpy(resp->signed_message, sign58, size_sign);
+	msg_write(MessageType_MessageType_ResponseSkycoinSignMessage, resp);
 	layoutHome();
 }
 

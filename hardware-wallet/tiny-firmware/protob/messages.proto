@@ -45,6 +45,7 @@ enum MessageType {
 	MessageType_SkycoinCheckMessageSignature = 115 [(wire_in) = true];
 	MessageType_SkycoinSignMessage = 116 [(wire_in) = true];
 	MessageType_ResponseSkycoinAddress = 117 [(wire_out) = true];
+	MessageType_ResponseSkycoinSignMessage = 118 [(wire_out) = true];
 }
 
 ////////////////////
@@ -150,12 +151,22 @@ message SkycoinCheckMessageSignature {
 
 /**
  * Request: Sign a message digest using the given secret key.
- * @next Success
+ * @next Failure
+ * @next ResponseSkycoinSignMessage
  */
 message SkycoinSignMessage {
 	required uint32 address_n = 1; //address iterator
 	required string message = 2;   //message that we want to sign
 }
+
+/**
+ * Response: Return the generated skycoin address
+ * @prev SkycoinAddress
+ */
+ message ResponseSkycoinSignMessage {
+	required string signed_message = 1; // generated addresses in base58 format
+}
+
 /**
  * Request: Test if the device is alive, device sends back the message in Success response
  * @next Success

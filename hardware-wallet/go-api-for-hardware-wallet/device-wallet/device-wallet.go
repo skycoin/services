@@ -245,6 +245,21 @@ func DecodeResponseSkycoinAddress(kind uint16, data []byte) (uint16, []string) {
 	return kind, make([]string, 0)
 }
 
+// DecodeResponseSkycoinSignMessage convert byte data into signed message, meant to be used after DevicePinMatrixAck
+func DecodeResponseSkycoinSignMessage(kind uint16, data []byte) (uint16, string) {
+	if kind == uint16(messages.MessageType_MessageType_ResponseSkycoinSignMessage) {
+		responseSkycoinSignMessage := &messages.ResponseSkycoinSignMessage{}
+		err := proto.Unmarshal(data, responseSkycoinSignMessage)
+		if err != nil {
+			log.Panicf("unmarshaling error: %s\n", err.Error())
+			return kind, ""
+		}
+		return kind, responseSkycoinSignMessage.GetSignedMessage()
+	}
+	log.Panic("Calling DecodeResponseeSkycoinSignMessage with wrong message type")
+	return kind, ""
+}
+
 // DeviceAddressGen Ask the device to generate an address
 func DeviceAddressGen(deviceType DeviceType, addressN int, startIndex int) (uint16, []string) {
 
@@ -282,12 +297,12 @@ func DeviceAddressGen(deviceType DeviceType, addressN int, startIndex int) (uint
 }
 
 // DeviceSignMessage Ask the device to sign a message using the secret key at given index.
-func DeviceSignMessage(deviceType DeviceType, addressN int, message string) (uint16, []byte) {
+func DeviceSignMessage(deviceType DeviceType, addressN int, message string) (uint16, string) {
 
 	dev, err := getDevice(deviceType)
 	if err != nil {
 		log.Panicf(err.Error())
-		return 0, make([]byte, 0)
+		return 0, ""
 	}
 	defer dev.Close()
 
@@ -305,7 +320,20 @@ func DeviceSignMessage(deviceType DeviceType, addressN int, message string) (uin
 		log.Panicf(err.Error())
 	}
 
-	return msg.Kind, msg.Data
+	if msg.Kind == uint16(messages.MessageType_MessageType_ResponseSkycoinSignMessage) {
+		return DecodeResponseSkycoinSignMessage(msg.Kind, msg.Data)
+	} else if msg.Kind == uint16(messages.MessageType_MessageType_PinMatrixRequest) {
+		log.Println("This operation requires a PIN code")
+		return msg.Kind, ""
+	}
+	log.Printf("DeviceSignMessage answer kind %d", msg.Kind)
+	failureMsg := &messages.Failure{}
+	err = proto.Unmarshal(msg.Data, failureMsg)
+	if err != nil {
+		log.Panicf("unmarshaling error: %s\n", err.Error())
+	}
+	log.Printf("Failure %d! Answer is: %s\n", failureMsg.GetCode(), failureMsg.GetMessage())
+	return msg.Kind, ""
 }
 
 // DeviceConnected check if a device is connected

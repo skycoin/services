@@ -89,11 +89,11 @@ func TestMain(t *testing.T) {
 
 	message:= "Hello World!"
 	kind, signature := DeviceSignMessage(deviceType, 1, message)
-	log.Print(string(signature[1:]))
-	require.Equal(t, uint16(messages.MessageType_MessageType_Success), kind) //Success message
-	require.Equal(t, 89, len(signature[2:]))
+	log.Print(signature)
+	require.Equal(t, uint16(messages.MessageType_MessageType_ResponseSkycoinSignMessage), kind) //Success message
+	require.Equal(t, 89, len(signature))
 
-	kind, data := DeviceCheckMessageSignature(deviceType, message, string(signature[2:]), addresses[0])
+	kind, data := DeviceCheckMessageSignature(deviceType, message, signature, addresses[0])
 	require.Equal(t, uint16(messages.MessageType_MessageType_Success), kind) //Success message
 	require.Equal(t, "zC8GAQGQBfwk7vtTxVoRG7iMperHNuyYPs", string(data[2:]))
 }
