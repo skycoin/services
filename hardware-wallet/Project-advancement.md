@@ -10,7 +10,7 @@ It can generate addresses, sign messages or transactions and check signatures.
 
 The hardware wallet has two buttons: Ok and Cancel. The user has to press one of these buttons when the hardware wallet requires user confirmation.
 
-I communications with a host PC using a USB wire. Please use [Skycoin's web application](https://github.com/skycoin/skycoin) or [Skycoin Command line interface](https://github.com/skycoin/skycoin/tree/develop/cmd/cli) tools to communicate with this firmware.
+It communicates with a host PC using a USB wire. Please use [Skycoin's web application](https://github.com/skycoin/skycoin) or [Skycoin Command line interface](https://github.com/skycoin/skycoin/tree/develop/cmd/cli) tools to communicate with this firmware.
 
 More informations in tiny-firmware's [README.md](https://github.com/skycoin/services/blob/master/hardware-wallet/tiny-firmware/README.md) section 6. How to read the firmware's code.
 
@@ -74,7 +74,7 @@ There is no way back after a wipe. All the stored data is lost.
 1) When to ask passphrase ?
 2) Has impacts on web wallet integration
 
-#### 8. memory encryption
+#### 8. Memory encryption
 
 **TODO ?**
 **Use passphrase as a key for encryption ?**
@@ -94,6 +94,7 @@ There is no way back after a wipe. All the stored data is lost.
 ### Pin code
 
 **TODO** [check this issue for PIN code integration](https://github.com/skycoin/skycoin/issues/1765)
+
 **TODO** [check this issue for PIN code configuration from the web wallet](https://github.com/skycoin/skycoin/issues/1768)
 
 The PIN code can be configured from skycoin-cli using command:
