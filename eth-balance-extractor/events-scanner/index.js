@@ -13,6 +13,7 @@ var web3 = new Web3();
 const nodeUrl = 'http://localhost:8545'; // URL to the Ethereum node API
 const contractAddress = "0xf230b790e05390fc8295f4d3f60332c93bed42e2"; // Address of the smart contract
 
+const enableTransactionCaching = false; // Saves transaction hashes if they from field is equal to event from field.
 const firstBlock = 4212160; // Block that contains transaction with deploying of smart contract
 const lastBlock = 5950982; // Last added block (if useLatestBlock=true this variable must be set to the nearest latest block of blockchain).
 const offset = 30000; // Amount of blocks that are processed in one transaction
@@ -312,7 +313,6 @@ const abi = [
 ];
 
 /// End of #Parameters section
-
 web3.setProvider(new web3.providers.HttpProvider(nodeUrl));
 var contract = new web3.eth.Contract(abi, contractAddress);
 
@@ -334,7 +334,7 @@ const processEvents = events => {
 			if (wallets[from]) {
 				wallets[from].balance = wallets[from].balance.add(web3.utils.toBN(e.returnValues._value).neg());
 				wallets[from].transactions++;
-				if (!wallets[from].transactionHash) {
+				if (enableTransactionCaching && !wallets[from].transactionHash) {
 					try {
 						const t = await web3.eth.getTransaction(e.transactionHash);
 						if (t.from.toLowerCase() === from)
@@ -345,12 +345,14 @@ const processEvents = events => {
 			} else {
 				wallets[from] = { balance: web3.utils.toBN(e.returnValues._value).neg(), transactionHash: null, transactions: 1 };
 
-				try {
-					const t = await web3.eth.getTransaction(e.transactionHash);
-					if (t.from.toLowerCase() === from)
-						wallets[from].transactionHash = e.transactionHash;
+				if (enableTransactionCaching) {
+					try {
+						const t = await web3.eth.getTransaction(e.transactionHash);
+						if (t.from.toLowerCase() === from)
+							wallets[from].transactionHash = e.transactionHash;
+					}
+					catch (e) { }
 				}
-				catch (e) { }
 			}
 
 			if (wallets[to]) {
