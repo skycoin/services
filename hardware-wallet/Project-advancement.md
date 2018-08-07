@@ -76,7 +76,7 @@ There is no way back after a wipe. All the stored data is lost.
 1) When to ask passphrase ?
 2) Has impacts on web wallet integration
 
-#### 8. Memory encryption
+#### Memory encryption
 
 **TODO ?**
 **Use passphrase as a key for encryption ?**
