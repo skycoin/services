@@ -34,7 +34,7 @@ This seed can be very useful to recover the wallet's money in case the skycoin h
 
 When the hardware wallet is freshly configured with a seed. The screen displays a **NEEDS BACKUP** message. This means that you can send a backup message to the hardware wallet to enter backup mode.
 
-If a pin code was set (see [PIN code configuration section](#### 5. PIN code protection)), it is required to enter backup mode.
+If a pin code was set (see [PIN code configuration section](# 5. PIN code protection)), it is required to enter backup mode.
 
 The backup mode will display every word of the seed one by one and wait for the user to press the Ok button between each word. The user is supposed to copy these words on a paper (the order matters).
 
@@ -42,7 +42,7 @@ After a first round the words are displayed a second time one by one as well. Th
 
 Warning 1: once the backup is finished the **NEEDS BACKUP** disappears from the hardware wallet's screen and there is no way to do the backup again. If you feel you did not backup your seed properly better generate a new one and discard this one before you invested Skycoins on the wallet corresponding to that seed.
 
-Warning 2: It is strongly recommended to do the backup short after the wallet creation, and before you invested Skycoins in it. If you loose a wallet that has an open door to do a backup, the person who finds it can use this backup to get the seed out of it. Especially if you did not [configure a PIN code](#### 5. PIN code protection).
+Warning 2: It is strongly recommended to do the backup short after the wallet creation, and before you invested Skycoins in it. If you loose a wallet that has an open door to do a backup, the person who finds it can use this backup to get the seed out of it. Especially if you did not [configure a PIN code](# 5. PIN code protection).
 
 #### 4. Don't erase your seed
 
@@ -50,7 +50,7 @@ At the time this document is written the hardware wallet is only able to store o
 
 If the user sends a seed setting message, the hardware wallet's screen asks the user if he wants to write the seed. If the user presses hardware wallet's Ok button. The new seed is stored and if there was an other seed before, it is **gone forever**.
 
-So don't configure a new seed on a hardware wallet that is representing a wallet you are still using (see [backup section](#### 3. Backup the seed) to avoid this problem).
+So don't configure a new seed on a hardware wallet that is representing a wallet you are still using (see [backup section](# 3. Backup the seed) to avoid this problem).
 
 #### 5. PIN code protection
 
