@@ -8,3 +8,5 @@ The firmware had been copied and modified from [this repository](https://github.
 The [skycoin-api](https://github.com/skycoin/services/tree/master/hardware-wallet/skycoin-api) folder contains the definition of the functions implementing the skycoin features.
 
 The [go-api-for-hardware-wallet](https://github.com/skycoin/services/tree/master/hardware-wallet/go-api-for-hardware-wallet) defines functions that act as code example to communicate with the firmware using a golang code.
+
+Follow up [this file](https://github.com/skycoin/services/blob/master/hardware-wallet/Project-advancement.md) to keep track of project advancement.
