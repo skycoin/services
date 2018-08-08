@@ -62,6 +62,26 @@ You can modify an existing PIN code. But the previous PIN code will be asked.
 
 If you are not able to input a correct PIN code there is no way to change it apart from [wiping the device](#wipe-the-device).
 
+#### PIN code cache
+
+The PIN code is required for 
+* address generation (can be cached)
+* check signature (can be cached)
+* signature
+* device backup
+
+If the user inputs a correct PIN code once, the PIN code is cached. When the PIN code is cached the operations where PIN code cache is authorised do not ask PIN code again to perform properly.
+
+The PIN code stays cached until the device is plugged off.
+
+The PIN code has to be input every time no matter what for the operation that do not allow PIN code cache.
+
+#### PIN code brute force protection
+
+If the user enters a wrong PIN code, the next time he asks for an operation requiring to enter a PIN code he has to wait extra seconds before he can enter it.
+
+The amount of time he has to wait before he can try again increases everytime he enters a wrong PIN code.
+
 #### Wipe the device
 
 A message exist to wipe the device. It erases seed and PIN code.
@@ -102,8 +122,6 @@ There is no way back after a wipe. All the stored data is lost.
 The PIN code can be configured from skycoin-cli using command:
 
     skycoin-cli deviceSetPinCode
-
-**TODO** update cli's README.md about deviceSetPinCode command.
 
 ### Use many connected devices at the same time
 
