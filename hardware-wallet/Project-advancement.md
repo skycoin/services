@@ -113,6 +113,13 @@ It is worth mentioning
 
 **TODO** [check this issue](https://github.com/skycoin/services/issues/133)
 
+### Other TODOs
+
+Known bugs and possible improvements:
+* The first time the device is plugged in it displays a "Storage failure detected message" that disapears the next time the device is connected. The text message has to be changed for "Storage not initialized, please restart".
+* The Storage structure in storage.c still contain fields copied from trezor code base that we are not using anymore.
+* the "MAGIC" four letters used by the bootloader to recognize skycoin firmware are still: TRZR, should be changed for SKCN or SKYN
+
 ## Integration with the skycoin web wallet
 
 [Skycoin's web application](https://github.com/skycoin/skycoin)
@@ -138,3 +145,15 @@ The PIN code can be configured from skycoin-cli using command:
 ### Wipe a device from the web wallet
 
 **TODO** [check this issue](https://github.com/skycoin/skycoin/issues/1769)
+
+
+### Web wallet dependencies to external code
+
+Here is the external code that was added in the project for hardware wallet integration:
+* Low level interface to decode google protobuf messages used in the communication with the PC under [github.com/golang/protobuf](https://github.com/mpsido/skycoin/tree/develop-hardware-wallet/vendor/github.com/golang/protobuf).
+* To send/receive messages from/to usb wire : [wire](https://github.com/mpsido/skycoin/tree/develop-hardware-wallet/src/device-wallet/wire), [usb](https://github.com/mpsido/skycoin/tree/develop-hardware-wallet/src/device-wallet/usb) and [usbhid](https://github.com/mpsido/skycoin/tree/develop-hardware-wallet/src/device-wallet/usbhid)
+
+### Other TODOs
+
+Known bugs:
+* Golang functions communicating with the device need to timeout if the device is not ansering
