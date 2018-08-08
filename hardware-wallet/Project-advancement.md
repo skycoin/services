@@ -101,6 +101,14 @@ There is no way back after a wipe. All the stored data is lost.
 **TODO ?**
 **Use passphrase as a key for encryption ?**
 
+### Firmware dependencies to external code
+
+All the dependencies to external code are located in [tiny-firmware/vendor](https://github.com/skycoin/services/blob/master/hardware-wallet/tiny-firmware/vendor) directory.
+
+It is worth mentioning 
+* [libopencm3](https://github.com/libopencm3/libopencm3) which is a library managing low level interface with STM32 microchip.
+* nanopb contains few source files pb_common.c, pb_encode.c, pb_decode.c. They are low level interface to decode google protobuf messages used in the communication with the PC.
+
 ### Factory test mode
 
 **TODO** [check this issue](https://github.com/skycoin/services/issues/133)
