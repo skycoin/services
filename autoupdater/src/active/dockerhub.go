@@ -195,6 +195,7 @@ type ImageDigestJSON struct {
 
 func getCurrentDockerImageDigest(imageName string, log *logger.Logger) string {
 	trimmedImageName := strings.Replace(imageName,"/","",1)
+	trimmedImageName = strings.Split(trimmedImageName,":")[0]
 	endpoint := fmt.Sprintf("http://unix/v1.24/images/json?filter=%s",trimmedImageName)
 	digests := ImagesDigestJSON{}
 
@@ -215,7 +216,7 @@ func getCurrentDockerImageDigest(imageName string, log *logger.Logger) string {
 	json.Unmarshal(body, &digests)
 
 	if len(digests) == 0 {
-		log.Fatalf("unable to find image %s",imageName)
+		log.Fatalf("unable to find image %s with query %s",trimmedImageName, endpoint)
 	}
 
 	return digests[0].Id
