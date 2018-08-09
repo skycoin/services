@@ -33,6 +33,9 @@ func New(service string, c *config.Configuration, updater updater.Updater, log *
 	case "git":
 		return newGit(updater, service, serviceConfig.Repository, updateCheckerConfig.Retries,
 			retryTime, log)
+	case "naive":
+		return newNaive(updater, service, serviceConfig.Repository, updateCheckerConfig.Retries,
+			retryTime, log)
 	case "dockerhub":
 		return newDockerHub(updater, serviceConfig.Repository, serviceConfig.CheckTag,
 			serviceConfig.OfficialName, "", log)
