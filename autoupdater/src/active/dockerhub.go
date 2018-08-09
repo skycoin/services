@@ -194,7 +194,8 @@ type ImageDigestJSON struct {
 }
 
 func getCurrentDockerImageDigest(imageName string, log *logger.Logger) string {
-	endpoint := fmt.Sprintf("http://unix/v1.24/images/json?filter=%s",imageName)
+	trimmedImageName := strings.Replace(imageName,"/","",1)
+	endpoint := fmt.Sprintf("http://unix/v1.24/images/json?filter=%s",trimmedImageName)
 	digests := ImagesDigestJSON{}
 
 	client := http.Client{
