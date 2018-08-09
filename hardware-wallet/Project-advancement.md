@@ -113,6 +113,16 @@ It is worth mentioning
 
 **TODO** [check this issue](https://github.com/skycoin/services/issues/133)
 
+### Notes for developpers
+
+A [travis build](https://github.com/skycoin/services/blob/master/.travis.yml) was created for hardware wallet's code.
+
+It is the build called "language C". For now it only checks emulator compiles successfully. But later it should:
+**TODO** [issue #136](https://github.com/skycoin/services/issues/136)
+* run go tests under [go-api-for-hardware-wallet](https://github.com/skycoin/services/blob/master/hardware-wallet/go-api-for-hardware-wallet/)
+* run a linter for C code quality
+* compile firmware for STM32 target. Check firmware size for instance.
+
 ### Other TODOs
 
 Known bugs and possible improvements:
