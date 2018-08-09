@@ -1,0 +1,130 @@
+version: "3.6"
+
+networks:
+  skynodes:
+    driver: overlay
+  cockroachdb:
+    driver: overlay
+    attachable: true
+
+services:
+  # Load balancer and reverse proxy
+  traefik:
+    image: traefik:1.6.4
+    command:
+      - "--api"
+      - "--docker"
+      - "--docker.swarmMode"
+      - "--docker.domain=skynode"
+      - "--docker.watch"
+    networks:
+      - skynodes
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  # Skycoin node own image that allows to know the address of the other nodes
+  skycoin-node:
+    image: ivcosla/sky-node:v0.0.1
+    networks:
+      - skynodes
+    command:
+    - "-disable-csrf" # Not sure if we want that
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    deploy:
+      replicas: 6
+      endpoint_mode: dnsrr
+      labels:
+        traefik.node.port: "6000"
+        traefik.node.frontend.rule: "PathPrefixStrip: /node"
+        traefik.node.protocol: "http"
+        traefik.api.port: "6420"
+        traefik.api.frontend.rule: "PathPrefix: /api"
+        traefik.api.protocol: "http"
+
+  # 3 cockroachdb instance, deployed on fixed nodes because
+  # they are stateful service using local volume drivers
+  cockroachdb-1:
+    image: cockroachdb/cockroach:v2.0.3
+    networks:
+      - cockroachdb
+    volumes:
+      - cockroachdb-1:/cockroach/cockroach-data
+    ports:
+      - 8081:8080
+    command:
+      - "start"
+      - "--join=skystack_cockroachdb-1:26257,skystack_cockroachdb-2:26257,skystack_cockroachdb-3:26257"
+      - "--cache=.25"
+      - "--max-sql-memory=.25"
+      - "--insecure"
+    stop_grace_period: 60s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.cockroachdb_1 == true
+# Cannot make the dashboard work behind traefik
+#      labels:
+#        traefik.db-dashboard.port: "8080"
+#        traefik.db-dashboard.frontend.rule: "PathPrefixStrip: /db-dashboard"
+#        traefik.db-dashboard.protocol: "http"
+
+  cockroachdb-2:
+    image: cockroachdb/cockroach:v2.0.3
+    networks:
+      - cockroachdb
+    volumes:
+      - cockroachdb-2:/cockroach/cockroach-data
+    command:
+      - "start"
+      - "--join=skystack_cockroachdb-1:26257,skystack_cockroachdb-2:26257,skystack_cockroachdb-3:26257"
+      - "--cache=.25"
+      - "--max-sql-memory=.25"
+      - "--insecure"
+    stop_grace_period: 60s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.cockroachdb_2 == true
+
+  cockroachdb-3:
+    image: cockroachdb/cockroach:v2.0.3
+    networks:
+      - cockroachdb
+    volumes:
+      - cockroachdb-3:/cockroach/cockroach-data
+    command:
+      - "start"
+      - "--join=skystack_cockroachdb-1:26257,skystack_cockroachdb-2:26257,skystack_cockroachdb-3:26257"
+      - "--cache=.25"
+      - "--max-sql-memory=.25"
+      - "--insecure"
+    stop_grace_period: 60s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.cockroachdb_3 == true
+
+volumes:
+  cockroachdb-1:
+  cockroachdb-2:
+  cockroachdb-3:
