@@ -1,0 +1,15 @@
+{
+  "name": "eventsscanner",
+  "version": "1.0.0",
+  "description": "## To start extraction process from scratch run following command: ```sh eth-scan extractWallets  http://url_of_eth_node_api  \"0xaddress_of_token_smart_contract\" \"0xcode_of_transfer_method\"  \"0xcode_of_transfer_from_method\" ./path_to_snapshots_folder block_number_where_smart_contract_was_deployed threads_count ```",
+  "main": "index.js",
+  "scripts": {
+    "run": "node --max-old-space-size=8192 ./index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "csv": "^3.1.0",
+    "web3": "^1.0.0-beta.35"
+  }
+}
