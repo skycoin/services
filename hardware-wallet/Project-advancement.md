@@ -124,6 +124,8 @@ Known bugs and possible improvements:
 
 [Skycoin's web application](https://github.com/skycoin/skycoin)
 
+Check this [pull request](https://github.com/skycoin/skycoin/pull/1686) to see most up to date code.
+
 ### Backup
 
 **TODO** [check this issue](https://github.com/skycoin/skycoin/issues/1708)
