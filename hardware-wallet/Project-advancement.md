@@ -119,6 +119,7 @@ Known bugs and possible improvements:
 * The first time the device is plugged in it displays a "Storage failure detected message" that disapears the next time the device is connected. The text message has to be changed for "Storage not initialized, please restart".
 * The Storage structure in storage.c still contain fields copied from trezor code base that we are not using anymore.
 * the "MAGIC" four letters used by the bootloader to recognize skycoin firmware are still: TRZR, should be changed for SKCN or SKYN
+* When the device is waiting for a Pin code it waits forever until the PIN code message arrives [see this issue](https://github.com/skycoin/services/issues/135)
 
 ## Integration with the skycoin web wallet
 
@@ -157,5 +158,7 @@ Here is the external code that was added in the project for hardware wallet inte
 
 ### Other TODOs
 
-Known bugs:
-* Golang functions communicating with the device need to timeout if the device is not ansering
+Known bugs and code improvements:
+* Golang functions communicating with the device need to timeout if the device is not ansering. [issue #1771](https://github.com/skycoin/skycoin/issues/1771)
+* Code would be more easy to work on if there was a "device-wallet" factory (very useful when we will fix issue [#1709](https://github.com/skycoin/skycoin/issues/1709))
+* When the wallet is waiting for a PIN code we might have to create a callback to be called when the pin code arrives (current code makes the GUI to say what the PIN code is sent for, and the parameters need to be repeated).
