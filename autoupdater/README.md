@@ -9,7 +9,7 @@ available, update them.
 
 Autoupdater allows to configure:
 
-    1. How to look for updates: Currently support to perform periodical checks on github or dockerhub (we call this active update checkers), or to subscribe to a publisher that will send autoupdater update notifications (we call this passive update checkers), the only publisher supported so far is [nats](https://nats.io/).
+    1. How to look for updates: Currently support to perform periodical checks on github or dockerhub (we call this active update checkers), there is also a naive active checker that will just call the updater every interval, or to subscribe to a publisher that will send autoupdater update notifications (we call this passive update checkers), the only publisher supported so far is [nats](https://nats.io/).
     
     2. How to update services: We call this Updaters, and currently there are supported docker swarm and custom scripts.
     
