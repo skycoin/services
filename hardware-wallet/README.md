@@ -9,4 +9,4 @@ The [skycoin-api](https://github.com/skycoin/services/tree/master/hardware-walle
 
 The [go-api-for-hardware-wallet](https://github.com/skycoin/services/tree/master/hardware-wallet/go-api-for-hardware-wallet) defines functions that act as code example to communicate with the firmware using a golang code.
 
-Follow up [this file](https://github.com/skycoin/services/blob/master/hardware-wallet/Project-advancement.md) to keep track of project advancement.
+Follow up [the wiki](https://github.com/skycoin/services/wiki/Hardware-wallet-project-advancement) to keep track of project advancement.
