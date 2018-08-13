@@ -8,7 +8,7 @@ This document aims at describing the features related to skycoin hardware wallet
 
 This is the firmware for the skycoin device which is intended to safely store a "seed" corresponding to a skycoin wallet.
 
-It can generate addresses, sign messages or transactions and check signatures.
+It can generate addresses, sign messages or transactions and [check signatures](https://github.com/skycoin/services/issues/138).
 
 The hardware wallet has two buttons: Ok and Cancel. The user has to press one of these buttons when the hardware wallet requires user confirmation.
 
@@ -130,6 +130,7 @@ Known bugs and possible improvements:
 * The Storage structure in storage.c still contain fields copied from trezor code base that we are not using anymore.
 * the "MAGIC" four letters used by the bootloader to recognize skycoin firmware are still: TRZR, should be changed for SKCN or SKYN
 * When the device is waiting for a Pin code it waits forever until the PIN code message arrives [see this issue](https://github.com/skycoin/services/issues/135)
+* Decide and fix check signature feature behaviour: [issue #138](https://github.com/skycoin/services/issues/138)
 
 ## Integration with the skycoin web wallet
 
@@ -172,3 +173,4 @@ Known bugs and code improvements:
 * Golang functions communicating with the device need to timeout if the device is not ansering. [issue #1771](https://github.com/skycoin/skycoin/issues/1771)
 * Code would be more easy to work on if there was a "device-wallet" factory (very useful when we will fix issue [#1709](https://github.com/skycoin/skycoin/issues/1709))
 * When the wallet is waiting for a PIN code we might have to create a callback to be called when the pin code arrives (current code makes the GUI to say what the PIN code is sent for, and the parameters need to be repeated).
+* Pin code integration for Check signature message in skycoin-cli [issue #1775](https://github.com/skycoin/skycoin/issues/1775)
