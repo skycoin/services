@@ -31,6 +31,7 @@
 #include "buttons.h"
 #include "gettext.h"
 #include "fastflash.h"
+#include "factory_test.h"
 
 /* Screen timeout */
 uint32_t system_millis_lock_start;
@@ -46,7 +47,7 @@ void check_lock_screen(void)
 	}
 
 	// button held for long enough (2 seconds)
-	if (layoutLast == layoutHome && button.NoDown >= 285000 * 2) {
+	if (layoutLast == layoutHome && button.NoDown >= 285000 * 2 && !button.YesDown) {
 
 		layoutDialog(&bmp_icon_question, _("Cancel"), _("Lock Device"), NULL, _("Do you really want to"), _("lock your TREZOR?"), NULL, NULL, NULL, NULL);
 
@@ -74,6 +75,12 @@ void check_lock_screen(void)
 		}
 	}
 
+	// wake from screensaver on any button
+	if (layoutLast == layoutScreensaver && (button.NoUp || button.YesUp)) {
+		layoutHome();
+		return;
+	}
+	
 	// if homescreen is shown for longer than 10 minutes, lock too
 	if (layoutLast == layoutHome) {
 		if ((timer_ms() - system_millis_lock_start) >= 600000) {
@@ -81,6 +88,16 @@ void check_lock_screen(void)
 			session_clear(true);
 			layoutScreensaver();
 		}
+	}
+}
+void check_factory_test(void)
+{
+	buttonUpdate();
+
+	// yes button held for long enough (2 seconds)
+	if (layoutLast == layoutHome && button.YesDown >= 285000 * 2 && !button.NoDown ) {
+		factoryTest();
+		layoutHome();
 	}
 }
 
@@ -123,6 +140,7 @@ int main(void)
 	for (;;) {
 		usbPoll();
 		check_lock_screen();
+		check_factory_test();
 	}
 
 	return 0;
