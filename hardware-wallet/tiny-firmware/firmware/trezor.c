@@ -96,7 +96,9 @@ void check_factory_test(void)
 
 	// yes button held for long enough (2 seconds)
 	if (layoutLast == layoutHome && button.YesDown >= 285000 * 2 && !button.NoDown ) {
+		usbTiny(1);
 		factoryTest();
+		usbTiny(0);
 		layoutHome();
 	}
 }

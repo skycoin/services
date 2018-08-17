@@ -2,12 +2,26 @@
 #include "factory_test.h"
 #include "trezor.h"
 #include "oled.h"
+#if EMULATOR
 #include "usb.h"
+#else
+#include "timer.h"
+#endif
 #include "buttons.h"
 #include "layout.h"
 #include "layout2.h"
 #include "util.h"
 
+#if !EMULATOR
+void wait_ms(uint32_t millis) {
+	uint32_t start = timer_ms();
+	while ((timer_ms() - start) < millis) {
+		delay(10);
+	}
+}
+#else
+#define wait_ms usbSleep
+#endif
 
 void factoryTest(void)
 {
@@ -15,18 +29,16 @@ void factoryTest(void)
 	layoutDialog(&bmp_icon_question, ("Cancel"), ("Test Device"), NULL, ("Do you really want to"), ("test your Wallet?"), NULL, NULL, NULL, NULL);
 
 	// wait until NoButton is released
-	usbTiny(1);
 	do {
-		usbSleep(5);
+		wait_ms(5);
 		buttonUpdate();
 	} while (!button.YesUp);
 
 	// wait for confirmation/cancellation of the dialog
 	do {
-		usbSleep(5);
+		wait_ms(5);
 		buttonUpdate();
 	} while (!button.YesUp && !button.NoUp);
-	usbTiny(0);
 
 	if (button.YesUp) { // if user say yes
 
@@ -42,7 +54,7 @@ void factoryTest(void)
 		}
 
 		do { // Back home
-			usbSleep(5);
+			wait_ms(5);
 			buttonUpdate();
 		} while (!button.YesUp);
 	}
@@ -56,7 +68,7 @@ void factoryTest_screen(void)
 
 	for (int i = 2; i < 12; i++) {
 
-		delay(0x3B9ACA00); // Wait 1 second
+		wait_ms(1000);
 
 		if (i%2)
 		{
@@ -79,7 +91,7 @@ bool factoryTest_buttons(bool buttonToTest)
 	layoutDialog(&bmp_icon_question,((buttonToTest) ? NULL:"No"),((buttonToTest) ? "Yes":NULL),NULL,((buttonToTest) ? "Press Yes":" Press No"),(""), NULL, NULL, NULL, NULL);
 
 	do {
-		usbSleep(5);
+		wait_ms(5);
 		buttonUpdate();
 	} while (!button.YesUp && !button.NoUp);
 
