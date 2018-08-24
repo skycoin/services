@@ -1,4 +1,5 @@
 # Ethereum tokens holders balance extractor
+Eth-balance-extractor scans Ethereum blockchain to extract token holders with their balances and public keys.
 
 ## events-scanner
 Required software:
