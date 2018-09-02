@@ -1,0 +1,25 @@
+active_update_checkers:
+  naive:
+    interval: "30s"
+    retries: 3
+    retry_time: "22s"
+    kind: "dockerhub"
+
+updaters:
+  custom:
+    kind: "swarm"
+
+services:
+  skywire-manager:
+    official_name: "skywire-manager"
+    local_name: "manager"
+    active_update_checker: "naive"
+    repository: "/skycoin/skywire"
+    updater: "custom"
+
+  skywire-node:
+    official_name: "skywire-node"
+    local_name: "node"
+    active_update_checker: "naive"
+    repository: "/skycoin/skywire"
+    updater: "custom"

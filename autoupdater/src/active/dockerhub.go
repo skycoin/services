@@ -8,10 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
-	"github.com/skycoin/services/autoupdater/config"
+		"github.com/skycoin/services/autoupdater/config"
 	"github.com/skycoin/services/autoupdater/src/logger"
 	"github.com/skycoin/services/autoupdater/src/updater"
+	"context"
+	"net"
+	"io/ioutil"
 )
 
 const schemaVersionHeader = "application/vnd.docker.distribution.manifest.v2+json"
@@ -185,17 +187,39 @@ func (g *Dockerhub) updateIfNew() error {
 	return nil
 }
 
+type ImagesDigestJSON []ImageDigestJSON
+
+type ImageDigestJSON struct {
+	Id string `json:"Id"`
+}
+
 func getCurrentDockerImageDigest(imageName string, log *logger.Logger) string {
-	endpoint := "unix:///var/run/docker.sock"
-	client, err := docker.NewClient(endpoint)
-	if err != nil {
-		log.Fatal("cannot connect to docker daemon: ", err)
+	trimmedImageName := strings.Replace(imageName,"/","",1)
+	trimmedImageName = strings.Split(trimmedImageName,":")[0]
+	endpoint := fmt.Sprintf("http://unix/v1.24/images/json?filter=%s",trimmedImageName)
+	digests := ImagesDigestJSON{}
+
+	client := http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", "/var/run/docker.sock")
+			},
+		},
 	}
-	image, err := client.InspectImage(imageName)
+
+	res, err := client.Get(endpoint)
 	if err != nil {
-		log.Fatal("cannot inspect local image ", imageName, " err: ", err)
+		log.Fatal("unable to contact docker socket")
 	}
-	return image.ID
+
+	body, _ := ioutil.ReadAll(res.Body)
+	json.Unmarshal(body, &digests)
+
+	if len(digests) == 0 {
+		log.Fatalf("unable to find image %s with query %s",trimmedImageName, endpoint)
+	}
+
+	return digests[0].Id
 }
 
 func (g *Dockerhub) getLatestDigest(client *http.Client, token, url string) (*DockerReleaseJSON, error) {
