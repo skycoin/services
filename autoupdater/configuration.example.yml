@@ -1,0 +1,64 @@
+active_update_checkers:
+  git_fetcher_1:
+    interval: "30s"
+    retries: 3
+    retry_time: "22s"
+    kind: "git"
+
+  dockerhub_fetcher:
+    interval: "30s"
+    retry_time: "22s"
+    kind: "dockerhub"
+
+passive_update_checkers:
+   nats:
+    message-broker: "nats"
+    topic: "top"
+    urls:
+      - "http://localhost:4222"
+
+updaters:
+  custom:
+    kind: "custom"
+  swarm:
+    kind: "swarm"
+
+services:
+  maria:
+    official_name: "maria"
+    local_name: "mariadb"
+    update_script: "$HOME/skycoin/github.com/skycoin/services/autoupdater/updater/custom_example/custom_script.sh"
+    script_interpreter: "/bin/bash"
+    script_timeout: "20s"
+    script_extra_arguments: ["-a 1"]
+    active_update_checker: "dockerhub_fetcher"
+    repository: "/library/mariadb"
+    check_tag: "latest"
+    updater: "custom"
+
+  top:
+    official_name: "top"
+    local_name: "skywire"
+    passive_update_checker: "nats"
+    updater: "swarm"
+
+  sky-node:
+    official_name: "sky-node"
+    local_name: "skycoin"
+    update_script: "/Users/ivan/Desktop/skycoin/src/github.com/skycoin/services/autoupdater/src/updater/scripts/skycoin.sh"
+    script_interpreter: "/bin/bash"
+    script_timeout: "20m"
+    script_extra_arguments: ["-a 1","-b 2"]
+    active_update_checker: "git_fetcher_1"
+    repository: "/skycoin/skycoin"
+    check_tag: "latest"
+    updater: "custom"
+
+  skywire:
+    official_name: "skywire"
+    local_name: "mystack_skywire"
+    update_script: "./updater/custom_example/custom_script.sh"
+    script_interpreter: "/bin/bash"
+    active_update_checker: "dockerhub_fetch"
+    check_tag: "latest"
+    updater: "swarm"

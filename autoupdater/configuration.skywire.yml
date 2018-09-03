@@ -1,0 +1,39 @@
+active_update_checkers:
+  naive:
+    interval: "30s"
+    retries: 3
+    retry_time: "22s"
+    kind: "naive"
+
+updaters:
+  custom:
+    kind: "custom"
+
+services:
+  skywire-manager:
+    official_name: "skywire-manager"
+    local_name: "manager"
+    update_script: "/Users/ivan/Desktop/skycoin/src/github.com/skycoin/services/autoupdater/src/updater/scripts/skywire.sh"
+    script_interpreter: "/bin/bash"
+    script_timeout: "20m"
+    script_extra_arguments:
+      - "-web-dir ${GOPATH}/src/github.com/skycoin/skywire/static/skywire-manager"
+    active_update_checker: "naive"
+    repository: "/skycoin/skywire"
+    updater: "custom"
+
+  skywire-node:
+    official_name: "skywire-node"
+    local_name: "node"
+    update_script: "/Users/ivan/Desktop/skycoin/src/github.com/skycoin/services/autoupdater/src/updater/scripts/skywire.sh"
+    script_interpreter: "/bin/bash"
+    script_timeout: "20m"
+    script_extra_arguments:
+      - "-connect-manager -manager-address 127.0.0.1:5998"
+      - "-manager-web 127.0.0.1:8000"
+      - "-discovery-address discovery.skycoin.net:5999-034b1cd4ebad163e457fb805b3ba43779958bba49f2c5e1e8b062482904bacdb68"
+      - "-address :5000"
+      - "-web-port :6001"
+    active_update_checker: "naive"
+    repository: "/skycoin/skywire"
+    updater: "custom"
