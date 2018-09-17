@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/skycoin/skycoin/src/visor"
 
-	"github.com/skycoin/services/errhandler"
+	"github.com/skycoin/services/coin-api/internal/server/errhandler"
 
 	"github.com/skycoin/services/coin-api/internal/multi"
 )
