@@ -1,0 +1,46 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.1
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:hoek:20180212':
+    - '@angular/cli > @angular-devkit/core > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/compiler-cli > chokidar > fsevents > node-pre-gyp > hawk > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/compiler-cli > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > @angular-devkit/core > chokidar > fsevents > node-pre-gyp > hawk > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/compiler-cli > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - karma > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek:
+        patched: '2018-12-11T23:14:40.763Z'
+    - karma > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek:
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack-dev-server > chokidar > fsevents > node-pre-gyp > hawk > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack-dev-server > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/compiler-cli > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - karma > chokidar > fsevents > node-pre-gyp > hawk > hoek:
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack-dev-server > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > @angular-devkit/core > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - karma > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek:
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack-dev-server > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > @angular-devkit/core > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
+    - '@angular/cli > webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek':
+        patched: '2018-12-11T23:14:40.763Z'
