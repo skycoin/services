@@ -9,7 +9,7 @@
     "grid-styled": "^2.0.0-9",
     "hidden-styled": "^1.0.0-0",
     "join-path": "^1.1.1",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.19",
     "moment": "^2.18.1",
     "normalize.css": "^7.0.0",
     "palx": "^1.0.2",
