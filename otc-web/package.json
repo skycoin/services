@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "axios": "^0.16.2",
+    "axios": "^0.21.1",
     "flag": "^2.0.4",
     "flat": "^2.0.1",
     "grid-styled": "^2.0.0-9",
