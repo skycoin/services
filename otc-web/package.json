@@ -10,7 +10,7 @@
     "hidden-styled": "^1.0.0-0",
     "join-path": "^1.1.1",
     "lodash": "^4.17.4",
-    "moment": "^2.18.1",
+    "moment": "^2.29.2",
     "normalize.css": "^7.0.0",
     "palx": "^1.0.2",
     "polished": "^1.3.0",
