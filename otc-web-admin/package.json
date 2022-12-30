@@ -5,7 +5,7 @@
   "dependencies": {
     "axios": "^0.16.2",
     "flag": "^2.0.3",
-    "flat": "^2.0.1",
+    "flat": "^5.0.1",
     "grid-styled": "^2.0.0-9",
     "hidden-styled": "^1.0.0-0",
     "join-path": "^1.1.1",
